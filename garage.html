@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hill Climb - Гараж</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #2b2b2b;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        .header {
+            padding: 15px;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: #3390ec;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .balance-box {
+            background: #FFD700;
+            color: #000;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+
+        .garage-container {
+            padding: 20px;
+        }
+
+        .upgrade-card {
+            background: #3c3c3c;
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .upgrade-info h3 { margin: 0 0 5px 0; font-size: 20px; }
+        .upgrade-info p { margin: 0; color: #aaa; font-size: 14px; }
+        
+        .upgrade-btn {
+            background: #4CAF50;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 15px;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .upgrade-btn:disabled {
+            background: #555;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <button class="back-btn" onclick="window.location.href='index.html'">◀ Назад</button>
+        <h2>ГАРАЖ</h2>
+        <div class="balance-box">💰 <span id="balance">...</span></div>
+    </div>
+
+    <div class="garage-container">
+        <!-- Улучшение Двигателя -->
+        <div class="upgrade-card">
+            <div class="upgrade-info">
+                <h3>Двигатель (Ур. <span id="engine-lvl">...</span>)</h3>
+                <p>Увеличивает скорость</p>
+            </div>
+            <button class="upgrade-btn" id="upgrade-btn" onclick="buyUpgrade()">
+                <span id="price">...</span> 💰
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let balance = 0;
+        let engineLvl = 1;
+
+        function loadData() {
+            try {
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
+                    window.Telegram.WebApp.CloudStorage.getItem('hillClimbCoins', (err, value) => {
+                        balance = parseInt(value) || 0;
+                        document.getElementById('balance').innerText = balance;
+                        updateUI();
+                    });
+                    window.Telegram.WebApp.CloudStorage.getItem('engineLevel', (err, value) => {
+                        engineLvl = parseInt(value) || 1;
+                        document.getElementById('engine-lvl').innerText = engineLvl;
+                        updateUI();
+                    });
+                } else {
+                    throw new Error("No CloudStorage");
+                }
+            } catch (e) {
+                balance = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
+                engineLvl = parseInt(localStorage.getItem('engineLevel')) || 1;
+                document.getElementById('balance').innerText = balance;
+                document.getElementById('engine-lvl').innerText = engineLvl;
+                updateUI();
+            }
+        }
+
+        function getUpgradePrice() {
+            return engineLvl * 50; // Цена растет: 50, 100, 150...
+        }
+
+        function updateUI() {
+            let price = getUpgradePrice();
+            document.getElementById('price').innerText = price;
+            
+            let btn = document.getElementById('upgrade-btn');
+            if (balance >= price) {
+                btn.disabled = false;
+                btn.style.background = '#4CAF50';
+            } else {
+                btn.disabled = true;
+                btn.style.background = '#555';
+            }
+        }
+
+        function buyUpgrade() {
+            let price = getUpgradePrice();
+            if (balance >= price) {
+                balance -= price;
+                engineLvl += 1;
+                
+                document.getElementById('balance').innerText = balance;
+                document.getElementById('engine-lvl').innerText = engineLvl;
+                
+                // Сохраняем
+                try {
+                    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.setItem) {
+                        window.Telegram.WebApp.CloudStorage.setItem('hillClimbCoins', balance.toString());
+                        window.Telegram.WebApp.CloudStorage.setItem('engineLevel', engineLvl.toString());
+                    } else {
+                        throw new Error();
+                    }
+                } catch (e) {
+                    localStorage.setItem('hillClimbCoins', balance);
+                    localStorage.setItem('engineLevel', engineLvl);
+                }
+                
+                updateUI();
+                
+                // Уведомление
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                }
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

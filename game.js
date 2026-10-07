@@ -33,6 +33,7 @@ let gasText;
 let brakeText;
 let coinIcon;
 let isGameOver = false;
+let engineLvl = 1;
 
 function create() {
     isGameOver = false;
@@ -136,23 +137,24 @@ function createUI(scene) {
         strokeThickness: 6
     }).setScrollFactor(0).setDepth(100);
 
-    // Асинхронно загружаем монеты из облака Telegram
+    // Асинхронно загружаем монеты и движок из облака Telegram
     try {
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
             window.Telegram.WebApp.CloudStorage.getItem('hillClimbCoins', (err, value) => {
-                if (!err && value) {
-                    totalCoins = parseInt(value) || 0;
-                } else {
-                    totalCoins = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
-                }
+                if (!err && value) totalCoins = parseInt(value) || 0;
+                else totalCoins = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
                 scoreText.setText(totalCoins.toString());
+            });
+            window.Telegram.WebApp.CloudStorage.getItem('engineLevel', (err, value) => {
+                if (!err && value) engineLvl = parseInt(value) || 1;
+                else engineLvl = parseInt(localStorage.getItem('engineLevel')) || 1;
             });
         } else {
             throw new Error("No CloudStorage");
         }
     } catch (e) {
-        // Запасной вариант для обычного браузера
         totalCoins = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
+        engineLvl = parseInt(localStorage.getItem('engineLevel')) || 1;
         scoreText.setText(totalCoins.toString());
     }
 
@@ -313,8 +315,9 @@ function createCar(scene) {
 }
 
 function update() {
-    const maxSpeed = 0.8;
-    const torque = 0.04;
+    // Чем выше уровень движка, тем быстрее едем и сильнее разгоняемся
+    const maxSpeed = 0.8 + (engineLvl * 0.1);
+    const torque = 0.04 + (engineLvl * 0.005);
 
     // Привязываем визуальную кабину к физическому кузову (чтобы она вращалась вместе с ним)
     if (car.chassis && car.cabin) {
