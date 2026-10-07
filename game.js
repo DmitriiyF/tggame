@@ -90,16 +90,20 @@ function createUI(scene) {
     }).setScrollFactor(0).setDepth(100);
 
     // Асинхронно загружаем монеты из облака Telegram
-    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage) {
-        window.Telegram.WebApp.CloudStorage.getItem('hillClimbCoins', (err, value) => {
-            if (!err && value) {
-                totalCoins = parseInt(value) || 0;
-            } else {
-                totalCoins = 0;
-            }
-            scoreText.setText(totalCoins.toString());
-        });
-    } else {
+    try {
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
+            window.Telegram.WebApp.CloudStorage.getItem('hillClimbCoins', (err, value) => {
+                if (!err && value) {
+                    totalCoins = parseInt(value) || 0;
+                } else {
+                    totalCoins = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
+                }
+                scoreText.setText(totalCoins.toString());
+            });
+        } else {
+            throw new Error("No CloudStorage");
+        }
+    } catch (e) {
         // Запасной вариант для обычного браузера
         totalCoins = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
         scoreText.setText(totalCoins.toString());
@@ -196,9 +200,13 @@ function collectCoin(coinGO) {
     scoreText.setText(totalCoins.toString());
 
     // Сохраняем в облако Telegram
-    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage) {
-        window.Telegram.WebApp.CloudStorage.setItem('hillClimbCoins', totalCoins.toString());
-    } else {
+    try {
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.setItem) {
+            window.Telegram.WebApp.CloudStorage.setItem('hillClimbCoins', totalCoins.toString());
+        } else {
+            throw new Error("No CloudStorage");
+        }
+    } catch (e) {
         localStorage.setItem('hillClimbCoins', totalCoins);
     }
 }
