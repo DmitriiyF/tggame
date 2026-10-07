@@ -35,8 +35,15 @@ let coinIcon;
 let isGameOver = false;
 let engineLvl = 1;
 
+// Бензин
+let maxFuel = 100;
+let currentFuel = 100;
+let fuelBarBg;
+let fuelBarFill;
+
 function create() {
     isGameOver = false;
+    currentFuel = maxFuel; // Полный бак при старте
     
     // Поддержка Telegram Web App
     if (window.Telegram && window.Telegram.WebApp) {
@@ -49,25 +56,33 @@ function create() {
     // 1. Создаем трассу и монетки
     createTerrain(this);
     createCoins(this);
+    createFuelCans(this); // Добавили генерацию канистр
 
     // 2. Создаем более детализированную машину
     createCar(this);
 
-    // 3. Обработка столкновений (сбор монеток и смерть)
+    // 3. Обработка столкновений (сбор монеток, бензина и смерть)
     this.matter.world.on('collisionstart', (event) => {
         if (isGameOver) return;
         event.pairs.forEach((pair) => {
             const bodyA = pair.bodyA;
             const bodyB = pair.bodyB;
             
-            // Если столкнулись монетка и машина
-            let isCar = bodyA.label === 'car' || bodyA.label === 'chassis';
+            let isCarA = bodyA.label === 'car' || bodyA.label === 'chassis';
             let isCarB = bodyB.label === 'car' || bodyB.label === 'chassis';
             
+            // Если столкнулись монетка и машина
             if (bodyA.label === 'coin' && isCarB) {
                 collectCoin(bodyA.gameObject);
-            } else if (bodyB.label === 'coin' && isCar) {
+            } else if (bodyB.label === 'coin' && isCarA) {
                 collectCoin(bodyB.gameObject);
+            }
+
+            // Если подобрали канистру с бензином
+            if (bodyA.label === 'fuel' && isCarB) {
+                collectFuel(bodyA.gameObject, this);
+            } else if (bodyB.label === 'fuel' && isCarA) {
+                collectFuel(bodyB.gameObject, this);
             }
 
             // Смерть при перевороте (касание земли крышей)
@@ -76,7 +91,7 @@ function create() {
                 
                 // Если угол наклона машины больше 1.5 радиан (~90 градусов)
                 if (Math.abs(car.chassis.rotation) > 1.5) {
-                    gameOver(this);
+                    gameOver(this, 'CRASHED!\nШея сломана');
                 }
             }
         });
@@ -93,7 +108,8 @@ function create() {
     this.cameras.main.setFollowOffset(0, 50); 
 }
 
-function gameOver(scene) {
+function gameOver(scene, reasonText) {
+    if (isGameOver) return;
     isGameOver = true;
     scene.matter.world.pause(); // Останавливаем физику
     
@@ -101,7 +117,7 @@ function gameOver(scene) {
     const height = scene.sys.game.config.height;
     
     // Надпись Game Over
-    scene.add.text(width/2, height/2 - 60, 'CRASHED!\nШея сломана', {
+    scene.add.text(width/2, height/2 - 60, reasonText, {
         fontSize: '40px',
         fill: '#FF0000',
         fontStyle: 'bold',
@@ -161,6 +177,15 @@ function createUI(scene) {
     // Иконка монетки рядом со счетом
     coinIcon = scene.add.circle(35, 42, 15, 0xFFD700)
         .setScrollFactor(0).setDepth(100).setStrokeStyle(3, 0xB8860B);
+
+    // Шкала Бензина (по центру)
+    scene.add.text(width/2, 20, 'FUEL', { fontSize: '18px', fill: '#FFF', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 })
+        .setOrigin(0.5).setScrollFactor(0).setDepth(100);
+    
+    fuelBarBg = scene.add.rectangle(width/2, 45, 200, 20, 0x000000, 0.5)
+        .setScrollFactor(0).setDepth(100);
+    fuelBarFill = scene.add.rectangle(width/2 - 96, 45, 192, 12, 0xFF3333, 1)
+        .setOrigin(0, 0.5).setScrollFactor(0).setDepth(101);
 
     // Кнопка ТОРМОЗ (слева внизу)
     brakeButton = scene.add.rectangle(100, height - 100, 140, 140, 0xFF3333, 0.7)
@@ -261,6 +286,45 @@ function collectCoin(coinGO) {
     }
 }
 
+function createFuelCans(scene) {
+    for (let i = 25; i < terrainPoints.length; i += 20) { // Примерно каждые 20 блоков земли
+        let point = terrainPoints[i];
+        
+        // Канистра (красный вертикальный прямоугольник)
+        let fuelCan = scene.add.rectangle(point.x, point.y - 70, 25, 35, 0xE53935);
+        fuelCan.setStrokeStyle(3, 0xFFFFFF); // Белая обводка
+        
+        // Белая полоска посередине канистры
+        scene.add.rectangle(point.x, point.y - 70, 25, 10, 0xFFFFFF);
+        
+        scene.matter.add.gameObject(fuelCan, {
+            isStatic: true,
+            isSensor: true,
+            label: 'fuel'
+        });
+    }
+}
+
+function collectFuel(fuelGO, scene) {
+    if (!fuelGO || !fuelGO.active) return;
+    fuelGO.destroy(); // Удаляем прямоугольник канистры
+    
+    currentFuel = maxFuel; // Заполняем бак
+    
+    // Всплывающая надпись +FUEL
+    let txt = scene.add.text(car.chassis.x, car.chassis.y - 100, '+ FUEL', { 
+        fontSize: '30px', fill: '#00FF00', fontStyle: 'bold', stroke: '#000', strokeThickness: 5 
+    }).setOrigin(0.5);
+    
+    scene.tweens.add({ 
+        targets: txt, 
+        y: txt.y - 50, 
+        alpha: 0, 
+        duration: 1000, 
+        onComplete: () => txt.destroy() 
+    });
+}
+
 function createCar(scene) {
     const x = 0;
     const y = 200;
@@ -315,6 +379,28 @@ function createCar(scene) {
 }
 
 function update() {
+    if (isGameOver) return; // После смерти ничего не делаем
+
+    // Трата бензина
+    if (currentFuel > 0) {
+        currentFuel -= 0.04; // Базовый расход (даже стоя)
+        if (cursors.right.isDown || isGasPressed) currentFuel -= 0.06; // Доп. расход при газе
+        if (currentFuel < 0) currentFuel = 0;
+    }
+
+    // Обновляем визуальную шкалу
+    let fillWidth = Math.max(0, (currentFuel / maxFuel) * 192);
+    if (fuelBarFill) fuelBarFill.width = fillWidth;
+
+    // Смерть от нехватки топлива
+    if (currentFuel <= 0) {
+        // Ждем, пока машина полностью остановится
+        if (Math.abs(car.wheelA.body.angularVelocity) < 0.05 && Math.abs(car.wheelB.body.angularVelocity) < 0.05) {
+            gameOver(this, 'OUT OF GAS!\nБензин кончился');
+            return;
+        }
+    }
+
     // Чем выше уровень движка, тем быстрее едем и сильнее разгоняемся
     const maxSpeed = 0.8 + (engineLvl * 0.1);
     const torque = 0.04 + (engineLvl * 0.005);
@@ -322,7 +408,6 @@ function update() {
     // Привязываем визуальную кабину к физическому кузову (чтобы она вращалась вместе с ним)
     if (car.chassis && car.cabin) {
         let angle = car.chassis.rotation;
-        // Немного тригонометрии, чтобы кабина всегда была над левой частью кузова
         let offsetX = Math.cos(angle - Math.PI/2) * 30 - Math.cos(angle) * 15;
         let offsetY = Math.sin(angle - Math.PI/2) * 30 - Math.sin(angle) * 15;
         
@@ -330,8 +415,8 @@ function update() {
         car.cabin.setRotation(angle);
     }
 
-    // Управление
-    if (cursors.right.isDown || isGasPressed) {
+    // Управление работает только если есть бензин
+    if ((cursors.right.isDown || isGasPressed) && currentFuel > 0) {
         if (car.wheelB.body.angularVelocity < maxSpeed) {
             car.wheelB.setAngularVelocity(car.wheelB.body.angularVelocity + torque);
             car.wheelA.setAngularVelocity(car.wheelA.body.angularVelocity + torque);
@@ -339,7 +424,8 @@ function update() {
         // Наклон назад в полете
         car.chassis.setAngularVelocity(car.chassis.body.angularVelocity - 0.008); 
     } 
-    else if (cursors.left.isDown || isBrakePressed) {
+    else if ((cursors.left.isDown || isBrakePressed)) {
+        // Тормозить можно всегда (даже без бензина)
         if (car.wheelB.body.angularVelocity > -maxSpeed) {
             car.wheelB.setAngularVelocity(car.wheelB.body.angularVelocity - torque);
             car.wheelA.setAngularVelocity(car.wheelA.body.angularVelocity - torque);
