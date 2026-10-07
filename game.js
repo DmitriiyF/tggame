@@ -25,7 +25,7 @@ let isBrakePressed = false;
 let Matter;
 
 // Интерфейс
-let score = 0;
+let totalCoins = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
 let scoreText;
 let gasButton;
 let brakeButton;
@@ -80,7 +80,7 @@ function createUI(scene) {
     const height = scene.sys.game.config.height;
 
     // Текст со счетом
-    scoreText = scene.add.text(60, 20, '0', { 
+    scoreText = scene.add.text(60, 20, totalCoins.toString(), { 
         fontSize: '40px', 
         fill: '#FFF', 
         fontFamily: 'Arial',
@@ -176,8 +176,9 @@ function createCoins(scene) {
 function collectCoin(coinGO) {
     if (!coinGO || !coinGO.active) return; // Защита от двойного сбора
     coinGO.destroy(); // Удаляем монетку
-    score += 5;       // Даем 5 очков
-    scoreText.setText(score.toString());
+    totalCoins += 5;       // Даем 5 очков
+    localStorage.setItem('hillClimbCoins', totalCoins); // Сохраняем в память
+    scoreText.setText(totalCoins.toString());
 }
 
 function createCar(scene) {
