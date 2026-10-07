@@ -32,8 +32,11 @@ let brakeButton;
 let gasText;
 let brakeText;
 let coinIcon;
+let isGameOver = false;
 
 function create() {
+    isGameOver = false;
+    
     // Поддержка Telegram Web App
     if (window.Telegram && window.Telegram.WebApp) {
         window.Telegram.WebApp.ready();
@@ -49,30 +52,74 @@ function create() {
     // 2. Создаем более детализированную машину
     createCar(this);
 
-    // 3. Обработка столкновений (сбор монеток)
+    // 3. Обработка столкновений (сбор монеток и смерть)
     this.matter.world.on('collisionstart', (event) => {
+        if (isGameOver) return;
         event.pairs.forEach((pair) => {
             const bodyA = pair.bodyA;
             const bodyB = pair.bodyB;
             
-            // Если столкнулись монетка и машина (кузов или колеса)
-            if (bodyA.label === 'coin' && bodyB.label === 'car') {
+            // Если столкнулись монетка и машина
+            let isCar = bodyA.label === 'car' || bodyA.label === 'chassis';
+            let isCarB = bodyB.label === 'car' || bodyB.label === 'chassis';
+            
+            if (bodyA.label === 'coin' && isCarB) {
                 collectCoin(bodyA.gameObject);
-            } else if (bodyB.label === 'coin' && bodyA.label === 'car') {
+            } else if (bodyB.label === 'coin' && isCar) {
                 collectCoin(bodyB.gameObject);
+            }
+
+            // Смерть при перевороте (касание земли крышей)
+            if ((bodyA.label === 'ground' && bodyB.label === 'chassis') || 
+                (bodyB.label === 'ground' && bodyA.label === 'chassis')) {
+                
+                // Если угол наклона машины больше 1.5 радиан (~90 градусов)
+                if (Math.abs(car.chassis.rotation) > 1.5) {
+                    gameOver(this);
+                }
             }
         });
     });
 
     cursors = this.input.keyboard.createCursorKeys();
 
-    // 4. Отрисовка интерфейса (кнопки и счетчик)
+    // 4. Отрисовка интерфейса
     createUI(this);
 
     // 5. Настройка камеры
     this.cameras.main.startFollow(car.chassis, false, 0.1, 0.1);
     this.cameras.main.setZoom(0.7);
-    this.cameras.main.setFollowOffset(0, 50); // Камера чуть выше машины
+    this.cameras.main.setFollowOffset(0, 50); 
+}
+
+function gameOver(scene) {
+    isGameOver = true;
+    scene.matter.world.pause(); // Останавливаем физику
+    
+    const width = scene.sys.game.config.width;
+    const height = scene.sys.game.config.height;
+    
+    // Надпись Game Over
+    scene.add.text(width/2, height/2 - 60, 'CRASHED!\nШея сломана', {
+        fontSize: '40px',
+        fill: '#FF0000',
+        fontStyle: 'bold',
+        align: 'center',
+        stroke: '#000',
+        strokeThickness: 6
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(200);
+    
+    // Кнопка возврата в меню
+    let restartBtn = scene.add.rectangle(width/2, height/2 + 60, 200, 60, 0x3390ec, 1)
+        .setScrollFactor(0).setDepth(200).setInteractive({ useHandCursor: true });
+    restartBtn.setStrokeStyle(3, 0xFFFFFF);
+    
+    scene.add.text(width/2, height/2 + 60, 'В МЕНЮ', { fontSize: '24px', fill: '#FFF', fontStyle: 'bold' })
+        .setOrigin(0.5).setScrollFactor(0).setDepth(200);
+        
+    restartBtn.on('pointerdown', () => {
+        window.location.href = 'index.html';
+    });
 }
 
 function createUI(scene) {
@@ -163,7 +210,8 @@ function createTerrain(scene) {
             isStatic: true,
             angle: angle,
             friction: 0.9,
-            restitution: 0.1 // Немного упругости
+            restitution: 0.1, // Немного упругости
+            label: 'ground'
         });
         
         // Сохраняем точки, чтобы потом раскидать там монетки
@@ -228,7 +276,7 @@ function createCar(scene) {
         collisionFilter: { group: group },
         density: 0.002, // Облегчили кузов
         friction: 0.5,
-        label: 'car'
+        label: 'chassis'
     });
 
     car.cabin = cabinRect;
