@@ -135,7 +135,7 @@ function gameOver(scene, reasonText) {
         .setOrigin(0.5).setScrollFactor(0).setDepth(200);
         
     restartBtn.on('pointerdown', () => {
-        window.location.href = 'index.html';
+        window.location.href = 'hillclimb_menu.html';
     });
 }
 
