@@ -25,7 +25,7 @@ let isBrakePressed = false;
 let Matter;
 
 // Интерфейс
-let totalCoins = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
+let totalCoins = 0; // Будем загружать из облака Telegram
 let scoreText;
 let gasButton;
 let brakeButton;
@@ -79,8 +79,8 @@ function createUI(scene) {
     const width = scene.sys.game.config.width;
     const height = scene.sys.game.config.height;
 
-    // Текст со счетом
-    scoreText = scene.add.text(60, 20, totalCoins.toString(), { 
+    // Текст со счетом (пока грузится из облака, пишем '...')
+    scoreText = scene.add.text(60, 20, '...', { 
         fontSize: '40px', 
         fill: '#FFF', 
         fontFamily: 'Arial',
@@ -88,6 +88,22 @@ function createUI(scene) {
         stroke: '#000',
         strokeThickness: 6
     }).setScrollFactor(0).setDepth(100);
+
+    // Асинхронно загружаем монеты из облака Telegram
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage) {
+        window.Telegram.WebApp.CloudStorage.getItem('hillClimbCoins', (err, value) => {
+            if (!err && value) {
+                totalCoins = parseInt(value) || 0;
+            } else {
+                totalCoins = 0;
+            }
+            scoreText.setText(totalCoins.toString());
+        });
+    } else {
+        // Запасной вариант для обычного браузера
+        totalCoins = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
+        scoreText.setText(totalCoins.toString());
+    }
 
     // Иконка монетки рядом со счетом
     coinIcon = scene.add.circle(35, 42, 15, 0xFFD700)
@@ -177,8 +193,14 @@ function collectCoin(coinGO) {
     if (!coinGO || !coinGO.active) return; // Защита от двойного сбора
     coinGO.destroy(); // Удаляем монетку
     totalCoins += 5;       // Даем 5 очков
-    localStorage.setItem('hillClimbCoins', totalCoins); // Сохраняем в память
     scoreText.setText(totalCoins.toString());
+
+    // Сохраняем в облако Telegram
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage) {
+        window.Telegram.WebApp.CloudStorage.setItem('hillClimbCoins', totalCoins.toString());
+    } else {
+        localStorage.setItem('hillClimbCoins', totalCoins);
+    }
 }
 
 function createCar(scene) {
