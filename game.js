@@ -189,45 +189,47 @@ function createCar(scene) {
     const chassisRect = scene.add.rectangle(x, y - 20, 130, 30, 0xE53935);
     chassisRect.setStrokeStyle(2, 0xB71C1C);
     
-    // Кабина водителя (рисуем как отдельный прямоугольник над кузовом)
+    // Кабина водителя
     const cabinRect = scene.add.rectangle(x - 20, y - 50, 70, 35, 0xD32F2F);
     cabinRect.setStrokeStyle(2, 0xB71C1C);
     
     car.chassis = scene.matter.add.gameObject(chassisRect, { 
         collisionFilter: { group: group },
-        density: 0.003, // Машина потяжелее
+        density: 0.002, // Облегчили кузов
         friction: 0.5,
         label: 'car'
     });
 
-    car.cabin = cabinRect; // Сохраняем, чтобы привязывать к кузову в update()
+    car.cabin = cabinRect;
 
     const wheelOptions = { 
         shape: 'circle',
-        radius: 28, // Колеса побольше
+        radius: 25, // Вернули адекватный размер
         collisionFilter: { group: group },
-        friction: 0.95,    // Сцепление (чтобы не буксовала)
-        density: 0.006,   // Тяжелые колеса для устойчивости
-        restitution: 0.1, // Немного прыгучести
+        friction: 0.9,    
+        density: 0.008,   // Тяжелые колеса (смещают центр тяжести вниз, машина не переворачивается)
+        restitution: 0.1, 
         label: 'car'
     };
     
-    // Колесо 1 с дисками
-    const wheelACircle = scene.add.circle(x - 45, y, 28, 0x212121);
+    // Колеса
+    const wheelACircle = scene.add.circle(x - 45, y, 25, 0x212121);
     wheelACircle.setStrokeStyle(5, 0x9E9E9E); 
     car.wheelA = scene.matter.add.gameObject(wheelACircle, wheelOptions);
 
-    // Колесо 2 с дисками
-    const wheelBCircle = scene.add.circle(x + 45, y, 28, 0x212121);
+    const wheelBCircle = scene.add.circle(x + 45, y, 25, 0x212121);
     wheelBCircle.setStrokeStyle(5, 0x9E9E9E);
     car.wheelB = scene.matter.add.gameObject(wheelBCircle, wheelOptions);
 
-    // Подвеска (более мягкая и прыгучая как в оригинале)
-    scene.matter.add.spring(car.chassis.body, car.wheelA.body, 40, 0.12, {
-        pointA: { x: -45, y: 15 }
+    // Подвеска (Жесткие амортизаторы)
+    // Длина пружины: 15 пикселей. Жесткость: 0.6 (держит кузов)
+    scene.matter.add.spring(car.chassis.body, car.wheelA.body, 15, 0.6, {
+        pointA: { x: -45, y: 15 },
+        damping: 0.1 // Гасит лишние колебания (чтобы не болталась как желе)
     });
-    scene.matter.add.spring(car.chassis.body, car.wheelB.body, 40, 0.12, {
-        pointA: { x: 45, y: 15 }
+    scene.matter.add.spring(car.chassis.body, car.wheelB.body, 15, 0.6, {
+        pointA: { x: 45, y: 15 },
+        damping: 0.1
     });
 }
 
