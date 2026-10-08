@@ -102,12 +102,24 @@
                 <span id="suspension-cost">...</span> 💰
             </button>
         </div>
+
+        <!-- Улучшение Шин -->
+        <div class="upgrade-card">
+            <div class="upgrade-info">
+                <h3>Шины (Ур. <span id="tires-lvl">...</span>)</h3>
+                <p>Улучшают сцепление с землей</p>
+            </div>
+            <button class="upgrade-btn" id="buy-tires-btn" onclick="buyTires()">
+                <span id="tires-cost">...</span> 💰
+            </button>
+        </div>
     </div>
 
     <script>
         let balance = 0;
         let engineLvl = 1;
         let suspensionLvl = 1;
+        let tiresLvl = 1;
 
         function loadData() {
             try {
@@ -130,6 +142,12 @@
                         document.getElementById('suspension-lvl').innerText = suspensionLvl;
                         updateUI();
                     });
+                    window.Telegram.WebApp.CloudStorage.getItem('tiresLevel', (err, value) => {
+                        let tiresStr = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('tiresLevel') || '1';
+                        tiresLvl = parseInt(tiresStr) || 1;
+                        document.getElementById('tires-lvl').innerText = tiresLvl;
+                        updateUI();
+                    });
                 } else {
                     throw new Error("No CloudStorage");
                 }
@@ -137,9 +155,11 @@
                 balance = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
                 engineLvl = parseInt(localStorage.getItem('engineLevel')) || 1;
                 suspensionLvl = parseInt(localStorage.getItem('suspensionLevel')) || 1;
+                tiresLvl = parseInt(localStorage.getItem('tiresLevel')) || 1;
                 document.getElementById('balance').innerText = balance;
                 document.getElementById('engine-lvl').innerText = engineLvl;
                 document.getElementById('suspension-lvl').innerText = suspensionLvl;
+                document.getElementById('tires-lvl').innerText = tiresLvl;
                 updateUI();
             }
         }
@@ -167,6 +187,18 @@
             } else {
                 suspensionBtn.disabled = true;
                 suspensionBtn.style.background = '#555';
+            }
+
+            // Шины
+            let tiresCost = tiresLvl * 50;
+            let tiresBtn = document.getElementById('buy-tires-btn');
+            document.getElementById('tires-cost').innerText = tiresCost;
+            if (balance >= tiresCost) {
+                tiresBtn.disabled = false;
+                tiresBtn.style.background = '#4CAF50';
+            } else {
+                tiresBtn.disabled = true;
+                tiresBtn.style.background = '#555';
             }
         }
 
@@ -196,16 +228,31 @@
             }
         }
 
+        function buyTires() {
+            let cost = tiresLvl * 50;
+            if (balance >= cost) {
+                balance -= cost;
+                tiresLvl++;
+                document.getElementById('balance').innerText = balance;
+                document.getElementById('tires-lvl').innerText = tiresLvl;
+                saveData();
+                updateUI();
+                triggerHaptic();
+            }
+        }
+
         function saveData() {
             localStorage.setItem('hillClimbCoins', balance.toString());
             localStorage.setItem('engineLevel', engineLvl.toString());
             localStorage.setItem('suspensionLevel', suspensionLvl.toString());
+            localStorage.setItem('tiresLevel', tiresLvl.toString());
 
             try {
                 if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.setItem) {
                     window.Telegram.WebApp.CloudStorage.setItem('hillClimbCoins', balance.toString(), function(){});
                     window.Telegram.WebApp.CloudStorage.setItem('engineLevel', engineLvl.toString(), function(){});
                     window.Telegram.WebApp.CloudStorage.setItem('suspensionLevel', suspensionLvl.toString(), function(){});
+                    window.Telegram.WebApp.CloudStorage.setItem('tiresLevel', tiresLvl.toString(), function(){});
                 }
             } catch (e) {}
         }

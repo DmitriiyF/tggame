@@ -35,6 +35,7 @@ let coinIcon;
 let isGameOver = false;
 let engineLvl = 1;
 let suspensionLvl = 1;
+let tiresLvl = 1;
 
 // Бензин
 let maxFuel = 100;
@@ -197,6 +198,11 @@ function createUI(scene) {
                 suspensionLvl = parseInt(suspStr) || 1;
                 updateSuspensionPhysics();
             });
+            window.Telegram.WebApp.CloudStorage.getItem('tiresLevel', (err, value) => {
+                let tiresStr = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('tiresLevel') || '1';
+                tiresLvl = parseInt(tiresStr) || 1;
+                updateTiresPhysics();
+            });
             window.Telegram.WebApp.CloudStorage.getItem('maxDistance', (err, value) => {
                 let distStr = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('maxDistance') || '0';
                 maxDistance = parseInt(distStr) || 0;
@@ -209,10 +215,12 @@ function createUI(scene) {
         totalCoins = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
         engineLvl = parseInt(localStorage.getItem('engineLevel')) || 1;
         suspensionLvl = parseInt(localStorage.getItem('suspensionLevel')) || 1;
+        tiresLvl = parseInt(localStorage.getItem('tiresLevel')) || 1;
         maxDistance = parseInt(localStorage.getItem('maxDistance')) || 0;
         scoreText.setText(totalCoins.toString());
         if (recordText) recordText.setText('Рекорд: ' + maxDistance + 'm');
         updateSuspensionPhysics();
+        updateTiresPhysics();
     }
 
     // Иконка монетки рядом со счетом
@@ -287,8 +295,8 @@ function createTerrain(scene) {
         scene.matter.add.gameObject(ground, {
             isStatic: true,
             angle: angle,
-            friction: 0.9,
-            restitution: 0.1, // Немного упругости
+            friction: 1.5, // Земля очень шершавая, чтобы сцепление зависело только от шин
+            restitution: 0.1, 
             label: 'ground'
         });
         
@@ -426,7 +434,7 @@ function createCar(scene) {
         shape: 'circle',
         radius: 25, 
         collisionFilter: { group: group },
-        friction: 0.9,    
+        friction: 0.5,    // Базовое слабое сцепление
         density: 0.008,   
         restitution: 0.1, 
         label: 'car'
@@ -454,15 +462,24 @@ function createCar(scene) {
 
 function updateSuspensionPhysics() {
     if (car.springA && car.springB) {
-        // Базовая жесткость 0.2, с каждым уровнем прибавляем 0.05
         let newStiffness = 0.2 + (suspensionLvl * 0.05);
-        // Базовое гашение 0.05, с каждым уровнем прибавляем 0.02
         let newDamping = 0.05 + (suspensionLvl * 0.02);
         
         car.springA.stiffness = newStiffness;
         car.springA.damping = newDamping;
         car.springB.stiffness = newStiffness;
         car.springB.damping = newDamping;
+    }
+}
+
+function updateTiresPhysics() {
+    if (car.wheelA && car.wheelB) {
+        // Базовое сцепление 0.5. За каждый уровень шин добавляется 0.1.
+        let newFriction = 0.5 + (tiresLvl * 0.1);
+        if (newFriction > 1.5) newFriction = 1.5; // Ограничиваем сверху
+        
+        car.wheelA.body.friction = newFriction;
+        car.wheelB.body.friction = newFriction;
     }
 }
 
