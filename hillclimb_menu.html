@@ -142,11 +142,13 @@
                 if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
                     // Грузим монеты
                     window.Telegram.WebApp.CloudStorage.getItem('hillClimbCoins', (err, value) => {
-                        document.getElementById('balance').innerText = value ? value : '0';
+                        let coins = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('hillClimbCoins') || '0';
+                        document.getElementById('balance').innerText = coins;
                     });
                     // Грузим движок
                     window.Telegram.WebApp.CloudStorage.getItem('engineLevel', (err, value) => {
-                        document.getElementById('engine-lvl').innerText = value ? value : '1';
+                        let eng = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('engineLevel') || '1';
+                        document.getElementById('engine-lvl').innerText = eng;
                     });
                 } else {
                     throw new Error("No CloudStorage");

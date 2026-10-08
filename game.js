@@ -112,7 +112,14 @@ function gameOver(scene, reasonText) {
     if (isGameOver) return;
     isGameOver = true;
     scene.matter.world.pause(); // Останавливаем физику
-    
+
+    // Финальное сохранение монет в облако
+    try {
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.setItem) {
+            window.Telegram.WebApp.CloudStorage.setItem('hillClimbCoins', totalCoins.toString(), (e,s)=>{});
+        }
+    } catch(e) {}
+        
     const width = scene.sys.game.config.width;
     const height = scene.sys.game.config.height;
     
@@ -157,13 +164,13 @@ function createUI(scene) {
     try {
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
             window.Telegram.WebApp.CloudStorage.getItem('hillClimbCoins', (err, value) => {
-                if (!err && value) totalCoins = parseInt(value) || 0;
-                else totalCoins = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
+                let coinsStr = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('hillClimbCoins') || '0';
+                totalCoins = parseInt(coinsStr) || 0;
                 scoreText.setText(totalCoins.toString());
             });
             window.Telegram.WebApp.CloudStorage.getItem('engineLevel', (err, value) => {
-                if (!err && value) engineLvl = parseInt(value) || 1;
-                else engineLvl = parseInt(localStorage.getItem('engineLevel')) || 1;
+                let engStr = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('engineLevel') || '1';
+                engineLvl = parseInt(engStr) || 1;
             });
         } else {
             throw new Error("No CloudStorage");
@@ -268,21 +275,27 @@ function createCoins(scene) {
     }
 }
 
+let lastCloudSaveTime = 0;
+
 function collectCoin(coinGO) {
     if (!coinGO || !coinGO.active) return; // Защита от двойного сбора
     coinGO.destroy(); // Удаляем монетку
     totalCoins += 5;       // Даем 5 очков
     scoreText.setText(totalCoins.toString());
 
-    // Сохраняем в облако Telegram
-    try {
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.setItem) {
-            window.Telegram.WebApp.CloudStorage.setItem('hillClimbCoins', totalCoins.toString());
-        } else {
-            throw new Error("No CloudStorage");
-        }
-    } catch (e) {
-        localStorage.setItem('hillClimbCoins', totalCoins);
+    // 1. Всегда моментально сохраняем в память телефона
+    localStorage.setItem('hillClimbCoins', totalCoins.toString());
+
+    // 2. Сохраняем в облако Telegram не чаще чем раз в 2 секунды (обход Rate Limit на Android)
+    let now = Date.now();
+    if (now - lastCloudSaveTime > 2000) {
+        lastCloudSaveTime = now;
+        try {
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.setItem) {
+                // Пустой коллбэк для совместимости с Android
+                window.Telegram.WebApp.CloudStorage.setItem('hillClimbCoins', totalCoins.toString(), (err, success) => {});
+            }
+        } catch (e) {}
     }
 }
 

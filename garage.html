@@ -101,12 +101,14 @@
             try {
                 if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
                     window.Telegram.WebApp.CloudStorage.getItem('hillClimbCoins', (err, value) => {
-                        balance = parseInt(value) || 0;
+                        let coinsStr = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('hillClimbCoins') || '0';
+                        balance = parseInt(coinsStr) || 0;
                         document.getElementById('balance').innerText = balance;
                         updateUI();
                     });
                     window.Telegram.WebApp.CloudStorage.getItem('engineLevel', (err, value) => {
-                        engineLvl = parseInt(value) || 1;
+                        let engStr = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('engineLevel') || '1';
+                        engineLvl = parseInt(engStr) || 1;
                         document.getElementById('engine-lvl').innerText = engineLvl;
                         updateUI();
                     });
