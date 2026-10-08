@@ -485,73 +485,69 @@ function collectFuel(fuelGO, scene) {
 }
 
 function createCar(scene) {
-    const x = 0;
-    const y = 200;
-    const group = scene.matter.world.nextGroup(true);
+    if (car && car.chassis) {
+        car.chassis.destroy();
+        car.wheelA.destroy();
+        car.wheelB.destroy();
+    }
 
-    // Для физики делаем кузов КОРОЧЕ, чем колесная база или впритык к ней,
-    // чтобы передний/задний бамперы не втыкались в землю на крутых склонах!
-    let cfg = {
-        w: 90, h: 30, // chassis
-        rA: 25, rB: 25, // wheels radius
-        wxA: -40, wxB: 40, wy: 35, // wheels offset (wy is distance from chassis center to wheel center. Larger = higher chassis)
-        cdens: 0.015, wdens: 0.001, fuel: 100, drive: 'rwd',
+    let x = 300; let y = 200;
+    
+    // БАЗОВЫЕ НАСТРОЙКИ (Идеальный аркадный баланс)
+    // wy = 15 (колеса крепятся прямо к низу кузова, центр тяжести предельно низкий!)
+    let cfg = { 
+        w: 90, h: 30, rA: 25, rB: 25, wxA: -45, wxB: 45, wy: 15, 
+        cdens: 0.015, wdens: 0.003, fuel: 100, drive: 'rwd',
         emoji: '🚙', emojiSize: '130px', emojiY: -15
     };
 
     if (selectedCarId === 'bike') {
-        cfg = { w: 70, h: 15, rA: 20, rB: 20, wxA: -35, wxB: 35, wy: 25, cdens: 0.006, wdens: 0.0005, fuel: 70, drive: 'rwd', emoji: '🏍️', emojiSize: '120px', emojiY: -20 };
+        cfg = { w: 70, h: 15, rA: 20, rB: 20, wxA: -35, wxB: 35, wy: 10, cdens: 0.008, wdens: 0.001, fuel: 70, drive: 'rwd', emoji: '🏍️', emojiSize: '120px', emojiY: -20 };
     } else if (selectedCarId === 'tractor') {
-        cfg = { w: 100, h: 40, rA: 35, rB: 25, wxA: -50, wxB: 50, wy: 40, cdens: 0.018, wdens: 0.002, fuel: 120, drive: 'rwd', emoji: '🚜', emojiSize: '150px', emojiY: -30 };
+        cfg = { w: 100, h: 40, rA: 35, rB: 25, wxA: -50, wxB: 50, wy: 20, cdens: 0.02, wdens: 0.005, fuel: 120, drive: 'rwd', emoji: '🚜', emojiSize: '150px', emojiY: -30 };
     } else if (selectedCarId === 'racecar') {
-        cfg = { w: 100, h: 20, rA: 20, rB: 20, wxA: -55, wxB: 55, wy: 25, cdens: 0.012, wdens: 0.0008, fuel: 90, drive: 'rwd', emoji: '🏎️', emojiSize: '160px', emojiY: -25 };
+        cfg = { w: 100, h: 20, rA: 20, rB: 20, wxA: -55, wxB: 55, wy: 10, cdens: 0.01, wdens: 0.002, fuel: 90, drive: 'awd', emoji: '🏎️', emojiSize: '160px', emojiY: -25 };
     } else if (selectedCarId === 'tank') {
-        cfg = { w: 120, h: 50, rA: 30, rB: 30, wxA: -60, wxB: 60, wy: 35, cdens: 0.03, wdens: 0.003, fuel: 150, drive: 'awd', emoji: '🚛', emojiSize: '160px', emojiY: -30 };
+        cfg = { w: 120, h: 50, rA: 30, rB: 30, wxA: -60, wxB: 60, wy: 25, cdens: 0.03, wdens: 0.008, fuel: 150, drive: 'awd', emoji: '🚛', emojiSize: '160px', emojiY: -30 };
     }
     
     maxFuel = cfg.fuel;
     currentFuel = maxFuel;
-    car.driveType = cfg.drive;
-    car.chassisMass = cfg.cdens;
+    if (fuelBarFill) fuelBarFill.width = 192;
 
-    // Невидимый кузов для физики
-    const chassisRect = scene.add.rectangle(x, y - 40, cfg.w, cfg.h, 0x000000, 0); 
+    let group = scene.matter.world.nextGroup(true);
+    let chassisRect = scene.add.rectangle(x, y, cfg.w, cfg.h, 0x000000, 0); // Невидимый кузов
     
     car.chassis = scene.matter.add.gameObject(chassisRect, { 
         collisionFilter: { group: group },
         density: cfg.cdens,
-        friction: 0.5,
+        restitution: 0.1,
+        friction: 0.3, // Кузов скользит, если трется
+        frictionAir: 0.02,
         label: 'chassis'
     });
-    Matter.Body.setCentre(car.chassis.body, { x: car.chassis.body.position.x, y: car.chassis.body.position.y + 25 }, true);
     
+    // Колеса с умеренным трением (чтобы могли чуть пробуксовывать, а не намертво вгрызаться)
+    const wheelOptsA = { shape: 'circle', radius: cfg.rA, collisionFilter: { group: group }, friction: 0.6, density: cfg.wdens, restitution: 0.1, label: 'car' };
+    const wheelOptsB = { shape: 'circle', radius: cfg.rB, collisionFilter: { group: group }, friction: 0.6, density: cfg.wdens, restitution: 0.1, label: 'car' };
 
-    
-    // Эмодзи как стикер вместо старой кабины
-    car.emoji = scene.add.text(x, y, cfg.emoji, { fontSize: cfg.emojiSize }).setOrigin(0.5);
-    car.emoji.setFlipX(true); // Разворачиваем машинки вправо!
-    car.emoji.deltaY = cfg.emojiY;
-
-    // Колеса легкие! Иначе они перевешивают кузов и подвеска кажется "соплей"
-    const wheelOptsA = { shape: 'circle', radius: cfg.rA, collisionFilter: { group: group }, friction: 0.8, density: cfg.wdens, restitution: 0.1, label: 'car' };
-    const wheelOptsB = { shape: 'circle', radius: cfg.rB, collisionFilter: { group: group }, friction: 0.8, density: cfg.wdens, restitution: 0.1, label: 'car' };
-    
-    const wA = scene.add.circle(x + cfg.wxA, y, cfg.rA, 0x212121);
-    wA.setStrokeStyle(5, 0x9E9E9E); 
+    let wA = scene.add.circle(x + cfg.wxA, y + cfg.wy, cfg.rA, 0x000000, 0);
+    let wB = scene.add.circle(x + cfg.wxB, y + cfg.wy, cfg.rB, 0x000000, 0);
     car.wheelA = scene.matter.add.gameObject(wA, wheelOptsA);
-
-    const wB = scene.add.circle(x + cfg.wxB, y, cfg.rB, 0x212121);
-    wB.setStrokeStyle(5, 0x9E9E9E);
     car.wheelB = scene.matter.add.gameObject(wB, wheelOptsB);
 
-    // Подвеска
-    car.springA = scene.matter.add.spring(car.chassis.body, car.wheelA.body, 0, 0.1, { pointA: { x: cfg.wxA, y: cfg.wy - 25 }, damping: 0.05 });
-    car.springB = scene.matter.add.spring(car.chassis.body, car.wheelB.body, 0, 0.1, { pointA: { x: cfg.wxB, y: cfg.wy - 25 }, damping: 0.05 });
+    // Подвеска: Прямое крепление к кузову (без хаков)
+    car.springA = scene.matter.add.spring(car.chassis.body, car.wheelA.body, 0, 0.1, { pointA: { x: cfg.wxA, y: cfg.wy }, damping: 0.05 });
+    car.springB = scene.matter.add.spring(car.chassis.body, car.wheelB.body, 0, 0.1, { pointA: { x: cfg.wxB, y: cfg.wy }, damping: 0.05 });
     
-    // Применяем актуальную прокачку сразу при создании
     updateSuspensionPhysics();
-    updateTiresPhysics();
-}
+
+    if (car.emoji) car.emoji.destroy();
+    car.emoji = scene.add.text(x, y, cfg.emoji, { fontSize: cfg.emojiSize })
+        .setOrigin(0.5, 0.5);
+    car.emoji.deltaY = cfg.emojiY;
+    
+    car.driveType = cfg.driveType || cfg.drive;
 
 function updateSuspensionPhysics() {
     if (car.springA && car.springB) {
@@ -581,13 +577,13 @@ function updateTiresPhysics() {
 
 function update() {
     if (isGameOver) return;
-    if (isGrounded) car.airFrames = 0; else car.airFrames = (car.airFrames || 0) + 1;
-if (isGrounded) car.airFrames = 0; else car.airFrames = (car.airFrames || 0) + 1; 
+    
+    // Анти-микропрыжки (coyote time)
+    if (isGrounded) car.airFrames = 0; 
+    else car.airFrames = (car.airFrames || 0) + 1; 
 
-    // Динамическая генерация холмов впереди (на 3000 пикселей)
+    // Генерация террейна
     generateTerrain(this, car.chassis.x + 3000);
-
-    // Оптимизация: удаляем чанки, которые остались далеко позади (2500 пикселей)
     let cleanupX = car.chassis.x - 2500;
     while (terrainChunks.length > 0 && terrainChunks[0].x < cleanupX) {
         let chunk = terrainChunks.shift();
@@ -600,21 +596,20 @@ if (isGrounded) car.airFrames = 0; else car.airFrames = (car.airFrames || 0) + 1
             this.matter.world.remove(chunk.joint.body);
             chunk.joint.destroy();
         }
-        if (chunk.coin && chunk.coin.active) chunk.coin.destroy();
-        if (chunk.fuel && chunk.fuel.active) chunk.fuel.destroy();
-        if (chunk.fuelStripe && chunk.fuelStripe.active) chunk.fuelStripe.destroy();
     }
 
-    // 1. Расчет дистанции (1 блок = ~50 пикселей, считаем 1 блок за 1 метр)
-    let currentDist = Math.max(0, Math.floor(car.chassis.x / 50));
-    distanceText.setText(currentDist + 'm');
+    if (car.chassis.y > 2000) {
+        gameOver(this, 'FELL OFF THE WORLD!');
+        return;
+    }
+
+    let currentDist = Math.max(0, Math.floor((car.chassis.x - 300) / 100));
+    if (distanceText) distanceText.setText(currentDist + 'm');
     if (currentDist > maxDistance) {
         maxDistance = currentDist;
         if (recordText) recordText.setText('РЕКОРД: ' + maxDistance + 'm');
-        
         localStorage.setItem('maxDistance_' + selectedCarId, maxDistance.toString());
         if (selectedCarId === 'jeep') localStorage.setItem('maxDistance', maxDistance.toString());
-        
         try {
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.isVersionAtLeast('6.9')) {
                 window.Telegram.WebApp.CloudStorage.setItem('maxDistance_' + selectedCarId, maxDistance.toString(), () => {});
@@ -623,93 +618,73 @@ if (isGrounded) car.airFrames = 0; else car.airFrames = (car.airFrames || 0) + 1
         } catch(e) {}
     }
 
-    // 2. Детектор сальто (Трюки)
     let currentAngle = car.chassis.rotation;
     let diff = currentAngle - lastAngle;
-    
-    // Нормализуем разницу от -PI до PI
     while (diff < -Math.PI) diff += Math.PI * 2;
     while (diff > Math.PI) diff -= Math.PI * 2;
-    
     totalRotation += diff;
     lastAngle = currentAngle;
 
-    // Если прокрутились почти на 360 градусов (оставим запас 10%)
     if (Math.abs(totalRotation) >= Math.PI * 1.8) {
-        totalRotation = 0; // Сбрасываем счетчик
-        awardBonus(50, 'FLIP! +50', this); // Даем 50 монет
+        totalRotation = 0; 
+        awardBonus(50, 'FLIP! +50', this); 
     }
 
-    // Трата бензина
     if (currentFuel > 0) {
-        currentFuel -= 0.04; // Базовый расход (даже стоя)
-        if (cursors.right.isDown || isGasPressed) currentFuel -= 0.06; // Доп. расход при газе
+        currentFuel -= 0.04;
+        if (cursors.right.isDown || isGasPressed) currentFuel -= 0.06;
         if (currentFuel < 0) currentFuel = 0;
     }
+    if (fuelBarFill) fuelBarFill.width = Math.max(0, (currentFuel / maxFuel) * 192);
 
-    // Обновляем визуальную шкалу
-    let fillWidth = Math.max(0, (currentFuel / maxFuel) * 192);
-    if (fuelBarFill) fuelBarFill.width = fillWidth;
-
-    // Смерть от нехватки топлива
     if (currentFuel <= 0) {
-        // Ждем, пока машина полностью остановится
         if (Math.abs(car.wheelA.body.angularVelocity) < 0.05 && Math.abs(car.wheelB.body.angularVelocity) < 0.05) {
             gameOver(this, 'OUT OF GAS!\nБензин кончился');
             return;
         }
     }
 
-    // Чем выше уровень движка, тем быстрее едем и сильнее разгоняемся
-    let baseTorque = 0.04;
-    let baseSpeed = 0.8;
-    
-    if (selectedCarId === 'bike') { baseTorque = 0.03; baseSpeed = 0.9; }
-    else if (selectedCarId === 'tractor') { baseTorque = 0.08; baseSpeed = 0.5; }
-    else if (selectedCarId === 'racecar') { baseTorque = 0.05; baseSpeed = 1.2; }
-    else if (selectedCarId === 'tank') { baseTorque = 0.07; baseSpeed = 0.6; }
-
-    const maxSpeed = baseSpeed + (engineLvl * 0.1);
-    const torque = baseTorque + (engineLvl * 0.005);
-
-    // Привязываем эмодзи к физическому кузову
+    // Визуал (без сложных смещений)
     if (car.chassis && car.emoji) {
         let angle = car.chassis.rotation;
-        
-        // Для текста центрирование работает немного иначе, поэтому используем заданное смещение
-        let dy = (car.emoji.deltaY || 0) - 25;
-        
+        let dy = car.emoji.deltaY || 0;
         let offsetX = -Math.sin(angle) * dy;
         let offsetY = Math.cos(angle) * dy;
-        
         car.emoji.setPosition(car.chassis.x + offsetX, car.chassis.y + offsetY);
         car.emoji.setRotation(angle);
     }
 
-    // НАСТОЯЩАЯ ФИЗИКА:
-    // Крутящий момент мотора теперь физический, а не просто прибавление скорости!
-    // Значения выверены под лунную гравитацию Matter.js (16 px/s^2), чтобы машина разгонялась реалистично и не делала 5 сальто!
-    let motorTorque = car.chassis.body.mass * (0.005 + engineLvl * 0.002); // Разгон от 0.3g до 1.0g
-    let airTorque = car.chassis.body.mass * 0.08; // Момент для сальто в воздухе (плавно)
-    let antiFlipTorque = car.chassis.body.mass * 0.15; // Мощная прижимная сила, чтобы нос был тяжелым на подъемах
+    // ЧИСТАЯ АРКАДНАЯ ФИЗИКА (Без приколов и вылетов)
+    let baseSpeed = 0.8;
+    let baseTorque = 0.005;
+    if (selectedCarId === 'bike') { baseSpeed = 0.9; baseTorque = 0.004; }
+    else if (selectedCarId === 'tractor') { baseSpeed = 0.5; baseTorque = 0.01; }
+    else if (selectedCarId === 'racecar') { baseSpeed = 1.2; baseTorque = 0.006; }
+    else if (selectedCarId === 'tank') { baseSpeed = 0.6; baseTorque = 0.015; }
     
+    let maxSpeed = baseSpeed + (engineLvl * 0.1);
+    let enginePower = car.chassis.body.mass * (baseTorque + (engineLvl * 0.001)); // Плавный момент на колеса
+    let airTorque = car.chassis.body.mass * 0.06;
+    
+    // Высчитываем противовес, чтобы машина не козлила (компенсируем крутящий момент)
+    let antiFlipTorque = enginePower * 1.5; 
+
     let isAnyPressed = false;
 
     if ((cursors.right.isDown || isGasPressed) && currentFuel > 0) {
         isAnyPressed = true;
         
+        // Газуем (мотор крутит колеса)
         if (car.wheelA.body.angularVelocity < maxSpeed) {
-            car.wheelA.body.torque = motorTorque;
-            if (car.driveType === 'awd') car.wheelB.body.torque = motorTorque;
-        } else {
-            // Ограничитель скорости (колеса не крутятся бесконечно быстро в воздухе)
-            Matter.Body.setAngularVelocity(car.wheelA.body, maxSpeed);
-            if (car.driveType === 'awd') Matter.Body.setAngularVelocity(car.wheelB.body, maxSpeed);
+            car.wheelA.body.torque = enginePower;
+            if (car.driveType === 'awd') car.wheelB.body.torque = enginePower;
         }
         
         if (isGrounded) {
+            // Мягко гасим подскок морды
             car.chassis.body.torque = antiFlipTorque;
         } else if (car.airFrames > 15) {
+            // В полете сальто
             car.chassis.body.torque = -airTorque;
         }
     } 
@@ -717,20 +692,17 @@ if (isGrounded) car.airFrames = 0; else car.airFrames = (car.airFrames || 0) + 1
         isAnyPressed = true;
         
         if (car.wheelA.body.angularVelocity > -maxSpeed) {
-            car.wheelA.body.torque = -motorTorque;
-            car.wheelB.body.torque = -motorTorque; // Тормозят всегда оба колеса!
-        } else {
-            Matter.Body.setAngularVelocity(car.wheelA.body, -maxSpeed);
-            Matter.Body.setAngularVelocity(car.wheelB.body, -maxSpeed);
+            car.wheelA.body.torque = -enginePower;
+            car.wheelB.body.torque = -enginePower; // Тормозим обоими
         }
         
-        if (!isGrounded && car.airFrames > 15) {
+        if (isGrounded) {
+            car.chassis.body.torque = -antiFlipTorque;
+        } else if (car.airFrames > 15) {
             car.chassis.body.torque = airTorque;
         }
     }
 
-    // Если кнопки отпущены - останавливаем вращение колес ТОЛЬКО В ВОЗДУХЕ,
-    // чтобы на земле машина могла свободно катиться по инерции (и с горки).
     if (!isAnyPressed && !isGrounded) {
         car.wheelA.setAngularVelocity(car.wheelA.body.angularVelocity * 0.95);
         car.wheelB.setAngularVelocity(car.wheelB.body.angularVelocity * 0.95);
