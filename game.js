@@ -51,6 +51,7 @@ let lastAngle = 0;
 let totalRotation = 0;
 let selectedCarId = 'jeep';
 
+let isGrounded = false;
 function create() {
     isGameOver = false;
     currentFuel = maxFuel; // Полный бак при старте
@@ -515,9 +516,7 @@ function createCar(scene) {
         label: 'chassis'
     });
     
-    // Искусственно занижаем инерцию кузова, чтобы он легко крутился в воздухе от слабого крутящего момента,
-    // но при этом слабый момент не мог перевернуть тяжелую машину на земле!
-    Matter.Body.setInertia(car.chassis.body, 2000);
+
     
     // Эмодзи как стикер вместо старой кабины
     car.emoji = scene.add.text(x, y, cfg.emoji, { fontSize: cfg.emojiSize }).setOrigin(0.5);
@@ -677,9 +676,8 @@ function update() {
     }
 
     // Управление работает только если есть бензин
-    // Очень слабый крутящий момент! Его не хватит, чтобы перевернуть машину на земле (гравитация сильнее),
-    // но благодаря заниженной инерции (2000) его с головой хватит для быстрых сальто в воздухе!
-    let airTorque = car.chassis.body.mass * 0.03; 
+    let airTorque = car.chassis.body.mass * 0.5; // Сильный момент для воздуха
+    let antiFlipTorque = car.chassis.body.mass * 0.2; // Момент прижимания к земле
     let isAnyPressed = false;
 
     if ((cursors.right.isDown || isGasPressed) && currentFuel > 0) {
@@ -690,8 +688,14 @@ function update() {
                 car.wheelB.setAngularVelocity(car.wheelB.body.angularVelocity + torque);
             }
         }
-        // Плавно поднимаем нос (torque работает с физикой, а не ломает её как setAngularVelocity)
-        car.chassis.body.torque = -airTorque;
+        
+        if (isGrounded) {
+            // Если на земле, прижимаем нос вниз, чтобы не перевернулась от мощного мотора (положительный момент)
+            car.chassis.body.torque = antiFlipTorque;
+        } else {
+            // Если в воздухе, поднимаем нос для сальто назад (отрицательный момент)
+            car.chassis.body.torque = -airTorque;
+        }
     } 
     else if ((cursors.left.isDown || isBrakePressed)) {
         isAnyPressed = true;
@@ -699,14 +703,21 @@ function update() {
             car.wheelA.setAngularVelocity(car.wheelA.body.angularVelocity - torque);
             car.wheelB.setAngularVelocity(car.wheelB.body.angularVelocity - torque);
         }
-        // Плавно опускаем нос
-        car.chassis.body.torque = airTorque;
+        
+        if (isGrounded) {
+            // При торможении зад приподнимается, прижмем его
+            car.chassis.body.torque = -antiFlipTorque;
+        } else {
+            // В воздухе наклоняем нос вперед
+            car.chassis.body.torque = airTorque;
+        }
     }
 
-    // Если кнопки отпущены - плавно останавливаем вращение колес (чтобы при приземлении не было резкого рывка)
-    if (!isAnyPressed) {
-        car.wheelA.setAngularVelocity(car.wheelA.body.angularVelocity * 0.99);
-        car.wheelB.setAngularVelocity(car.wheelB.body.angularVelocity * 0.99);
+    // Если кнопки отпущены - останавливаем вращение колес ТОЛЬКО В ВОЗДУХЕ,
+    // чтобы на земле машина могла свободно катиться по инерции (и с горки).
+    if (!isAnyPressed && !isGrounded) {
+        car.wheelA.setAngularVelocity(car.wheelA.body.angularVelocity * 0.95);
+        car.wheelB.setAngularVelocity(car.wheelB.body.angularVelocity * 0.95);
     }
 }
 

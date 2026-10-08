@@ -14,6 +14,9 @@
         .upgrade-card { background: #333; border-radius: 15px; padding: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
         .upgrade-info h3 { margin: 0 0 5px 0; font-size: 18px; color: #4CAF50; }
         .upgrade-info p { margin: 0; font-size: 14px; color: #aaa; }
+        .progress-bar-container { width: 100%; height: 10px; background: #333; border-radius: 5px; margin-top: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; background: #00FF00; width: 10%; transition: width 0.3s; }
+        .max-lvl { background: #FFD700 !important; color: #000 !important; font-weight: bold; }
         .upgrade-btn { background: #4CAF50; border: none; border-radius: 10px; padding: 10px 15px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; }
         .upgrade-btn:disabled { background: #555; color: #888; }
         h2 { text-align: center; color: white; margin-top: 20px; margin-bottom: 5px; }
@@ -29,15 +32,27 @@
 
     <div class="garage-container">
         <div class="upgrade-card">
-            <div class="upgrade-info"><h3>Двигатель (Ур. <span id="engine-lvl">...</span>)</h3><p>Увеличивает скорость</p></div>
+            <div class="upgrade-info">
+                <h3>Двигатель (Ур. <span id="engine-lvl">...</span>/10)</h3>
+                <p>Увеличивает скорость</p>
+                <div class="progress-bar-container"><div class="progress-bar" id="engine-bar"></div></div>
+            </div>
             <button class="upgrade-btn" id="buy-engine-btn" onclick="buyEngine()"><span id="engine-cost">...</span> 💰</button>
         </div>
         <div class="upgrade-card">
-            <div class="upgrade-info"><h3>Подвеска (Ур. <span id="suspension-lvl">...</span>)</h3><p>Меньше трясет, лучше прыгает</p></div>
+            <div class="upgrade-info">
+                <h3>Подвеска (Ур. <span id="suspension-lvl">...</span>/10)</h3>
+                <p>Меньше трясет, лучше прыгает</p>
+                <div class="progress-bar-container"><div class="progress-bar" id="suspension-bar"></div></div>
+            </div>
             <button class="upgrade-btn" id="buy-suspension-btn" onclick="buySuspension()"><span id="suspension-cost">...</span> 💰</button>
         </div>
         <div class="upgrade-card">
-            <div class="upgrade-info"><h3>Шины (Ур. <span id="tires-lvl">...</span>)</h3><p>Улучшают сцепление с землей</p></div>
+            <div class="upgrade-info">
+                <h3>Шины (Ур. <span id="tires-lvl">...</span>/10)</h3>
+                <p>Улучшают сцепление с землей</p>
+                <div class="progress-bar-container"><div class="progress-bar" id="tires-bar"></div></div>
+            </div>
             <button class="upgrade-btn" id="buy-tires-btn" onclick="buyTires()"><span id="tires-cost">...</span> 💰</button>
         </div>
     </div>
@@ -91,26 +106,52 @@
             updateUI();
         }
 
+        const MAX_LVL = 10;
+
         function updateUI() {
             let engineCost = engineLvl * 50;
             let engineBtn = document.getElementById('buy-engine-btn');
-            document.getElementById('engine-cost').innerText = engineCost;
-            engineBtn.disabled = balance < engineCost;
+            document.getElementById('engine-bar').style.width = (engineLvl / MAX_LVL * 100) + '%';
+            if (engineLvl >= MAX_LVL) {
+                engineBtn.innerHTML = "МАКСИМУМ";
+                engineBtn.disabled = true;
+                engineBtn.classList.add('max-lvl');
+            } else {
+                document.getElementById('engine-cost').innerText = engineCost;
+                engineBtn.disabled = balance < engineCost;
+                engineBtn.classList.remove('max-lvl');
+            }
 
             let suspensionCost = suspensionLvl * 50;
             let suspensionBtn = document.getElementById('buy-suspension-btn');
-            document.getElementById('suspension-cost').innerText = suspensionCost;
-            suspensionBtn.disabled = balance < suspensionCost;
+            document.getElementById('suspension-bar').style.width = (suspensionLvl / MAX_LVL * 100) + '%';
+            if (suspensionLvl >= MAX_LVL) {
+                suspensionBtn.innerHTML = "МАКСИМУМ";
+                suspensionBtn.disabled = true;
+                suspensionBtn.classList.add('max-lvl');
+            } else {
+                document.getElementById('suspension-cost').innerText = suspensionCost;
+                suspensionBtn.disabled = balance < suspensionCost;
+                suspensionBtn.classList.remove('max-lvl');
+            }
 
             let tiresCost = tiresLvl * 50;
             let tiresBtn = document.getElementById('buy-tires-btn');
-            document.getElementById('tires-cost').innerText = tiresCost;
-            tiresBtn.disabled = balance < tiresCost;
+            document.getElementById('tires-bar').style.width = (tiresLvl / MAX_LVL * 100) + '%';
+            if (tiresLvl >= MAX_LVL) {
+                tiresBtn.innerHTML = "МАКСИМУМ";
+                tiresBtn.disabled = true;
+                tiresBtn.classList.add('max-lvl');
+            } else {
+                document.getElementById('tires-cost').innerText = tiresCost;
+                tiresBtn.disabled = balance < tiresCost;
+                tiresBtn.classList.remove('max-lvl');
+            }
         }
 
         function buyEngine() {
             let cost = engineLvl * 50;
-            if (balance >= cost) {
+            if (balance >= cost && engineLvl < MAX_LVL) {
                 balance -= cost; engineLvl++;
                 document.getElementById('balance').innerText = balance;
                 document.getElementById('engine-lvl').innerText = engineLvl;
@@ -120,7 +161,7 @@
 
         function buySuspension() {
             let cost = suspensionLvl * 50;
-            if (balance >= cost) {
+            if (balance >= cost && suspensionLvl < MAX_LVL) {
                 balance -= cost; suspensionLvl++;
                 document.getElementById('balance').innerText = balance;
                 document.getElementById('suspension-lvl').innerText = suspensionLvl;
@@ -130,7 +171,7 @@
 
         function buyTires() {
             let cost = tiresLvl * 50;
-            if (balance >= cost) {
+            if (balance >= cost && tiresLvl < MAX_LVL) {
                 balance -= cost; tiresLvl++;
                 document.getElementById('balance').innerText = balance;
                 document.getElementById('tires-lvl').innerText = tiresLvl;
