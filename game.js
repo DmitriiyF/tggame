@@ -515,6 +515,10 @@ function createCar(scene) {
         label: 'chassis'
     });
     
+    // Искусственно занижаем инерцию кузова, чтобы он легко крутился в воздухе от слабого крутящего момента,
+    // но при этом слабый момент не мог перевернуть тяжелую машину на земле!
+    Matter.Body.setInertia(car.chassis.body, 2000);
+    
     // Эмодзи как стикер вместо старой кабины
     car.emoji = scene.add.text(x, y, cfg.emoji, { fontSize: cfg.emojiSize }).setOrigin(0.5);
     car.emoji.setFlipX(true); // Разворачиваем машинки вправо!
@@ -673,7 +677,9 @@ function update() {
     }
 
     // Управление работает только если есть бензин
-    let airTorque = car.chassis.body.mass * 0.12; // Мягкий крутящий момент для сальто и вилли
+    // Очень слабый крутящий момент! Его не хватит, чтобы перевернуть машину на земле (гравитация сильнее),
+    // но благодаря заниженной инерции (2000) его с головой хватит для быстрых сальто в воздухе!
+    let airTorque = car.chassis.body.mass * 0.03; 
     let isAnyPressed = false;
 
     if ((cursors.right.isDown || isGasPressed) && currentFuel > 0) {
