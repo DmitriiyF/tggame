@@ -133,15 +133,27 @@ function gameOver(scene, reasonText) {
         strokeThickness: 6
     }).setOrigin(0.5).setScrollFactor(0).setDepth(200);
     
-    // Кнопка возврата в меню
-    let restartBtn = scene.add.rectangle(width/2, height/2 + 60, 200, 60, 0x3390ec, 1)
+    // Кнопка Рестарт (ЗАНОВО)
+    let retryBtn = scene.add.rectangle(width/2, height/2 + 40, 220, 60, 0x4CAF50, 1)
         .setScrollFactor(0).setDepth(200).setInteractive({ useHandCursor: true });
-    restartBtn.setStrokeStyle(3, 0xFFFFFF);
+    retryBtn.setStrokeStyle(3, 0xFFFFFF);
     
-    scene.add.text(width/2, height/2 + 60, 'В МЕНЮ', { fontSize: '24px', fill: '#FFF', fontStyle: 'bold' })
+    scene.add.text(width/2, height/2 + 40, '🔄 ЗАНОВО', { fontSize: '24px', fill: '#FFF', fontStyle: 'bold' })
         .setOrigin(0.5).setScrollFactor(0).setDepth(200);
         
-    restartBtn.on('pointerdown', () => {
+    retryBtn.on('pointerdown', () => {
+        window.location.href = 'hillclimb.html';
+    });
+
+    // Кнопка возврата в меню
+    let menuBtn = scene.add.rectangle(width/2, height/2 + 120, 220, 60, 0x3390ec, 1)
+        .setScrollFactor(0).setDepth(200).setInteractive({ useHandCursor: true });
+    menuBtn.setStrokeStyle(3, 0xFFFFFF);
+    
+    scene.add.text(width/2, height/2 + 120, 'В МЕНЮ', { fontSize: '24px', fill: '#FFF', fontStyle: 'bold' })
+        .setOrigin(0.5).setScrollFactor(0).setDepth(200);
+        
+    menuBtn.on('pointerdown', () => {
         window.location.href = 'hillclimb_menu.html';
     });
 }
