@@ -41,9 +41,17 @@ let currentFuel = 100;
 let fuelBarBg;
 let fuelBarFill;
 
+// Расстояние и трюки
+let maxDistance = 0;
+let distanceText;
+let lastAngle = 0;
+let totalRotation = 0;
+
 function create() {
     isGameOver = false;
     currentFuel = maxFuel; // Полный бак при старте
+    lastAngle = 0;
+    totalRotation = 0;
     
     // Поддержка Telegram Web App
     if (window.Telegram && window.Telegram.WebApp) {
@@ -113,10 +121,12 @@ function gameOver(scene, reasonText) {
     isGameOver = true;
     scene.matter.world.pause(); // Останавливаем физику
 
-    // Финальное сохранение монет в облако
+    // Финальное сохранение монет и рекорда дистанции в облако
+    localStorage.setItem('maxDistance', maxDistance.toString());
     try {
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.setItem) {
             window.Telegram.WebApp.CloudStorage.setItem('hillClimbCoins', totalCoins.toString(), (e,s)=>{});
+            window.Telegram.WebApp.CloudStorage.setItem('maxDistance', maxDistance.toString(), (e,s)=>{});
         }
     } catch(e) {}
         
@@ -172,7 +182,7 @@ function createUI(scene) {
         strokeThickness: 6
     }).setScrollFactor(0).setDepth(100);
 
-    // Асинхронно загружаем монеты и движок из облака Telegram
+    // Асинхронно загружаем данные из облака
     try {
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
             window.Telegram.WebApp.CloudStorage.getItem('hillClimbCoins', (err, value) => {
@@ -184,18 +194,28 @@ function createUI(scene) {
                 let engStr = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('engineLevel') || '1';
                 engineLvl = parseInt(engStr) || 1;
             });
+            window.Telegram.WebApp.CloudStorage.getItem('maxDistance', (err, value) => {
+                let distStr = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('maxDistance') || '0';
+                maxDistance = parseInt(distStr) || 0;
+            });
         } else {
             throw new Error("No CloudStorage");
         }
     } catch (e) {
         totalCoins = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
         engineLvl = parseInt(localStorage.getItem('engineLevel')) || 1;
+        maxDistance = parseInt(localStorage.getItem('maxDistance')) || 0;
         scoreText.setText(totalCoins.toString());
     }
 
     // Иконка монетки рядом со счетом
     coinIcon = scene.add.circle(35, 42, 15, 0xFFD700)
         .setScrollFactor(0).setDepth(100).setStrokeStyle(3, 0xB8860B);
+
+    // Текст Дистанции (справа сверху)
+    distanceText = scene.add.text(width - 20, 20, '0m', { 
+        fontSize: '30px', fill: '#FFF', fontFamily: 'Arial', fontStyle: 'bold', stroke: '#000', strokeThickness: 5 
+    }).setOrigin(1, 0).setScrollFactor(0).setDepth(100);
 
     // Шкала Бензина (по центру)
     scene.add.text(width/2, 20, 'FUEL', { fontSize: '18px', fill: '#FFF', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 })
@@ -311,6 +331,24 @@ function collectCoin(coinGO) {
     }
 }
 
+function awardBonus(amount, textMessage, scene) {
+    totalCoins += amount;
+    scoreText.setText(totalCoins.toString());
+    localStorage.setItem('hillClimbCoins', totalCoins.toString());
+
+    let txt = scene.add.text(car.chassis.x, car.chassis.y - 120, textMessage, { 
+        fontSize: '35px', fill: '#FFD700', fontStyle: 'bold', stroke: '#000', strokeThickness: 5 
+    }).setOrigin(0.5);
+    
+    scene.tweens.add({ 
+        targets: txt, 
+        y: txt.y - 70, 
+        alpha: 0, 
+        duration: 1500, 
+        onComplete: () => txt.destroy() 
+    });
+}
+
 function createFuelCans(scene) {
     for (let i = 25; i < terrainPoints.length; i += 20) { // Примерно каждые 20 блоков земли
         let point = terrainPoints[i];
@@ -391,20 +429,42 @@ function createCar(scene) {
     wheelBCircle.setStrokeStyle(5, 0x9E9E9E);
     car.wheelB = scene.matter.add.gameObject(wheelBCircle, wheelOptions);
 
-    // Подвеска (Жесткие амортизаторы)
-    // Длина пружины: 15 пикселей. Жесткость: 0.6 (держит кузов)
-    scene.matter.add.spring(car.chassis.body, car.wheelA.body, 15, 0.6, {
-        pointA: { x: -45, y: 15 },
-        damping: 0.1 // Гасит лишние колебания (чтобы не болталась как желе)
+    // Подвеска (Жесткие оси, чтобы не было 'сопливости')
+    // Длина оси: 20 пикселей. Жесткость: 1.0 (абсолютно жесткая)
+    scene.matter.add.constraint(car.chassis.body, car.wheelA.body, 20, 1.0, {
+        pointA: { x: -45, y: 15 }
     });
-    scene.matter.add.spring(car.chassis.body, car.wheelB.body, 15, 0.6, {
-        pointA: { x: 45, y: 15 },
-        damping: 0.1
+    scene.matter.add.constraint(car.chassis.body, car.wheelB.body, 20, 1.0, {
+        pointA: { x: 45, y: 15 }
     });
 }
 
 function update() {
     if (isGameOver) return; // После смерти ничего не делаем
+
+    // 1. Расчет дистанции (1 блок = ~50 пикселей, считаем 1 блок за 1 метр)
+    let currentDist = Math.max(0, Math.floor(car.chassis.x / 50));
+    distanceText.setText(currentDist + 'm');
+    if (currentDist > maxDistance) {
+        maxDistance = currentDist;
+    }
+
+    // 2. Детектор сальто (Трюки)
+    let currentAngle = car.chassis.rotation;
+    let diff = currentAngle - lastAngle;
+    
+    // Нормализуем разницу от -PI до PI
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    
+    totalRotation += diff;
+    lastAngle = currentAngle;
+
+    // Если прокрутились почти на 360 градусов (оставим запас 10%)
+    if (Math.abs(totalRotation) >= Math.PI * 1.8) {
+        totalRotation = 0; // Сбрасываем счетчик
+        awardBonus(50, 'FLIP! +50', this); // Даем 50 монет
+    }
 
     // Трата бензина
     if (currentFuel > 0) {

@@ -121,6 +121,7 @@
     <div class="car-showcase">
         <div class="car-image">🚙</div>
         <div class="stats">Уровень движка: <span id="engine-lvl">...</span></div>
+        <div class="stats" style="margin-top: 5px;">Рекорд: <span id="max-dist">...</span>m</div>
     </div>
 
     <div class="menu-buttons">
@@ -150,12 +151,18 @@
                         let eng = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('engineLevel') || '1';
                         document.getElementById('engine-lvl').innerText = eng;
                     });
+                    // Грузим рекорд
+                    window.Telegram.WebApp.CloudStorage.getItem('maxDistance', (err, value) => {
+                        let dist = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('maxDistance') || '0';
+                        document.getElementById('max-dist').innerText = dist;
+                    });
                 } else {
                     throw new Error("No CloudStorage");
                 }
             } catch (e) {
                 document.getElementById('balance').innerText = localStorage.getItem('hillClimbCoins') || '0';
                 document.getElementById('engine-lvl').innerText = localStorage.getItem('engineLevel') || '1';
+                document.getElementById('max-dist').innerText = localStorage.getItem('maxDistance') || '0';
             }
         }
 
