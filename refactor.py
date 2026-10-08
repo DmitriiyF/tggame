@@ -1,4 +1,75 @@
-<!DOCTYPE html>
+import re
+
+# 1. Update game.js
+with open('game.js', 'r', encoding='utf-8') as f:
+    game_js = f.read()
+
+# Replace the data loading section in game.js
+game_js = re.sub(
+    r"engineLvl = parseInt\(localStorage\.getItem\('engineLevel'\)\) \|\| 1;.*?window\.Telegram\.WebApp\.CloudStorage\.getItem\('selectedCar', \(err, val\) => \{ if\(val\) selectedCarId = val; \}\);\s*\}\s*catch\(e\)\s*\{\}",
+    """selectedCarId = localStorage.getItem('selectedCar') || 'jeep';
+    
+    function loadLvl(key, fallbackKey, callback) {
+        let val = localStorage.getItem(key);
+        if (!val && fallbackKey) val = localStorage.getItem(fallbackKey);
+        callback(parseInt(val) || 1);
+        
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
+            window.Telegram.WebApp.CloudStorage.getItem(key, (err, cloudVal) => {
+                if (cloudVal) callback(parseInt(cloudVal));
+                else if (fallbackKey) {
+                    window.Telegram.WebApp.CloudStorage.getItem(fallbackKey, (err, fVal) => {
+                        if (fVal) callback(parseInt(fVal));
+                    });
+                }
+            });
+        }
+    }
+    
+    maxDistance = parseInt(localStorage.getItem('maxDistance')) || 0;
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
+        window.Telegram.WebApp.CloudStorage.getItem('maxDistance', (err, val) => { if(val) { maxDistance = parseInt(val); if(recordText) recordText.setText('РЕКОРД: ' + maxDistance + 'm'); } });
+        window.Telegram.WebApp.CloudStorage.getItem('selectedCar', (err, val) => { if(val) selectedCarId = val; });
+    }
+    
+    loadLvl('engineLevel_' + selectedCarId, selectedCarId === 'jeep' ? 'engineLevel' : null, v => engineLvl = v);
+    loadLvl('suspensionLevel_' + selectedCarId, selectedCarId === 'jeep' ? 'suspensionLevel' : null, v => { suspensionLvl = v; updateSuspensionPhysics(); });
+    loadLvl('tiresLevel_' + selectedCarId, selectedCarId === 'jeep' ? 'tiresLevel' : null, v => { tiresLvl = v; updateTiresPhysics(); });""",
+    game_js, flags=re.DOTALL
+)
+
+with open('game.js', 'w', encoding='utf-8') as f:
+    f.write(game_js)
+
+# 2. Update hillclimb_menu.html
+with open('hillclimb_menu.html', 'r', encoding='utf-8') as f:
+    menu = f.read()
+
+menu = re.sub(
+    r"window\.Telegram\.WebApp\.CloudStorage\.getItem\('engineLevel', \(err, value\) => \{.*?document\.getElementById\('engine-lvl'\)\.innerText = eng;.*?\}\);",
+    """window.Telegram.WebApp.CloudStorage.getItem('selectedCar', (err, carVal) => {
+                        selectedCar = carVal || localStorage.getItem('selectedCar') || 'jeep';
+                        updateCarIcon(selectedCar);
+                        
+                        window.Telegram.WebApp.CloudStorage.getItem('engineLevel_' + selectedCar, (err, value) => {
+                            let eng = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('engineLevel_' + selectedCar);
+                            if (!eng && selectedCar === 'jeep') eng = localStorage.getItem('engineLevel'); // fallback
+                            document.getElementById('engine-lvl').innerText = eng || '1';
+                        });
+                    });""",
+    menu, flags=re.DOTALL
+)
+menu = menu.replace(
+    "document.getElementById('engine-lvl').innerText = localStorage.getItem('engineLevel') || '1';",
+    "let eng = localStorage.getItem('engineLevel_' + selectedCar); if (!eng && selectedCar === 'jeep') eng = localStorage.getItem('engineLevel'); document.getElementById('engine-lvl').innerText = eng || '1';"
+)
+menu = re.sub(r"window\.Telegram\.WebApp\.CloudStorage\.getItem\('selectedCar', \(err, value\) => \{.*?updateCarIcon\(selectedCar\);.*?\}\);", "", menu, flags=re.DOTALL)
+
+with open('hillclimb_menu.html', 'w', encoding='utf-8') as f:
+    f.write(menu)
+
+# 3. Update garage.html completely
+garage_html = """<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -159,4 +230,7 @@
         loadData();
     </script>
 </body>
-</html>
+</html>"""
+
+with open('garage.html', 'w', encoding='utf-8') as f:
+    f.write(garage_html)

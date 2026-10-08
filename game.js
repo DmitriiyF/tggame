@@ -64,21 +64,34 @@ function create() {
     }
     
     // Загружаем данные перед созданием машины
-    engineLvl = parseInt(localStorage.getItem('engineLevel')) || 1;
-    suspensionLvl = parseInt(localStorage.getItem('suspensionLevel')) || 1;
-    tiresLvl = parseInt(localStorage.getItem('tiresLevel')) || 1;
-    maxDistance = parseInt(localStorage.getItem('maxDistance')) || 0;
     selectedCarId = localStorage.getItem('selectedCar') || 'jeep';
     
-    try {
+    function loadLvl(key, fallbackKey, callback) {
+        let val = localStorage.getItem(key);
+        if (!val && fallbackKey) val = localStorage.getItem(fallbackKey);
+        callback(parseInt(val) || 1);
+        
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
-            window.Telegram.WebApp.CloudStorage.getItem('engineLevel', (err, val) => { if(val) engineLvl = parseInt(val); });
-            window.Telegram.WebApp.CloudStorage.getItem('suspensionLevel', (err, val) => { if(val) { suspensionLvl = parseInt(val); updateSuspensionPhysics(); } });
-            window.Telegram.WebApp.CloudStorage.getItem('tiresLevel', (err, val) => { if(val) { tiresLvl = parseInt(val); updateTiresPhysics(); } });
-            window.Telegram.WebApp.CloudStorage.getItem('maxDistance', (err, val) => { if(val) { maxDistance = parseInt(val); if(recordText) recordText.setText('РЕКОРД: ' + maxDistance + 'm'); } });
-            window.Telegram.WebApp.CloudStorage.getItem('selectedCar', (err, val) => { if(val) selectedCarId = val; });
+            window.Telegram.WebApp.CloudStorage.getItem(key, (err, cloudVal) => {
+                if (cloudVal) callback(parseInt(cloudVal));
+                else if (fallbackKey) {
+                    window.Telegram.WebApp.CloudStorage.getItem(fallbackKey, (err, fVal) => {
+                        if (fVal) callback(parseInt(fVal));
+                    });
+                }
+            });
         }
-    } catch(e) {}
+    }
+    
+    maxDistance = parseInt(localStorage.getItem('maxDistance')) || 0;
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
+        window.Telegram.WebApp.CloudStorage.getItem('maxDistance', (err, val) => { if(val) { maxDistance = parseInt(val); if(recordText) recordText.setText('РЕКОРД: ' + maxDistance + 'm'); } });
+        window.Telegram.WebApp.CloudStorage.getItem('selectedCar', (err, val) => { if(val) selectedCarId = val; });
+    }
+    
+    loadLvl('engineLevel_' + selectedCarId, selectedCarId === 'jeep' ? 'engineLevel' : null, v => engineLvl = v);
+    loadLvl('suspensionLevel_' + selectedCarId, selectedCarId === 'jeep' ? 'suspensionLevel' : null, v => { suspensionLvl = v; updateSuspensionPhysics(); });
+    loadLvl('tiresLevel_' + selectedCarId, selectedCarId === 'jeep' ? 'tiresLevel' : null, v => { tiresLvl = v; updateTiresPhysics(); });
 
     Matter = Phaser.Physics.Matter.Matter;
 
