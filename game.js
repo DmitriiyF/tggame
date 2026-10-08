@@ -439,23 +439,25 @@ function createCar(scene) {
     let cfg = {
         w: 130, h: 30, c: 0xE53935, // chassis
         cw: 70, ch: 35, cx: -20, cy: -70, // cabin
-        rA: 25, rB: 25, // wheels radius (A=back, B=front)
+        rA: 25, rB: 25, // wheels radius
         wxA: -45, wxB: 45, wy: 35, // wheels offset
-        dens: 0.002, fuel: 100
+        cdens: 0.005, wdens: 0.001, fuel: 100, drive: 'rwd' // Правильная масса: тяжелый кузов, легкие колеса
     };
 
     if (selectedCarId === 'bike') {
-        cfg = { w: 90, h: 15, c: 0x2196F3, cw: 30, ch: 30, cx: 0, cy: -45, rA: 20, rB: 20, wxA: -40, wxB: 40, wy: 25, dens: 0.001, fuel: 70 };
+        cfg = { w: 90, h: 15, c: 0x2196F3, cw: 30, ch: 30, cx: 0, cy: -45, rA: 20, rB: 20, wxA: -40, wxB: 40, wy: 25, cdens: 0.002, wdens: 0.0005, fuel: 70, drive: 'rwd' };
     } else if (selectedCarId === 'tractor') {
-        cfg = { w: 150, h: 40, c: 0xFF9800, cw: 60, ch: 60, cx: -30, cy: -80, rA: 40, rB: 25, wxA: -55, wxB: 60, wy: 40, dens: 0.004, fuel: 120 };
+        cfg = { w: 150, h: 40, c: 0xFF9800, cw: 60, ch: 60, cx: -30, cy: -80, rA: 40, rB: 25, wxA: -55, wxB: 60, wy: 40, cdens: 0.006, wdens: 0.002, fuel: 120, drive: 'rwd' };
     } else if (selectedCarId === 'racecar') {
-        cfg = { w: 160, h: 20, c: 0x9C27B0, cw: 50, ch: 20, cx: -10, cy: -40, rA: 22, rB: 22, wxA: -60, wxB: 60, wy: 20, dens: 0.0025, fuel: 90 };
+        cfg = { w: 160, h: 20, c: 0x9C27B0, cw: 50, ch: 20, cx: -10, cy: -40, rA: 22, rB: 22, wxA: -60, wxB: 60, wy: 20, cdens: 0.004, wdens: 0.0008, fuel: 90, drive: 'rwd' };
     } else if (selectedCarId === 'tank') {
-        cfg = { w: 180, h: 50, c: 0x4CAF50, cw: 80, ch: 30, cx: 0, cy: -80, rA: 35, rB: 35, wxA: -70, wxB: 70, wy: 40, dens: 0.008, fuel: 150 };
+        cfg = { w: 180, h: 50, c: 0x4CAF50, cw: 80, ch: 30, cx: 0, cy: -80, rA: 35, rB: 35, wxA: -70, wxB: 70, wy: 40, cdens: 0.01, wdens: 0.003, fuel: 150, drive: 'awd' };
     }
     
     maxFuel = cfg.fuel;
     currentFuel = maxFuel;
+    car.driveType = cfg.drive; // Сохраняем тип привода для update()
+    car.chassisMass = cfg.cdens;
 
     // Кузов
     const chassisRect = scene.add.rectangle(x, y - 40, cfg.w, cfg.h, cfg.c);
@@ -467,7 +469,7 @@ function createCar(scene) {
     
     car.chassis = scene.matter.add.gameObject(chassisRect, { 
         collisionFilter: { group: group },
-        density: cfg.dens,
+        density: cfg.cdens,
         friction: 0.5,
         label: 'chassis'
     });
@@ -475,8 +477,9 @@ function createCar(scene) {
     car.cabin.deltaX = cfg.cx;
     car.cabin.deltaY = cfg.cy + 40;
 
-    const wheelOptsA = { shape: 'circle', radius: cfg.rA, collisionFilter: { group: group }, friction: 0.5, density: 0.008, restitution: 0.1, label: 'car' };
-    const wheelOptsB = { shape: 'circle', radius: cfg.rB, collisionFilter: { group: group }, friction: 0.5, density: 0.008, restitution: 0.1, label: 'car' };
+    // Колеса легкие! Иначе они перевешивают кузов и подвеска кажется "соплей"
+    const wheelOptsA = { shape: 'circle', radius: cfg.rA, collisionFilter: { group: group }, friction: 0.8, density: cfg.wdens, restitution: 0.1, label: 'car' };
+    const wheelOptsB = { shape: 'circle', radius: cfg.rB, collisionFilter: { group: group }, friction: 0.8, density: cfg.wdens, restitution: 0.1, label: 'car' };
     
     const wA = scene.add.circle(x + cfg.wxA, y, cfg.rA, 0x212121);
     wA.setStrokeStyle(5, 0x9E9E9E); 
@@ -618,20 +621,22 @@ function update() {
     // Управление работает только если есть бензин
     if ((cursors.right.isDown || isGasPressed) && currentFuel > 0) {
         if (car.wheelB.body.angularVelocity < maxSpeed) {
-            car.wheelB.setAngularVelocity(car.wheelB.body.angularVelocity + torque);
-            car.wheelA.setAngularVelocity(car.wheelA.body.angularVelocity + torque);
+            car.wheelA.setAngularVelocity(car.wheelA.body.angularVelocity + torque); // Заднее колесо тянет всегда
+            if (car.driveType === 'awd') {
+                car.wheelB.setAngularVelocity(car.wheelB.body.angularVelocity + torque); // Переднее тянет только на полном приводе (танк)
+            }
         }
-        // Наклон назад в полете (уменьшено до 0.0015, чтобы не переворачивалась на земле из-за мягкой подвески)
-        car.chassis.setAngularVelocity(car.chassis.body.angularVelocity - 0.0015); 
+        // Наклон назад в полете (через нативный Matter.js)
+        Matter.Body.applyForce(car.chassis.body, { x: car.chassis.x + 50, y: car.chassis.y }, { x: 0, y: -car.chassisMass * 0.05 });
     } 
     else if ((cursors.left.isDown || isBrakePressed)) {
-        // Тормозить можно всегда (даже без бензина)
+        // Тормозить можно всегда (даже без бензина), тормозят оба колеса для эффективности
         if (car.wheelB.body.angularVelocity > -maxSpeed) {
-            car.wheelB.setAngularVelocity(car.wheelB.body.angularVelocity - torque);
             car.wheelA.setAngularVelocity(car.wheelA.body.angularVelocity - torque);
+            car.wheelB.setAngularVelocity(car.wheelB.body.angularVelocity - torque);
         }
         // Наклон вперед в полете
-        car.chassis.setAngularVelocity(car.chassis.body.angularVelocity + 0.0015); 
+        Matter.Body.applyForce(car.chassis.body, { x: car.chassis.x + 50, y: car.chassis.y }, { x: 0, y: car.chassisMass * 0.05 });
     }
 }
 
