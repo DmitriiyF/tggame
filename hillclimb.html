@@ -29,6 +29,26 @@
             pointer-events: none;
             white-space: pre-wrap;
         }
+        
+        #menu-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: 2px solid white;
+            border-radius: 10px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            font-size: 14px;
+            z-index: 1000;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        #menu-btn:active {
+            background: rgba(0, 0, 0, 0.8);
+        }
     </style>
 </head>
 <body>
@@ -43,6 +63,6 @@
         });
     </script>
     <script src="game.js?v=1.1"></script>
-    <div style="position: absolute; top: 10px; right: 10px; font-size: 14px; color: rgba(255,255,255,0.7); font-family: Arial; pointer-events: none; z-index: 100;">v1.1</div>
+    <button id="menu-btn" onclick="window.location.href='hillclimb_menu.html'">МЕНЮ</button>
 </body>
 </html>
