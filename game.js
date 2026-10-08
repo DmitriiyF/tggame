@@ -429,13 +429,16 @@ function createCar(scene) {
     wheelBCircle.setStrokeStyle(5, 0x9E9E9E);
     car.wheelB = scene.matter.add.gameObject(wheelBCircle, wheelOptions);
 
-    // Идеально жесткая ось (Pin Joint / Revolute Joint). 
-    // length: 0 означает, что центр колеса прибит к pointA намертво и не может болтаться как маятник.
-    scene.matter.add.constraint(car.chassis.body, car.wheelA.body, 0, 1.0, {
-        pointA: { x: -45, y: 30 } // Точка крепления ниже кузова (кузов высотой 30, значит y:30 это на 15 пикс ниже дна)
+    // Мягкая независимая подвеска (Пружина с нулевой длиной)
+    // Длина 0 означает, что колесо стремится ровно в точку pointA, как на резинке.
+    // Оно будет пружинить на кочках, но не будет болтаться как маятник (что было раньше).
+    scene.matter.add.spring(car.chassis.body, car.wheelA.body, 0, 0.3, {
+        pointA: { x: -45, y: 30 },
+        damping: 0.1
     });
-    scene.matter.add.constraint(car.chassis.body, car.wheelB.body, 0, 1.0, {
-        pointA: { x: 45, y: 30 }
+    scene.matter.add.spring(car.chassis.body, car.wheelB.body, 0, 0.3, {
+        pointA: { x: 45, y: 30 },
+        damping: 0.1
     });
 }
 
