@@ -87,11 +87,23 @@ function create() {
         }
     }
     
-    maxDistance = parseInt(localStorage.getItem('maxDistance')) || 0;
+    maxDistance = parseInt(localStorage.getItem('maxDistance_' + selectedCarId)) || 0;
+    if (!maxDistance && selectedCarId === 'jeep') maxDistance = parseInt(localStorage.getItem('maxDistance')) || 0;
+
     try {
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.isVersionAtLeast('6.9')) {
-            window.Telegram.WebApp.CloudStorage.getItem('maxDistance', (err, val) => { if(val) { maxDistance = parseInt(val); if(recordText) recordText.setText('РЕКОРД: ' + maxDistance + 'm'); } });
-            window.Telegram.WebApp.CloudStorage.getItem('selectedCar', (err, val) => { if(val) selectedCarId = val; });
+            window.Telegram.WebApp.CloudStorage.getItem('selectedCar', (err, val) => { if (val) selectedCarId = val; });
+            
+            window.Telegram.WebApp.CloudStorage.getItem('maxDistance_' + selectedCarId, (err, val) => {
+                if (val) {
+                    maxDistance = parseInt(val);
+                    if (recordText) recordText.setText('РЕКОРД: ' + maxDistance + 'm');
+                } else if (selectedCarId === 'jeep') {
+                    window.Telegram.WebApp.CloudStorage.getItem('maxDistance', (err, val2) => {
+                        if (val2) { maxDistance = parseInt(val2); if (recordText) recordText.setText('РЕКОРД: ' + maxDistance + 'm'); }
+                    });
+                }
+            });
         }
     } catch (e) {
         console.error(e);
@@ -531,10 +543,11 @@ function createCar(scene) {
 
 function updateSuspensionPhysics() {
     if (car.springA && car.springB) {
-        // Жесткость: ур.1 = 0.14 (мягкая, но не желейная), ур.6 = 0.34 (жесткая)
-        let newStiffness = 0.1 + (suspensionLvl * 0.04);
-        // Гашение: ур.1 = 0.06, ур.6 = 0.11
-        let newDamping = 0.05 + (suspensionLvl * 0.01);
+        // Делаем подвеску гораздо мягче!
+        // Жесткость: ур.1 = 0.02 (очень мягко), ур.6 = 0.07 (в меру упруго)
+        let newStiffness = 0.01 + (suspensionLvl * 0.01);
+        // Гашение (Damping): ур.1 = 0.02, ур.6 = 0.07
+        let newDamping = 0.01 + (suspensionLvl * 0.01);
         
         car.springA.stiffness = newStiffness;
         car.springA.damping = newDamping;
@@ -660,6 +673,8 @@ function update() {
     }
 
     // Управление работает только если есть бензин
+    let airTorque = 0.05; // Угловое ускорение для сальто
+
     if ((cursors.right.isDown || isGasPressed) && currentFuel > 0) {
         if (car.wheelB.body.angularVelocity < maxSpeed) {
             car.wheelA.setAngularVelocity(car.wheelA.body.angularVelocity + torque); // Заднее колесо тянет всегда
@@ -667,8 +682,8 @@ function update() {
                 car.wheelB.setAngularVelocity(car.wheelB.body.angularVelocity + torque); // Переднее тянет только на полном приводе (танк)
             }
         }
-        // Наклон назад в полете (через нативный Matter.js)
-        Matter.Body.applyForce(car.chassis.body, { x: car.chassis.x + 50, y: car.chassis.y }, { x: 0, y: -car.chassisMass * 0.05 });
+        // Наклон назад в воздухе (вместо линейной силы, которая заставляла прыгать)
+        Matter.Body.setAngularVelocity(car.chassis.body, car.chassis.body.angularVelocity - airTorque);
     } 
     else if ((cursors.left.isDown || isBrakePressed)) {
         // Тормозить можно всегда (даже без бензина), тормозят оба колеса для эффективности
@@ -676,8 +691,8 @@ function update() {
             car.wheelA.setAngularVelocity(car.wheelA.body.angularVelocity - torque);
             car.wheelB.setAngularVelocity(car.wheelB.body.angularVelocity - torque);
         }
-        // Наклон вперед в полете
-        Matter.Body.applyForce(car.chassis.body, { x: car.chassis.x + 50, y: car.chassis.y }, { x: 0, y: car.chassisMass * 0.05 });
+        // Наклон вперед в воздухе
+        Matter.Body.setAngularVelocity(car.chassis.body, car.chassis.body.angularVelocity + airTorque);
     }
 }
 
