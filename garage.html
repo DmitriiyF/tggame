@@ -87,8 +87,19 @@
                 <h3>Двигатель (Ур. <span id="engine-lvl">...</span>)</h3>
                 <p>Увеличивает скорость</p>
             </div>
-            <button class="upgrade-btn" id="upgrade-btn" onclick="buyUpgrade()">
-                <span id="price">...</span> 💰
+            <button class="upgrade-btn" id="buy-engine-btn" onclick="buyEngine()">
+                <span id="engine-cost">...</span> 💰
+            </button>
+        </div>
+
+        <!-- Улучшение Подвески -->
+        <div class="upgrade-card">
+            <div class="upgrade-info">
+                <h3>Подвеска (Ур. <span id="suspension-lvl">...</span>)</h3>
+                <p>Меньше трясет, лучше прыгает</p>
+            </div>
+            <button class="upgrade-btn" id="buy-suspension-btn" onclick="buySuspension()">
+                <span id="suspension-cost">...</span> 💰
             </button>
         </div>
     </div>
@@ -96,6 +107,7 @@
     <script>
         let balance = 0;
         let engineLvl = 1;
+        let suspensionLvl = 1;
 
         function loadData() {
             try {
@@ -112,64 +124,95 @@
                         document.getElementById('engine-lvl').innerText = engineLvl;
                         updateUI();
                     });
+                    window.Telegram.WebApp.CloudStorage.getItem('suspensionLevel', (err, value) => {
+                        let suspStr = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('suspensionLevel') || '1';
+                        suspensionLvl = parseInt(suspStr) || 1;
+                        document.getElementById('suspension-lvl').innerText = suspensionLvl;
+                        updateUI();
+                    });
                 } else {
                     throw new Error("No CloudStorage");
                 }
             } catch (e) {
                 balance = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
                 engineLvl = parseInt(localStorage.getItem('engineLevel')) || 1;
+                suspensionLvl = parseInt(localStorage.getItem('suspensionLevel')) || 1;
                 document.getElementById('balance').innerText = balance;
                 document.getElementById('engine-lvl').innerText = engineLvl;
+                document.getElementById('suspension-lvl').innerText = suspensionLvl;
                 updateUI();
             }
-        }
-
-        function getUpgradePrice() {
-            return engineLvl * 50; // Цена растет: 50, 100, 150...
         }
 
         function updateUI() {
-            let price = getUpgradePrice();
-            document.getElementById('price').innerText = price;
-            
-            let btn = document.getElementById('upgrade-btn');
-            if (balance >= price) {
-                btn.disabled = false;
-                btn.style.background = '#4CAF50';
+            // Двигатель
+            let engineCost = engineLvl * 50;
+            let engineBtn = document.getElementById('buy-engine-btn');
+            document.getElementById('engine-cost').innerText = engineCost;
+            if (balance >= engineCost) {
+                engineBtn.disabled = false;
+                engineBtn.style.background = '#4CAF50';
             } else {
-                btn.disabled = true;
-                btn.style.background = '#555';
+                engineBtn.disabled = true;
+                engineBtn.style.background = '#555';
+            }
+
+            // Подвеска
+            let suspensionCost = suspensionLvl * 50;
+            let suspensionBtn = document.getElementById('buy-suspension-btn');
+            document.getElementById('suspension-cost').innerText = suspensionCost;
+            if (balance >= suspensionCost) {
+                suspensionBtn.disabled = false;
+                suspensionBtn.style.background = '#4CAF50';
+            } else {
+                suspensionBtn.disabled = true;
+                suspensionBtn.style.background = '#555';
             }
         }
 
-        function buyUpgrade() {
-            let price = getUpgradePrice();
-            if (balance >= price) {
-                balance -= price;
-                engineLvl += 1;
-                
+        function buyEngine() {
+            let cost = engineLvl * 50;
+            if (balance >= cost) {
+                balance -= cost;
+                engineLvl++;
                 document.getElementById('balance').innerText = balance;
                 document.getElementById('engine-lvl').innerText = engineLvl;
-                
-                // Сохраняем
-                try {
-                    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.setItem) {
-                        window.Telegram.WebApp.CloudStorage.setItem('hillClimbCoins', balance.toString());
-                        window.Telegram.WebApp.CloudStorage.setItem('engineLevel', engineLvl.toString());
-                    } else {
-                        throw new Error();
-                    }
-                } catch (e) {
-                    localStorage.setItem('hillClimbCoins', balance);
-                    localStorage.setItem('engineLevel', engineLvl);
-                }
-                
+                saveData();
                 updateUI();
-                
-                // Уведомление
-                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
-                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                triggerHaptic();
+            }
+        }
+
+        function buySuspension() {
+            let cost = suspensionLvl * 50;
+            if (balance >= cost) {
+                balance -= cost;
+                suspensionLvl++;
+                document.getElementById('balance').innerText = balance;
+                document.getElementById('suspension-lvl').innerText = suspensionLvl;
+                saveData();
+                updateUI();
+                triggerHaptic();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('hillClimbCoins', balance.toString());
+            localStorage.setItem('engineLevel', engineLvl.toString());
+            localStorage.setItem('suspensionLevel', suspensionLvl.toString());
+
+            try {
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.setItem) {
+                    window.Telegram.WebApp.CloudStorage.setItem('hillClimbCoins', balance.toString(), function(){});
+                    window.Telegram.WebApp.CloudStorage.setItem('engineLevel', engineLvl.toString(), function(){});
+                    window.Telegram.WebApp.CloudStorage.setItem('suspensionLevel', suspensionLvl.toString(), function(){});
                 }
+            } catch (e) {}
+        }
+
+        function triggerHaptic() {
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
             }
         }
 

@@ -34,6 +34,7 @@ let brakeText;
 let coinIcon;
 let isGameOver = false;
 let engineLvl = 1;
+let suspensionLvl = 1;
 
 // Бензин
 let maxFuel = 100;
@@ -191,9 +192,10 @@ function createUI(scene) {
                 totalCoins = parseInt(coinsStr) || 0;
                 scoreText.setText(totalCoins.toString());
             });
-            window.Telegram.WebApp.CloudStorage.getItem('engineLevel', (err, value) => {
-                let engStr = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('engineLevel') || '1';
-                engineLvl = parseInt(engStr) || 1;
+            window.Telegram.WebApp.CloudStorage.getItem('suspensionLevel', (err, value) => {
+                let suspStr = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('suspensionLevel') || '1';
+                suspensionLvl = parseInt(suspStr) || 1;
+                updateSuspensionPhysics();
             });
             window.Telegram.WebApp.CloudStorage.getItem('maxDistance', (err, value) => {
                 let distStr = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('maxDistance') || '0';
@@ -206,9 +208,11 @@ function createUI(scene) {
     } catch (e) {
         totalCoins = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
         engineLvl = parseInt(localStorage.getItem('engineLevel')) || 1;
+        suspensionLvl = parseInt(localStorage.getItem('suspensionLevel')) || 1;
         maxDistance = parseInt(localStorage.getItem('maxDistance')) || 0;
         scoreText.setText(totalCoins.toString());
         if (recordText) recordText.setText('Рекорд: ' + maxDistance + 'm');
+        updateSuspensionPhysics();
     }
 
     // Иконка монетки рядом со счетом
@@ -438,16 +442,28 @@ function createCar(scene) {
     car.wheelB = scene.matter.add.gameObject(wheelBCircle, wheelOptions);
 
     // Мягкая независимая подвеска (Пружина с нулевой длиной)
-    // Длина 0 означает, что колесо стремится ровно в точку pointA, как на резинке.
-    // Оно будет пружинить на кочках, но не будет болтаться как маятник (что было раньше).
-    scene.matter.add.spring(car.chassis.body, car.wheelA.body, 0, 0.3, {
+    car.springA = scene.matter.add.spring(car.chassis.body, car.wheelA.body, 0, 0.3, {
         pointA: { x: -45, y: 30 },
         damping: 0.1
     });
-    scene.matter.add.spring(car.chassis.body, car.wheelB.body, 0, 0.3, {
+    car.springB = scene.matter.add.spring(car.chassis.body, car.wheelB.body, 0, 0.3, {
         pointA: { x: 45, y: 30 },
         damping: 0.1
     });
+}
+
+function updateSuspensionPhysics() {
+    if (car.springA && car.springB) {
+        // Базовая жесткость 0.2, с каждым уровнем прибавляем 0.05
+        let newStiffness = 0.2 + (suspensionLvl * 0.05);
+        // Базовое гашение 0.05, с каждым уровнем прибавляем 0.02
+        let newDamping = 0.05 + (suspensionLvl * 0.02);
+        
+        car.springA.stiffness = newStiffness;
+        car.springA.damping = newDamping;
+        car.springB.stiffness = newStiffness;
+        car.springB.damping = newDamping;
+    }
 }
 
 function update() {
