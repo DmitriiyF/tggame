@@ -447,35 +447,30 @@ function createCar(scene) {
     const group = scene.matter.world.nextGroup(true);
 
     let cfg = {
-        w: 130, h: 30, c: 0xE53935, // chassis
-        cw: 70, ch: 35, cx: -20, cy: -70, // cabin
+        w: 130, h: 30, // chassis
         rA: 25, rB: 25, // wheels radius
         wxA: -45, wxB: 45, wy: 35, // wheels offset
-        cdens: 0.005, wdens: 0.001, fuel: 100, drive: 'rwd' // Правильная масса: тяжелый кузов, легкие колеса
+        cdens: 0.005, wdens: 0.001, fuel: 100, drive: 'rwd',
+        emoji: '🚙', emojiSize: '110px', emojiY: -40
     };
 
     if (selectedCarId === 'bike') {
-        cfg = { w: 90, h: 15, c: 0x2196F3, cw: 30, ch: 30, cx: 0, cy: -45, rA: 20, rB: 20, wxA: -40, wxB: 40, wy: 25, cdens: 0.002, wdens: 0.0005, fuel: 70, drive: 'rwd' };
+        cfg = { w: 90, h: 15, rA: 20, rB: 20, wxA: -35, wxB: 35, wy: 25, cdens: 0.002, wdens: 0.0005, fuel: 70, drive: 'rwd', emoji: '🏍️', emojiSize: '90px', emojiY: -25 };
     } else if (selectedCarId === 'tractor') {
-        cfg = { w: 150, h: 40, c: 0xFF9800, cw: 60, ch: 60, cx: -30, cy: -80, rA: 40, rB: 25, wxA: -55, wxB: 60, wy: 40, cdens: 0.006, wdens: 0.002, fuel: 120, drive: 'rwd' };
+        cfg = { w: 150, h: 40, rA: 40, rB: 25, wxA: -55, wxB: 60, wy: 40, cdens: 0.006, wdens: 0.002, fuel: 120, drive: 'rwd', emoji: '🚜', emojiSize: '130px', emojiY: -50 };
     } else if (selectedCarId === 'racecar') {
-        cfg = { w: 160, h: 20, c: 0x9C27B0, cw: 50, ch: 20, cx: -10, cy: -40, rA: 22, rB: 22, wxA: -60, wxB: 60, wy: 20, cdens: 0.004, wdens: 0.0008, fuel: 90, drive: 'rwd' };
+        cfg = { w: 160, h: 20, rA: 22, rB: 22, wxA: -60, wxB: 60, wy: 20, cdens: 0.004, wdens: 0.0008, fuel: 90, drive: 'rwd', emoji: '🏎️', emojiSize: '150px', emojiY: -35 };
     } else if (selectedCarId === 'tank') {
-        cfg = { w: 180, h: 50, c: 0x4CAF50, cw: 80, ch: 30, cx: 0, cy: -80, rA: 35, rB: 35, wxA: -70, wxB: 70, wy: 40, cdens: 0.01, wdens: 0.003, fuel: 150, drive: 'awd' };
+        cfg = { w: 180, h: 50, rA: 35, rB: 35, wxA: -70, wxB: 70, wy: 40, cdens: 0.01, wdens: 0.003, fuel: 150, drive: 'awd', emoji: '🚛', emojiSize: '160px', emojiY: -55 };
     }
     
     maxFuel = cfg.fuel;
     currentFuel = maxFuel;
-    car.driveType = cfg.drive; // Сохраняем тип привода для update()
+    car.driveType = cfg.drive;
     car.chassisMass = cfg.cdens;
 
-    // Кузов
-    const chassisRect = scene.add.rectangle(x, y - 40, cfg.w, cfg.h, cfg.c);
-    chassisRect.setStrokeStyle(2, 0x000000);
-    
-    // Кабина
-    const cabinRect = scene.add.rectangle(x + cfg.cx, y + cfg.cy, cfg.cw, cfg.ch, cfg.c);
-    cabinRect.setStrokeStyle(2, 0x000000);
+    // Невидимый кузов для физики
+    const chassisRect = scene.add.rectangle(x, y - 40, cfg.w, cfg.h, 0x000000, 0); 
     
     car.chassis = scene.matter.add.gameObject(chassisRect, { 
         collisionFilter: { group: group },
@@ -483,9 +478,10 @@ function createCar(scene) {
         friction: 0.5,
         label: 'chassis'
     });
-    car.cabin = cabinRect;
-    car.cabin.deltaX = cfg.cx;
-    car.cabin.deltaY = cfg.cy + 40;
+    
+    // Эмодзи как стикер вместо старой кабины
+    car.emoji = scene.add.text(x, y, cfg.emoji, { fontSize: cfg.emojiSize }).setOrigin(0.5);
+    car.emoji.deltaY = cfg.emojiY;
 
     // Колеса легкие! Иначе они перевешивают кузов и подвеска кажется "соплей"
     const wheelOptsA = { shape: 'circle', radius: cfg.rA, collisionFilter: { group: group }, friction: 0.8, density: cfg.wdens, restitution: 0.1, label: 'car' };
@@ -614,18 +610,18 @@ function update() {
     const maxSpeed = baseSpeed + (engineLvl * 0.1);
     const torque = baseTorque + (engineLvl * 0.005);
 
-    // Привязываем визуальную кабину к физическому кузову (чтобы она вращалась вместе с ним)
-    if (car.chassis && car.cabin) {
+    // Привязываем эмодзи к физическому кузову
+    if (car.chassis && car.emoji) {
         let angle = car.chassis.rotation;
         
-        let dx = car.cabin.deltaX || 0;
-        let dy = car.cabin.deltaY || 0;
+        // Для текста центрирование работает немного иначе, поэтому используем заданное смещение
+        let dy = car.emoji.deltaY || 0;
         
-        let offsetX = Math.cos(angle) * dx - Math.sin(angle) * dy;
-        let offsetY = Math.sin(angle) * dx + Math.cos(angle) * dy;
+        let offsetX = -Math.sin(angle) * dy;
+        let offsetY = Math.cos(angle) * dy;
         
-        car.cabin.setPosition(car.chassis.x + offsetX, car.chassis.y + offsetY);
-        car.cabin.setRotation(angle);
+        car.emoji.setPosition(car.chassis.x + offsetX, car.chassis.y + offsetY);
+        car.emoji.setRotation(angle);
     }
 
     // Управление работает только если есть бензин
