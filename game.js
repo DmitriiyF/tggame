@@ -423,7 +423,7 @@ function createCar(scene) {
     
     car.chassis = scene.matter.add.gameObject(chassisRect, { 
         collisionFilter: { group: group },
-        density: 0.004, // Сделали кузов чуть тяжелее, чтобы он давил на пружины
+        density: 0.01, // Кузов очень тяжелый (масса ~39)
         friction: 0.5,
         label: 'chassis'
     });
@@ -434,8 +434,8 @@ function createCar(scene) {
         shape: 'circle',
         radius: 25, 
         collisionFilter: { group: group },
-        friction: 0.5,    // Базовое слабое сцепление
-        density: 0.008,   
+        friction: 0.5,    
+        density: 0.002,   // Колеса легкие (масса ~4)
         restitution: 0.1, 
         label: 'car'
     };
@@ -449,23 +449,23 @@ function createCar(scene) {
     wheelBCircle.setStrokeStyle(5, 0x9E9E9E);
     car.wheelB = scene.matter.add.gameObject(wheelBCircle, wheelOptions);
 
-    // Подвеска: базово ставим мягкую, она обновится в updateSuspensionPhysics
-    car.springA = scene.matter.add.spring(car.chassis.body, car.wheelA.body, 0, 0.1, {
-        pointA: { x: -45, y: 35 }, // Опустили колеса еще на 5 пикселей, чтобы был запас хода пружины
-        damping: 0.02
+    // Подвеска
+    car.springA = scene.matter.add.spring(car.chassis.body, car.wheelA.body, 0, 0.01, {
+        pointA: { x: -45, y: 35 },
+        damping: 0.005
     });
-    car.springB = scene.matter.add.spring(car.chassis.body, car.wheelB.body, 0, 0.1, {
+    car.springB = scene.matter.add.spring(car.chassis.body, car.wheelB.body, 0, 0.01, {
         pointA: { x: 45, y: 35 },
-        damping: 0.02
+        damping: 0.005
     });
 }
 
 function updateSuspensionPhysics() {
     if (car.springA && car.springB) {
-        // Уровень 1: 0.08 (очень мягкая). Уровень 6: 0.28 (спортивная жесткая)
-        let newStiffness = 0.05 + (suspensionLvl * 0.03);
-        // Уровень 1: 0.02 (прыгучая). Уровень 6: 0.12 (мгновенно гасит удары)
-        let newDamping = 0.01 + (suspensionLvl * 0.02);
+        // Жесткость: ур.1 = 0.01 (очень мягко), ур.6 = 0.02 (упруго)
+        let newStiffness = 0.008 + (suspensionLvl * 0.002);
+        // Гашение: ур.1 = 0.005, ур.6 = 0.01
+        let newDamping = 0.004 + (suspensionLvl * 0.001);
         
         car.springA.stiffness = newStiffness;
         car.springA.damping = newDamping;
