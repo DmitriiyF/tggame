@@ -449,19 +449,20 @@ function createCar(scene) {
     let cfg = {
         w: 130, h: 30, // chassis
         rA: 25, rB: 25, // wheels radius
-        wxA: -45, wxB: 45, wy: 35, // wheels offset
+        wxA: -40, wxB: 40, wy: 25, // wheels offset
         cdens: 0.005, wdens: 0.001, fuel: 100, drive: 'rwd',
-        emoji: '🚙', emojiSize: '110px', emojiY: -40
+        emoji: '🚙', emojiSize: '130px', emojiY: -5
     };
 
     if (selectedCarId === 'bike') {
-        cfg = { w: 90, h: 15, rA: 20, rB: 20, wxA: -35, wxB: 35, wy: 25, cdens: 0.002, wdens: 0.0005, fuel: 70, drive: 'rwd', emoji: '🏍️', emojiSize: '90px', emojiY: -25 };
+        cfg = { w: 90, h: 15, rA: 20, rB: 20, wxA: -35, wxB: 35, wy: 15, cdens: 0.002, wdens: 0.0005, fuel: 70, drive: 'rwd', emoji: '🏍️', emojiSize: '120px', emojiY: -10 };
     } else if (selectedCarId === 'tractor') {
-        cfg = { w: 150, h: 40, rA: 40, rB: 25, wxA: -55, wxB: 60, wy: 40, cdens: 0.006, wdens: 0.002, fuel: 120, drive: 'rwd', emoji: '🚜', emojiSize: '130px', emojiY: -50 };
+        // Трактор: при развороте заднее (большое) колесо будет слева (-wx), а переднее справа (+wx)
+        cfg = { w: 150, h: 40, rA: 35, rB: 25, wxA: -50, wxB: 50, wy: 25, cdens: 0.006, wdens: 0.002, fuel: 120, drive: 'rwd', emoji: '🚜', emojiSize: '150px', emojiY: -15 };
     } else if (selectedCarId === 'racecar') {
-        cfg = { w: 160, h: 20, rA: 22, rB: 22, wxA: -60, wxB: 60, wy: 20, cdens: 0.004, wdens: 0.0008, fuel: 90, drive: 'rwd', emoji: '🏎️', emojiSize: '150px', emojiY: -35 };
+        cfg = { w: 160, h: 20, rA: 20, rB: 20, wxA: -55, wxB: 55, wy: 15, cdens: 0.004, wdens: 0.0008, fuel: 90, drive: 'rwd', emoji: '🏎️', emojiSize: '160px', emojiY: -15 };
     } else if (selectedCarId === 'tank') {
-        cfg = { w: 180, h: 50, rA: 35, rB: 35, wxA: -70, wxB: 70, wy: 40, cdens: 0.01, wdens: 0.003, fuel: 150, drive: 'awd', emoji: '🚛', emojiSize: '160px', emojiY: -55 };
+        cfg = { w: 180, h: 50, rA: 30, rB: 30, wxA: -60, wxB: 60, wy: 25, cdens: 0.01, wdens: 0.003, fuel: 150, drive: 'awd', emoji: '🚛', emojiSize: '160px', emojiY: -20 };
     }
     
     maxFuel = cfg.fuel;
@@ -481,6 +482,7 @@ function createCar(scene) {
     
     // Эмодзи как стикер вместо старой кабины
     car.emoji = scene.add.text(x, y, cfg.emoji, { fontSize: cfg.emojiSize }).setOrigin(0.5);
+    car.emoji.setFlipX(true); // Разворачиваем машинки вправо!
     car.emoji.deltaY = cfg.emojiY;
 
     // Колеса легкие! Иначе они перевешивают кузов и подвеска кажется "соплей"
