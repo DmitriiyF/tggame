@@ -246,18 +246,18 @@ function createUI(scene) {
             window.Telegram.WebApp.CloudStorage.getItem('engineLevel_' + selectedCarId, (err, value) => {
                 let fallback = localStorage.getItem('engineLevel_' + selectedCarId) || (selectedCarId === 'jeep' ? localStorage.getItem('engineLevel') : null) || '1';
                 let engineStr = (value !== undefined && value !== null && value !== '') ? value : fallback;
-                engineLvl = parseInt(engineStr) || 1;
+                engineLvl = Math.min(10, parseInt(engineStr) || 1);
             });
             window.Telegram.WebApp.CloudStorage.getItem('suspensionLevel_' + selectedCarId, (err, value) => {
                 let fallback = localStorage.getItem('suspensionLevel_' + selectedCarId) || (selectedCarId === 'jeep' ? localStorage.getItem('suspensionLevel') : null) || '1';
                 let suspStr = (value !== undefined && value !== null && value !== '') ? value : fallback;
-                suspensionLvl = parseInt(suspStr) || 1;
+                suspensionLvl = Math.min(10, parseInt(suspStr) || 1);
                 updateSuspensionPhysics();
             });
             window.Telegram.WebApp.CloudStorage.getItem('tiresLevel_' + selectedCarId, (err, value) => {
                 let fallback = localStorage.getItem('tiresLevel_' + selectedCarId) || (selectedCarId === 'jeep' ? localStorage.getItem('tiresLevel') : null) || '1';
                 let tiresStr = (value !== undefined && value !== null && value !== '') ? value : fallback;
-                tiresLvl = parseInt(tiresStr) || 1;
+                tiresLvl = Math.min(10, parseInt(tiresStr) || 1);
                 updateTiresPhysics();
             });
             window.Telegram.WebApp.CloudStorage.getItem('maxDistance_' + selectedCarId, (err, value) => {
@@ -271,9 +271,9 @@ function createUI(scene) {
         }
     } catch (e) {
         totalCoins = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
-        engineLvl = parseInt(localStorage.getItem('engineLevel_' + selectedCarId)) || (selectedCarId === 'jeep' ? parseInt(localStorage.getItem('engineLevel')) : 1) || 1;
-        suspensionLvl = parseInt(localStorage.getItem('suspensionLevel_' + selectedCarId)) || (selectedCarId === 'jeep' ? parseInt(localStorage.getItem('suspensionLevel')) : 1) || 1;
-        tiresLvl = parseInt(localStorage.getItem('tiresLevel_' + selectedCarId)) || (selectedCarId === 'jeep' ? parseInt(localStorage.getItem('tiresLevel')) : 1) || 1;
+        engineLvl = Math.min(10, parseInt(localStorage.getItem('engineLevel_' + selectedCarId)) || (selectedCarId === 'jeep' ? parseInt(localStorage.getItem('engineLevel')) : 1) || 1);
+        suspensionLvl = Math.min(10, parseInt(localStorage.getItem('suspensionLevel_' + selectedCarId)) || (selectedCarId === 'jeep' ? parseInt(localStorage.getItem('suspensionLevel')) : 1) || 1);
+        tiresLvl = Math.min(10, parseInt(localStorage.getItem('tiresLevel_' + selectedCarId)) || (selectedCarId === 'jeep' ? parseInt(localStorage.getItem('tiresLevel')) : 1) || 1);
         maxDistance = parseInt(localStorage.getItem('maxDistance_' + selectedCarId)) || (selectedCarId === 'jeep' ? parseInt(localStorage.getItem('maxDistance')) : 0) || 0;
         scoreText.setText(totalCoins.toString());
         if (recordText) recordText.setText('РЕКОРД: ' + maxDistance + 'm');
@@ -495,18 +495,18 @@ function createCar(scene) {
         w: 90, h: 30, // chassis
         rA: 25, rB: 25, // wheels radius
         wxA: -40, wxB: 40, wy: 35, // wheels offset (wy is distance from chassis center to wheel center. Larger = higher chassis)
-        cdens: 0.005, wdens: 0.001, fuel: 100, drive: 'rwd',
+        cdens: 0.015, wdens: 0.001, fuel: 100, drive: 'rwd',
         emoji: '🚙', emojiSize: '130px', emojiY: -15
     };
 
     if (selectedCarId === 'bike') {
-        cfg = { w: 70, h: 15, rA: 20, rB: 20, wxA: -35, wxB: 35, wy: 25, cdens: 0.002, wdens: 0.0005, fuel: 70, drive: 'rwd', emoji: '🏍️', emojiSize: '120px', emojiY: -20 };
+        cfg = { w: 70, h: 15, rA: 20, rB: 20, wxA: -35, wxB: 35, wy: 25, cdens: 0.006, wdens: 0.0005, fuel: 70, drive: 'rwd', emoji: '🏍️', emojiSize: '120px', emojiY: -20 };
     } else if (selectedCarId === 'tractor') {
-        cfg = { w: 100, h: 40, rA: 35, rB: 25, wxA: -50, wxB: 50, wy: 40, cdens: 0.006, wdens: 0.002, fuel: 120, drive: 'rwd', emoji: '🚜', emojiSize: '150px', emojiY: -30 };
+        cfg = { w: 100, h: 40, rA: 35, rB: 25, wxA: -50, wxB: 50, wy: 40, cdens: 0.018, wdens: 0.002, fuel: 120, drive: 'rwd', emoji: '🚜', emojiSize: '150px', emojiY: -30 };
     } else if (selectedCarId === 'racecar') {
-        cfg = { w: 100, h: 20, rA: 20, rB: 20, wxA: -55, wxB: 55, wy: 25, cdens: 0.004, wdens: 0.0008, fuel: 90, drive: 'rwd', emoji: '🏎️', emojiSize: '160px', emojiY: -25 };
+        cfg = { w: 100, h: 20, rA: 20, rB: 20, wxA: -55, wxB: 55, wy: 25, cdens: 0.012, wdens: 0.0008, fuel: 90, drive: 'rwd', emoji: '🏎️', emojiSize: '160px', emojiY: -25 };
     } else if (selectedCarId === 'tank') {
-        cfg = { w: 120, h: 50, rA: 30, rB: 30, wxA: -60, wxB: 60, wy: 35, cdens: 0.01, wdens: 0.003, fuel: 150, drive: 'awd', emoji: '🚛', emojiSize: '160px', emojiY: -30 };
+        cfg = { w: 120, h: 50, rA: 30, rB: 30, wxA: -60, wxB: 60, wy: 35, cdens: 0.03, wdens: 0.003, fuel: 150, drive: 'awd', emoji: '🚛', emojiSize: '160px', emojiY: -30 };
     }
     
     maxFuel = cfg.fuel;
@@ -687,7 +687,8 @@ function update() {
     // Крутящий момент мотора теперь физический, а не просто прибавление скорости!
     // Значения выверены под лунную гравитацию Matter.js (16 px/s^2), чтобы машина разгонялась реалистично и не делала 5 сальто!
     let motorTorque = car.chassis.body.mass * (0.005 + engineLvl * 0.002); // Разгон от 0.3g до 1.0g
-    let airTorque = car.chassis.body.mass * 0.15; // Момент для сальто в воздухе (плавно)
+    let airTorque = car.chassis.body.mass * 0.08; // Момент для сальто в воздухе (плавно)
+    let antiFlipTorque = car.chassis.body.mass * 0.15; // Мощная прижимная сила, чтобы нос был тяжелым на подъемах
     
     let isAnyPressed = false;
 
@@ -703,8 +704,11 @@ function update() {
             if (car.driveType === 'awd') Matter.Body.setAngularVelocity(car.wheelB.body, maxSpeed);
         }
         
-        // В воздухе делаем сальто назад
-        if (!isGrounded) {
+        if (isGrounded) {
+            // На земле прижимаем нос, чтобы машина лучше карабкалась в гору
+            car.chassis.body.torque = antiFlipTorque;
+        } else {
+            // В воздухе делаем сальто назад
             car.chassis.body.torque = -airTorque;
         }
     } 

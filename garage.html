@@ -37,7 +37,10 @@
                 <p>Увеличивает скорость</p>
                 <div class="progress-bar-container"><div class="progress-bar" id="engine-bar"></div></div>
             </div>
-            <button class="upgrade-btn" id="buy-engine-btn" onclick="buyEngine()"><span id="engine-cost">...</span> 💰</button>
+            <div style="display:flex; gap: 5px;">
+                <button class="upgrade-btn downgrade-btn" onclick="downgradeEngine()" style="flex:0 0 40px; background:#d9534f;">-</button>
+                <button class="upgrade-btn" id="buy-engine-btn" onclick="buyEngine()" style="flex:1;"><span id="engine-cost">...</span> 💰</button>
+            </div>
         </div>
         <div class="upgrade-card">
             <div class="upgrade-info">
@@ -45,7 +48,10 @@
                 <p>Меньше трясет, лучше прыгает</p>
                 <div class="progress-bar-container"><div class="progress-bar" id="suspension-bar"></div></div>
             </div>
-            <button class="upgrade-btn" id="buy-suspension-btn" onclick="buySuspension()"><span id="suspension-cost">...</span> 💰</button>
+            <div style="display:flex; gap: 5px;">
+                <button class="upgrade-btn downgrade-btn" onclick="downgradeSuspension()" style="flex:0 0 40px; background:#d9534f;">-</button>
+                <button class="upgrade-btn" id="buy-suspension-btn" onclick="buySuspension()" style="flex:1;"><span id="suspension-cost">...</span> 💰</button>
+            </div>
         </div>
         <div class="upgrade-card">
             <div class="upgrade-info">
@@ -53,7 +59,10 @@
                 <p>Улучшают сцепление с землей</p>
                 <div class="progress-bar-container"><div class="progress-bar" id="tires-bar"></div></div>
             </div>
-            <button class="upgrade-btn" id="buy-tires-btn" onclick="buyTires()"><span id="tires-cost">...</span> 💰</button>
+            <div style="display:flex; gap: 5px;">
+                <button class="upgrade-btn downgrade-btn" onclick="downgradeTires()" style="flex:0 0 40px; background:#d9534f;">-</button>
+                <button class="upgrade-btn" id="buy-tires-btn" onclick="buyTires()" style="flex:1;"><span id="tires-cost">...</span> 💰</button>
+            </div>
         </div>
     </div>
 
@@ -90,15 +99,15 @@
 
             let eng = await getCloudItem('engineLevel_' + selectedCarId);
             if (!eng && selectedCarId === 'jeep') eng = await getCloudItem('engineLevel');
-            engineLvl = parseInt(eng) || 1;
+            engineLvl = Math.min(MAX_LVL, parseInt(eng) || 1);
 
             let susp = await getCloudItem('suspensionLevel_' + selectedCarId);
             if (!susp && selectedCarId === 'jeep') susp = await getCloudItem('suspensionLevel');
-            suspensionLvl = parseInt(susp) || 1;
+            suspensionLvl = Math.min(MAX_LVL, parseInt(susp) || 1);
 
             let tires = await getCloudItem('tiresLevel_' + selectedCarId);
             if (!tires && selectedCarId === 'jeep') tires = await getCloudItem('tiresLevel');
-            tiresLvl = parseInt(tires) || 1;
+            tiresLvl = Math.min(MAX_LVL, parseInt(tires) || 1);
 
             document.getElementById('engine-lvl').innerText = engineLvl;
             document.getElementById('suspension-lvl').innerText = suspensionLvl;
@@ -149,7 +158,35 @@
             }
         }
 
-        function buyEngine() {
+        
+        function downgradeEngine() {
+            if (engineLvl > 1) {
+                engineLvl--;
+                balance += engineLvl * 50; // Refund the cost of the level we just lost
+                document.getElementById('balance').innerText = balance;
+                document.getElementById('engine-lvl').innerText = engineLvl;
+                saveData(); updateUI(); triggerHaptic();
+            }
+        }
+        function downgradeSuspension() {
+            if (suspensionLvl > 1) {
+                suspensionLvl--;
+                balance += suspensionLvl * 50;
+                document.getElementById('balance').innerText = balance;
+                document.getElementById('suspension-lvl').innerText = suspensionLvl;
+                saveData(); updateUI(); triggerHaptic();
+            }
+        }
+        function downgradeTires() {
+            if (tiresLvl > 1) {
+                tiresLvl--;
+                balance += tiresLvl * 50;
+                document.getElementById('balance').innerText = balance;
+                document.getElementById('tires-lvl').innerText = tiresLvl;
+                saveData(); updateUI(); triggerHaptic();
+            }
+        }
+\n        function buyEngine() {
             let cost = engineLvl * 50;
             if (balance >= cost && engineLvl < MAX_LVL) {
                 balance -= cost; engineLvl++;
