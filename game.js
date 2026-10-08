@@ -44,6 +44,7 @@ let fuelBarFill;
 // Расстояние и трюки
 let maxDistance = 0;
 let distanceText;
+let recordText;
 let lastAngle = 0;
 let totalRotation = 0;
 
@@ -197,6 +198,7 @@ function createUI(scene) {
             window.Telegram.WebApp.CloudStorage.getItem('maxDistance', (err, value) => {
                 let distStr = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('maxDistance') || '0';
                 maxDistance = parseInt(distStr) || 0;
+                if (recordText) recordText.setText('Рекорд: ' + maxDistance + 'm');
             });
         } else {
             throw new Error("No CloudStorage");
@@ -206,6 +208,7 @@ function createUI(scene) {
         engineLvl = parseInt(localStorage.getItem('engineLevel')) || 1;
         maxDistance = parseInt(localStorage.getItem('maxDistance')) || 0;
         scoreText.setText(totalCoins.toString());
+        if (recordText) recordText.setText('Рекорд: ' + maxDistance + 'm');
     }
 
     // Иконка монетки рядом со счетом
@@ -215,6 +218,11 @@ function createUI(scene) {
     // Текст Дистанции (справа сверху)
     distanceText = scene.add.text(width - 20, 20, '0m', { 
         fontSize: '30px', fill: '#FFF', fontFamily: 'Arial', fontStyle: 'bold', stroke: '#000', strokeThickness: 5 
+    }).setOrigin(1, 0).setScrollFactor(0).setDepth(100);
+
+    // Текст Рекорда (под дистанцией)
+    recordText = scene.add.text(width - 20, 55, 'Рекорд: ' + maxDistance + 'm', { 
+        fontSize: '16px', fill: '#FFD700', fontFamily: 'Arial', fontStyle: 'bold', stroke: '#000', strokeThickness: 3 
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(100);
 
     // Шкала Бензина (по центру)
@@ -450,6 +458,7 @@ function update() {
     distanceText.setText(currentDist + 'm');
     if (currentDist > maxDistance) {
         maxDistance = currentDist;
+        if (recordText) recordText.setText('Рекорд: ' + maxDistance + 'm');
     }
 
     // 2. Детектор сальто (Трюки)
