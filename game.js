@@ -277,11 +277,17 @@ let currentSlope = 0;
 let targetSlope = 0;
 let segmentIndex = 0;
 
+// Функция для детерминированного рандома (карта всегда одинаковая)
+function seededRandom(seed) {
+    let x = Math.sin(seed * 9999) * 10000;
+    return x - Math.floor(x);
+}
+
 function generateTerrain(scene, upToX) {
     while (lastGenX < upToX) {
-        // Плавно меняем наклон каждые несколько блоков, чтобы получились гладкие холмы
-        if (Math.random() < 0.15) {
-            targetSlope = (Math.random() * 40) - 20; // от -20 (вверх) до +20 (вниз)
+        // Используем seededRandom вместо Math.random(), чтобы холмы всегда были одинаковыми
+        if (seededRandom(segmentIndex) < 0.15) {
+            targetSlope = (seededRandom(segmentIndex + 1000) * 40) - 20;
         }
         currentSlope += (targetSlope - currentSlope) * 0.1;
         
@@ -296,11 +302,11 @@ function generateTerrain(scene, upToX) {
         let midX = lastGenX + dx/2;
         let midY = lastGenY + dy/2;
         
-        // Визуальная часть: прямоугольник, уходящий глубоко вниз (чтобы не было видно дна)
+        // Визуальная часть
         let ground = scene.add.rectangle(midX, midY + 500, length + 10, 1000, 0x4CAF50);
         ground.setStrokeStyle(4, 0x2E7D32);
         
-        // Физика привязывается к этому же прямоугольнику
+        // Физика
         scene.matter.add.gameObject(ground, {
             isStatic: true,
             angle: angle,
@@ -313,14 +319,14 @@ function generateTerrain(scene, upToX) {
         
         // Спавн монеток
         if (segmentIndex > 5 && segmentIndex % 6 === 0) {
-            let heightOffset = 60 + Math.random() * 60; 
+            let heightOffset = 60 + seededRandom(segmentIndex + 2000) * 60; 
             let coin = scene.add.circle(midX, midY - heightOffset, 15, 0xFFD700);
             coin.setStrokeStyle(3, 0xB8860B);
             scene.matter.add.gameObject(coin, { isStatic: true, isSensor: true, label: 'coin' });
             chunk.coin = coin;
         }
         
-        // Спавн бензина
+        // Спавн бензина (строго каждые 20 блоков)
         if (segmentIndex > 10 && segmentIndex % 20 === 0) {
             let fuelCan = scene.add.rectangle(midX, midY - 70, 25, 35, 0xE53935);
             fuelCan.setStrokeStyle(3, 0xFFFFFF);
