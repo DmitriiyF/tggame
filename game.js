@@ -312,11 +312,16 @@ function generateTerrain(scene, upToX) {
             // Генерируем цель от -maxSlope (вверх) до +maxSlope (вниз)
             targetSlope = (seededRandom(segmentIndex + 1000) * (maxSlope * 2)) - maxSlope;
         }
-        // Делаем переходы более долгими и плавными, чтобы получались огромные длинные горы
-        currentSlope += (targetSlope - currentSlope) * 0.05;
+        // Делаем переходы чуть более резкими
+        currentSlope += (targetSlope - currentSlope) * 0.08;
         
         let x = lastGenX + 120; // ширина сегмента
         let y = lastGenY + currentSlope;
+        
+        // Добавляем микро-кочки (шум), чтобы трасса не была идеально гладкой как рельсы
+        // Это заставит подвеску работать, а на большой скорости машина будет подпрыгивать
+        let noise = (seededRandom(segmentIndex * 50) * 12) - 6;
+        y += noise;
         
         let dx = x - lastGenX;
         let dy = y - lastGenY;
