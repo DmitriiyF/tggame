@@ -544,7 +544,7 @@ function createCar(scene) {
 
     if (car.emoji) car.emoji.destroy();
     car.emoji = scene.add.text(x, y, cfg.emoji, { fontSize: cfg.emojiSize })
-        .setOrigin(0.5, 0.5);
+        .setOrigin(0.5, 0.5).setScale(-1, 1);
     car.emoji.deltaY = cfg.emojiY;
     
     car.driveType = cfg.driveType || cfg.drive;
@@ -657,18 +657,18 @@ function update() {
 
     // ЧИСТАЯ АРКАДНАЯ ФИЗИКА (Без приколов и вылетов)
     let baseSpeed = 0.8;
-    let baseTorque = 0.005;
-    if (selectedCarId === 'bike') { baseSpeed = 0.9; baseTorque = 0.004; }
-    else if (selectedCarId === 'tractor') { baseSpeed = 0.5; baseTorque = 0.01; }
-    else if (selectedCarId === 'racecar') { baseSpeed = 1.2; baseTorque = 0.006; }
-    else if (selectedCarId === 'tank') { baseSpeed = 0.6; baseTorque = 0.015; }
+    let baseTorque = 0.008;
+    if (selectedCarId === 'bike') { baseSpeed = 0.9; baseTorque = 0.01; }
+    else if (selectedCarId === 'tractor') { baseSpeed = 0.5; baseTorque = 0.02; }
+    else if (selectedCarId === 'racecar') { baseSpeed = 1.2; baseTorque = 0.01; }
+    else if (selectedCarId === 'tank') { baseSpeed = 0.6; baseTorque = 0.02; }
     
     let maxSpeed = baseSpeed + (engineLvl * 0.1);
-    let enginePower = car.chassis.body.mass * (baseTorque + (engineLvl * 0.001)); // Плавный момент на колеса
+    let enginePower = car.chassis.body.mass * (baseTorque + (engineLvl * 0.0025)); // Плавный момент на колеса
     let airTorque = car.chassis.body.mass * 0.06;
     
     // Высчитываем противовес, чтобы машина не козлила (компенсируем крутящий момент)
-    let antiFlipTorque = enginePower * 1.5; 
+    let antiFlipTorque = enginePower * 4.0; 
 
     let isAnyPressed = false;
 
