@@ -64,10 +64,8 @@ function create() {
 
     Matter = Phaser.Physics.Matter.Matter;
 
-    // 1. Создаем трассу и монетки
-    createTerrain(this);
-    createCoins(this);
-    createFuelCans(this); // Добавили генерацию канистр
+    // 1. Динамическая генерация трассы (создаем первый кусок)
+    generateTerrain(this, 3000);
 
     // 2. Создаем более детализированную машину
     createCar(this);
@@ -272,79 +270,89 @@ function createUI(scene) {
     brakeButton.on('pointerout', () => { isBrakePressed = false; brakeButton.setAlpha(0.7); });
 }
 
-let terrainPoints = [];
+let terrainChunks = [];
+let lastGenX = -200;
+let lastGenY = 400;
+let currentSlope = 0;
+let targetSlope = 0;
+let segmentIndex = 0;
 
-function createTerrain(scene) {
-    let lastX = -200;
-    let lastY = 400;
-    terrainPoints = [];
-    
-    for (let i = 0; i < 400; i++) {
-        let x = lastX + 120;
-        let y = lastY + Math.sin(i * 0.35) * 70 + (Math.random() * 20 - 10);
+function generateTerrain(scene, upToX) {
+    while (lastGenX < upToX) {
+        // Плавно меняем наклон каждые несколько блоков, чтобы получились гладкие холмы
+        if (Math.random() < 0.15) {
+            targetSlope = (Math.random() * 40) - 20; // от -20 (вверх) до +20 (вниз)
+        }
+        currentSlope += (targetSlope - currentSlope) * 0.1;
         
-        let dx = x - lastX;
-        let dy = y - lastY;
+        let x = lastGenX + 120; // ширина сегмента
+        let y = lastGenY + currentSlope;
+        
+        let dx = x - lastGenX;
+        let dy = y - lastGenY;
         let angle = Math.atan2(dy, dx);
         let length = Math.sqrt(dx*dx + dy*dy);
         
-        // Рисуем кусок земли
-        let ground = scene.add.rectangle(lastX + dx/2, lastY + dy/2, length + 5, 100, 0x4CAF50); 
-        ground.setStrokeStyle(4, 0x2E7D32); // Темно-зеленая обводка сверху
+        let midX = lastGenX + dx/2;
+        let midY = lastGenY + dy/2;
         
+        // Визуальная часть: прямоугольник, уходящий глубоко вниз (чтобы не было видно дна)
+        let ground = scene.add.rectangle(midX, midY + 500, length + 10, 1000, 0x4CAF50);
+        ground.setStrokeStyle(4, 0x2E7D32);
+        
+        // Физика привязывается к этому же прямоугольнику
         scene.matter.add.gameObject(ground, {
             isStatic: true,
             angle: angle,
-            friction: 1.5, // Земля очень шершавая, чтобы сцепление зависело только от шин
+            friction: 1.5,
             restitution: 0.1, 
             label: 'ground'
         });
         
-        // Сохраняем точки, чтобы потом раскидать там монетки
-        terrainPoints.push({x: lastX + dx/2, y: lastY + dy/2});
-
-        lastX = x;
-        lastY = y;
-    }
-}
-
-function createCoins(scene) {
-    // Раскидываем золотые монетки
-    for (let i = 15; i < terrainPoints.length; i += 6) { // Каждые 6 блоков земли
-        let point = terrainPoints[i];
+        let chunk = { ground: ground, x: midX, coin: null, fuel: null, fuelStripe: null };
         
-        // Монетка немного над землей (иногда выше, иногда ниже)
-        let heightOffset = 60 + Math.random() * 60; 
+        // Спавн монеток
+        if (segmentIndex > 5 && segmentIndex % 6 === 0) {
+            let heightOffset = 60 + Math.random() * 60; 
+            let coin = scene.add.circle(midX, midY - heightOffset, 15, 0xFFD700);
+            coin.setStrokeStyle(3, 0xB8860B);
+            scene.matter.add.gameObject(coin, { isStatic: true, isSensor: true, label: 'coin' });
+            chunk.coin = coin;
+        }
         
-        let coin = scene.add.circle(point.x, point.y - heightOffset, 15, 0xFFD700);
-        coin.setStrokeStyle(3, 0xB8860B); // Обводка монетки
+        // Спавн бензина
+        if (segmentIndex > 10 && segmentIndex % 20 === 0) {
+            let fuelCan = scene.add.rectangle(midX, midY - 70, 25, 35, 0xE53935);
+            fuelCan.setStrokeStyle(3, 0xFFFFFF);
+            let whiteStripe = scene.add.rectangle(midX, midY - 70, 25, 10, 0xFFFFFF);
+            scene.matter.add.gameObject(fuelCan, { isStatic: true, isSensor: true, label: 'fuel' });
+            chunk.fuel = fuelCan;
+            chunk.fuelStripe = whiteStripe;
+        }
         
-        scene.matter.add.gameObject(coin, {
-            isStatic: true,
-            isSensor: true, // Сенсор значит, что сквозь нее можно проехать (она не бетонная)
-            label: 'coin'
-        });
+        terrainChunks.push(chunk);
+        
+        lastGenX = x;
+        lastGenY = y;
+        segmentIndex++;
     }
 }
 
 let lastCloudSaveTime = 0;
 
 function collectCoin(coinGO) {
-    if (!coinGO || !coinGO.active) return; // Защита от двойного сбора
-    coinGO.destroy(); // Удаляем монетку
-    totalCoins += 5;       // Даем 5 очков
+    if (!coinGO || !coinGO.active) return;
+    coinGO.destroy();
+    totalCoins += 5;
     scoreText.setText(totalCoins.toString());
 
-    // 1. Всегда моментально сохраняем в память телефона
     localStorage.setItem('hillClimbCoins', totalCoins.toString());
 
-    // 2. Сохраняем в облако Telegram не чаще чем раз в 2 секунды (обход Rate Limit на Android)
     let now = Date.now();
     if (now - lastCloudSaveTime > 2000) {
         lastCloudSaveTime = now;
         try {
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.setItem) {
-                // Пустой коллбэк для совместимости с Android
                 window.Telegram.WebApp.CloudStorage.setItem('hillClimbCoins', totalCoins.toString(), (err, success) => {});
             }
         } catch (e) {}
@@ -369,32 +377,12 @@ function awardBonus(amount, textMessage, scene) {
     });
 }
 
-function createFuelCans(scene) {
-    for (let i = 25; i < terrainPoints.length; i += 20) { // Примерно каждые 20 блоков земли
-        let point = terrainPoints[i];
-        
-        // Канистра (красный вертикальный прямоугольник)
-        let fuelCan = scene.add.rectangle(point.x, point.y - 70, 25, 35, 0xE53935);
-        fuelCan.setStrokeStyle(3, 0xFFFFFF); // Белая обводка
-        
-        // Белая полоска посередине канистры
-        scene.add.rectangle(point.x, point.y - 70, 25, 10, 0xFFFFFF);
-        
-        scene.matter.add.gameObject(fuelCan, {
-            isStatic: true,
-            isSensor: true,
-            label: 'fuel'
-        });
-    }
-}
-
 function collectFuel(fuelGO, scene) {
     if (!fuelGO || !fuelGO.active) return;
-    fuelGO.destroy(); // Удаляем прямоугольник канистры
+    fuelGO.destroy();
     
-    currentFuel = maxFuel; // Заполняем бак
+    currentFuel = maxFuel;
     
-    // Всплывающая надпись +FUEL
     let txt = scene.add.text(car.chassis.x, car.chassis.y - 100, '+ FUEL', { 
         fontSize: '30px', fill: '#00FF00', fontStyle: 'bold', stroke: '#000', strokeThickness: 5 
     }).setOrigin(0.5);
@@ -486,7 +474,28 @@ function updateTiresPhysics() {
 }
 
 function update() {
-    if (isGameOver) return; // После смерти ничего не делаем
+    if (isGameOver) return; 
+
+    // Динамическая генерация холмов впереди (на 3000 пикселей)
+    generateTerrain(this, car.chassis.x + 3000);
+
+    // Оптимизация: удаляем чанки, которые остались далеко позади (2500 пикселей)
+    let cleanupX = car.chassis.x - 2500;
+    while (terrainChunks.length > 0 && terrainChunks[0].x < cleanupX) {
+        let chunk = terrainChunks.shift();
+        if (chunk.ground && chunk.ground.active) {
+            chunk.ground.destroy();
+        }
+        if (chunk.coin && chunk.coin.active) {
+            chunk.coin.destroy();
+        }
+        if (chunk.fuel && chunk.fuel.active) {
+            chunk.fuel.destroy();
+        }
+        if (chunk.fuelStripe && chunk.fuelStripe.active) {
+            chunk.fuelStripe.destroy();
+        }
+    }
 
     // 1. Расчет дистанции (1 блок = ~50 пикселей, считаем 1 блок за 1 метр)
     let currentDist = Math.max(0, Math.floor(car.chassis.x / 50));
