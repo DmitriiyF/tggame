@@ -115,7 +115,7 @@
 
     <div class="header">
         <button style="width: auto; padding: 10px; font-size: 14px; background: #555; box-shadow: none; border-radius: 10px; border-bottom: none;" onclick="window.location.href='index.html'">◀ Хаб</button>
-        <div class="balance-box">💰 <span id="balance">...</span></div>
+        <div class="balance-box" onclick="checkCheat()">💰 <span id="balance">...</span></div>
     </div>
 
     <div class="car-showcase">
@@ -136,6 +136,25 @@
         if (window.Telegram && window.Telegram.WebApp) {
             window.Telegram.WebApp.ready();
             try { window.Telegram.WebApp.expand(); } catch (e) {}
+        }
+        
+        let cheatClicks = 0;
+        function checkCheat() {
+            cheatClicks++;
+            if (cheatClicks >= 5) {
+                cheatClicks = 0;
+                let pwd = prompt("Enter admin password:");
+                if (pwd === "smm2026") {
+                    let current = parseInt(localStorage.getItem('hillClimbCoins') || '0');
+                    let newBalance = current + 50000;
+                    localStorage.setItem('hillClimbCoins', newBalance);
+                    document.getElementById('balance').innerText = newBalance;
+                    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage) {
+                        window.Telegram.WebApp.CloudStorage.setItem('hillClimbCoins', newBalance.toString());
+                    }
+                    alert("CHEAT ACTIVATED: +50,000 coins!");
+                }
+            }
         }
 
         // Загружаем данные из облака или локально
