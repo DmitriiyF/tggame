@@ -126,6 +126,7 @@
 
     <div class="menu-buttons">
         <button class="btn-play" onclick="window.location.href='hillclimb.html'">ИГРАТЬ</button>
+        <button class="btn-garage" onclick="window.location.href='cars.html'" style="background: #E53935; border-bottom: 5px solid #C62828;">МАШИНЫ</button>
         <button class="btn-garage" onclick="window.location.href='garage.html'">ГАРАЖ</button>
     </div>
 
@@ -139,22 +140,30 @@
 
         // Загружаем данные из облака или локально
         function loadData() {
+            let selectedCar = 'jeep';
+            
+            function updateCarIcon(carId) {
+                const icons = { 'jeep': '🚙', 'bike': '🏍️', 'tractor': '🚜', 'racecar': '🏎️', 'tank': '🛡️' };
+                document.querySelector('.car-image').innerText = icons[carId] || '🚙';
+            }
+
             try {
                 if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
-                    // Грузим монеты
                     window.Telegram.WebApp.CloudStorage.getItem('hillClimbCoins', (err, value) => {
                         let coins = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('hillClimbCoins') || '0';
                         document.getElementById('balance').innerText = coins;
                     });
-                    // Грузим движок
                     window.Telegram.WebApp.CloudStorage.getItem('engineLevel', (err, value) => {
                         let eng = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('engineLevel') || '1';
                         document.getElementById('engine-lvl').innerText = eng;
                     });
-                    // Грузим рекорд
                     window.Telegram.WebApp.CloudStorage.getItem('maxDistance', (err, value) => {
                         let dist = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('maxDistance') || '0';
                         document.getElementById('max-dist').innerText = dist;
+                    });
+                    window.Telegram.WebApp.CloudStorage.getItem('selectedCar', (err, value) => {
+                        selectedCar = value || localStorage.getItem('selectedCar') || 'jeep';
+                        updateCarIcon(selectedCar);
                     });
                 } else {
                     throw new Error("No CloudStorage");
@@ -163,6 +172,8 @@
                 document.getElementById('balance').innerText = localStorage.getItem('hillClimbCoins') || '0';
                 document.getElementById('engine-lvl').innerText = localStorage.getItem('engineLevel') || '1';
                 document.getElementById('max-dist').innerText = localStorage.getItem('maxDistance') || '0';
+                selectedCar = localStorage.getItem('selectedCar') || 'jeep';
+                updateCarIcon(selectedCar);
             }
         }
 

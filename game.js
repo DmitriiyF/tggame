@@ -49,6 +49,7 @@ let distanceText;
 let recordText;
 let lastAngle = 0;
 let totalRotation = 0;
+let selectedCarId = 'jeep';
 
 function create() {
     isGameOver = false;
@@ -61,6 +62,23 @@ function create() {
         window.Telegram.WebApp.ready();
         try { window.Telegram.WebApp.expand(); } catch (e) {}
     }
+    
+    // Загружаем данные перед созданием машины
+    engineLvl = parseInt(localStorage.getItem('engineLevel')) || 1;
+    suspensionLvl = parseInt(localStorage.getItem('suspensionLevel')) || 1;
+    tiresLvl = parseInt(localStorage.getItem('tiresLevel')) || 1;
+    maxDistance = parseInt(localStorage.getItem('maxDistance')) || 0;
+    selectedCarId = localStorage.getItem('selectedCar') || 'jeep';
+    
+    try {
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
+            window.Telegram.WebApp.CloudStorage.getItem('engineLevel', (err, val) => { if(val) engineLvl = parseInt(val); });
+            window.Telegram.WebApp.CloudStorage.getItem('suspensionLevel', (err, val) => { if(val) { suspensionLvl = parseInt(val); updateSuspensionPhysics(); } });
+            window.Telegram.WebApp.CloudStorage.getItem('tiresLevel', (err, val) => { if(val) { tiresLvl = parseInt(val); updateTiresPhysics(); } });
+            window.Telegram.WebApp.CloudStorage.getItem('maxDistance', (err, val) => { if(val) { maxDistance = parseInt(val); if(recordText) recordText.setText('РЕКОРД: ' + maxDistance + 'm'); } });
+            window.Telegram.WebApp.CloudStorage.getItem('selectedCar', (err, val) => { if(val) selectedCarId = val; });
+        }
+    } catch(e) {}
 
     Matter = Phaser.Physics.Matter.Matter;
 
@@ -413,51 +431,63 @@ function createCar(scene) {
     const y = 200;
     const group = scene.matter.world.nextGroup(true);
 
-    // Кузов машины
-    const chassisRect = scene.add.rectangle(x, y - 40, 130, 30, 0xE53935);
-    chassisRect.setStrokeStyle(2, 0xB71C1C);
+    let cfg = {
+        w: 130, h: 30, c: 0xE53935, // chassis
+        cw: 70, ch: 35, cx: -20, cy: -70, // cabin
+        rA: 25, rB: 25, // wheels radius (A=back, B=front)
+        wxA: -45, wxB: 45, wy: 35, // wheels offset
+        dens: 0.002, fuel: 100
+    };
+
+    if (selectedCarId === 'bike') {
+        cfg = { w: 90, h: 15, c: 0x2196F3, cw: 30, ch: 30, cx: 0, cy: -45, rA: 20, rB: 20, wxA: -40, wxB: 40, wy: 25, dens: 0.001, fuel: 70 };
+    } else if (selectedCarId === 'tractor') {
+        cfg = { w: 150, h: 40, c: 0xFF9800, cw: 60, ch: 60, cx: -30, cy: -80, rA: 40, rB: 25, wxA: -55, wxB: 60, wy: 40, dens: 0.004, fuel: 120 };
+    } else if (selectedCarId === 'racecar') {
+        cfg = { w: 160, h: 20, c: 0x9C27B0, cw: 50, ch: 20, cx: -10, cy: -40, rA: 22, rB: 22, wxA: -60, wxB: 60, wy: 20, dens: 0.0025, fuel: 90 };
+    } else if (selectedCarId === 'tank') {
+        cfg = { w: 180, h: 50, c: 0x4CAF50, cw: 80, ch: 30, cx: 0, cy: -80, rA: 35, rB: 35, wxA: -70, wxB: 70, wy: 40, dens: 0.008, fuel: 150 };
+    }
     
-    // Кабина водителя
-    const cabinRect = scene.add.rectangle(x - 20, y - 70, 70, 35, 0xD32F2F);
-    cabinRect.setStrokeStyle(2, 0xB71C1C);
+    maxFuel = cfg.fuel;
+    currentFuel = maxFuel;
+
+    // Кузов
+    const chassisRect = scene.add.rectangle(x, y - 40, cfg.w, cfg.h, cfg.c);
+    chassisRect.setStrokeStyle(2, 0x000000);
+    
+    // Кабина
+    const cabinRect = scene.add.rectangle(x + cfg.cx, y + cfg.cy, cfg.cw, cfg.ch, cfg.c);
+    cabinRect.setStrokeStyle(2, 0x000000);
     
     car.chassis = scene.matter.add.gameObject(chassisRect, { 
         collisionFilter: { group: group },
-        density: 0.002,
+        density: cfg.dens,
         friction: 0.5,
         label: 'chassis'
     });
-
     car.cabin = cabinRect;
+    car.cabin.deltaX = cfg.cx;
+    car.cabin.deltaY = cfg.cy + 40;
 
-    const wheelOptions = { 
-        shape: 'circle',
-        radius: 25, 
-        collisionFilter: { group: group },
-        friction: 0.5,    
-        density: 0.008,   // Вернули тяжелые колеса (как было в самой первой стабильной версии)
-        restitution: 0.1, 
-        label: 'car'
-    };
+    const wheelOptsA = { shape: 'circle', radius: cfg.rA, collisionFilter: { group: group }, friction: 0.5, density: 0.008, restitution: 0.1, label: 'car' };
+    const wheelOptsB = { shape: 'circle', radius: cfg.rB, collisionFilter: { group: group }, friction: 0.5, density: 0.008, restitution: 0.1, label: 'car' };
     
-    // Колеса спавним чуть ниже
-    const wheelACircle = scene.add.circle(x - 45, y - 10, 25, 0x212121);
-    wheelACircle.setStrokeStyle(5, 0x9E9E9E); 
-    car.wheelA = scene.matter.add.gameObject(wheelACircle, wheelOptions);
+    const wA = scene.add.circle(x + cfg.wxA, y, cfg.rA, 0x212121);
+    wA.setStrokeStyle(5, 0x9E9E9E); 
+    car.wheelA = scene.matter.add.gameObject(wA, wheelOptsA);
 
-    const wheelBCircle = scene.add.circle(x + 45, y - 10, 25, 0x212121);
-    wheelBCircle.setStrokeStyle(5, 0x9E9E9E);
-    car.wheelB = scene.matter.add.gameObject(wheelBCircle, wheelOptions);
+    const wB = scene.add.circle(x + cfg.wxB, y, cfg.rB, 0x212121);
+    wB.setStrokeStyle(5, 0x9E9E9E);
+    car.wheelB = scene.matter.add.gameObject(wB, wheelOptsB);
 
     // Подвеска
-    car.springA = scene.matter.add.spring(car.chassis.body, car.wheelA.body, 0, 0.1, {
-        pointA: { x: -45, y: 35 }, 
-        damping: 0.05
-    });
-    car.springB = scene.matter.add.spring(car.chassis.body, car.wheelB.body, 0, 0.1, {
-        pointA: { x: 45, y: 35 },
-        damping: 0.05
-    });
+    car.springA = scene.matter.add.spring(car.chassis.body, car.wheelA.body, 0, 0.1, { pointA: { x: cfg.wxA, y: cfg.wy }, damping: 0.05 });
+    car.springB = scene.matter.add.spring(car.chassis.body, car.wheelB.body, 0, 0.1, { pointA: { x: cfg.wxB, y: cfg.wy }, damping: 0.05 });
+    
+    // Применяем актуальную прокачку сразу при создании
+    updateSuspensionPhysics();
+    updateTiresPhysics();
 }
 
 function updateSuspensionPhysics() {
@@ -555,14 +585,26 @@ function update() {
     }
 
     // Чем выше уровень движка, тем быстрее едем и сильнее разгоняемся
-    const maxSpeed = 0.8 + (engineLvl * 0.1);
-    const torque = 0.04 + (engineLvl * 0.005);
+    let baseTorque = 0.04;
+    let baseSpeed = 0.8;
+    
+    if (selectedCarId === 'bike') { baseTorque = 0.03; baseSpeed = 0.9; }
+    else if (selectedCarId === 'tractor') { baseTorque = 0.08; baseSpeed = 0.5; }
+    else if (selectedCarId === 'racecar') { baseTorque = 0.05; baseSpeed = 1.2; }
+    else if (selectedCarId === 'tank') { baseTorque = 0.07; baseSpeed = 0.6; }
+
+    const maxSpeed = baseSpeed + (engineLvl * 0.1);
+    const torque = baseTorque + (engineLvl * 0.005);
 
     // Привязываем визуальную кабину к физическому кузову (чтобы она вращалась вместе с ним)
     if (car.chassis && car.cabin) {
         let angle = car.chassis.rotation;
-        let offsetX = Math.cos(angle - Math.PI/2) * 30 - Math.cos(angle) * 15;
-        let offsetY = Math.sin(angle - Math.PI/2) * 30 - Math.sin(angle) * 15;
+        
+        let dx = car.cabin.deltaX || 0;
+        let dy = car.cabin.deltaY || 0;
+        
+        let offsetX = Math.cos(angle) * dx - Math.sin(angle) * dy;
+        let offsetY = Math.sin(angle) * dx + Math.cos(angle) * dy;
         
         car.cabin.setPosition(car.chassis.x + offsetX, car.chassis.y + offsetY);
         car.cabin.setRotation(angle);

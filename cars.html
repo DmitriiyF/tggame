@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hill Climb - Машины</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #2b2b2b;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        .header {
+            padding: 15px;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: #3390ec;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .balance-box {
+            background: #FFD700;
+            color: #000;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+
+        .cars-container {
+            padding: 20px;
+        }
+
+        .car-card {
+            background: #3c3c3c;
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .car-icon {
+            font-size: 40px;
+            margin-right: 15px;
+        }
+
+        .car-info {
+            flex-grow: 1;
+        }
+
+        .car-info h3 { margin: 0 0 5px 0; font-size: 20px; }
+        .car-info p { margin: 0; color: #aaa; font-size: 13px; }
+        
+        .action-btn {
+            background: #4CAF50;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 15px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            min-width: 90px;
+        }
+        .action-btn:disabled {
+            background: #555;
+            color: #888;
+        }
+        .action-btn.selected {
+            background: #3390ec;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <button class="back-btn" onclick="window.location.href='hillclimb_menu.html'">◀ Назад</button>
+        <h2>МАШИНЫ</h2>
+        <div class="balance-box">💰 <span id="balance">...</span></div>
+    </div>
+
+    <div class="cars-container" id="cars-list">
+        <!-- Генерируется через JS -->
+    </div>
+
+    <script>
+        let balance = 0;
+        let unlockedCars = ['jeep'];
+        let selectedCar = 'jeep';
+
+        const carData = [
+            { id: 'jeep', name: 'Джип', desc: 'Базовая машина', price: 0, icon: '🚙' },
+            { id: 'bike', name: 'Мотокросс', desc: 'Легкий и быстрый, легко переворачивается', price: 500, icon: '🏍️' },
+            { id: 'tractor', name: 'Трактор', desc: 'Тяжелый, мощный, но медленный', price: 1500, icon: '🚜' },
+            { id: 'racecar', name: 'Гоночная', desc: 'Очень быстрая, низкая подвеска', price: 3000, icon: '🏎️' },
+            { id: 'tank', name: 'Танк', desc: 'Неубиваемый монстр', price: 5000, icon: '🛡️' }
+        ];
+
+        function loadData() {
+            try {
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
+                    window.Telegram.WebApp.CloudStorage.getKeys((err, keys) => {
+                        let loadBalance = new Promise(res => window.Telegram.WebApp.CloudStorage.getItem('hillClimbCoins', (e, v) => res(v)));
+                        let loadUnlocked = new Promise(res => window.Telegram.WebApp.CloudStorage.getItem('unlockedCars', (e, v) => res(v)));
+                        let loadSelected = new Promise(res => window.Telegram.WebApp.CloudStorage.getItem('selectedCar', (e, v) => res(v)));
+                        
+                        Promise.all([loadBalance, loadUnlocked, loadSelected]).then(values => {
+                            balance = parseInt(values[0]) || parseInt(localStorage.getItem('hillClimbCoins')) || 0;
+                            
+                            let unlRaw = values[1] || localStorage.getItem('unlockedCars');
+                            if (unlRaw) unlockedCars = JSON.parse(unlRaw);
+                            
+                            selectedCar = values[2] || localStorage.getItem('selectedCar') || 'jeep';
+                            
+                            renderUI();
+                        });
+                    });
+                } else {
+                    throw new Error("No CloudStorage");
+                }
+            } catch (e) {
+                balance = parseInt(localStorage.getItem('hillClimbCoins')) || 0;
+                let unlRaw = localStorage.getItem('unlockedCars');
+                if (unlRaw) unlockedCars = JSON.parse(unlRaw);
+                selectedCar = localStorage.getItem('selectedCar') || 'jeep';
+                renderUI();
+            }
+        }
+
+        function renderUI() {
+            document.getElementById('balance').innerText = balance;
+            const container = document.getElementById('cars-list');
+            container.innerHTML = '';
+
+            carData.forEach(car => {
+                let isUnlocked = unlockedCars.includes(car.id);
+                let isSelected = selectedCar === car.id;
+                
+                let btnHtml = '';
+                if (isSelected) {
+                    btnHtml = `<button class="action-btn selected">ВЫБРАН</button>`;
+                } else if (isUnlocked) {
+                    btnHtml = `<button class="action-btn" onclick="selectCar('${car.id}')">ВЫБРАТЬ</button>`;
+                } else {
+                    let canAfford = balance >= car.price;
+                    let disabledStr = canAfford ? '' : 'disabled';
+                    btnHtml = `<button class="action-btn" ${disabledStr} onclick="buyCar('${car.id}', ${car.price})">${car.price} 💰</button>`;
+                }
+
+                container.innerHTML += `
+                    <div class="car-card">
+                        <div class="car-icon">${car.icon}</div>
+                        <div class="car-info">
+                            <h3>${car.name}</h3>
+                            <p>${car.desc}</p>
+                        </div>
+                        ${btnHtml}
+                    </div>
+                `;
+            });
+        }
+
+        function selectCar(id) {
+            selectedCar = id;
+            saveData();
+            renderUI();
+            triggerHaptic();
+        }
+
+        function buyCar(id, price) {
+            if (balance >= price) {
+                balance -= price;
+                unlockedCars.push(id);
+                selectedCar = id;
+                saveData();
+                renderUI();
+                triggerHaptic();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('hillClimbCoins', balance.toString());
+            localStorage.setItem('unlockedCars', JSON.stringify(unlockedCars));
+            localStorage.setItem('selectedCar', selectedCar);
+
+            try {
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.setItem) {
+                    window.Telegram.WebApp.CloudStorage.setItem('hillClimbCoins', balance.toString(), function(){});
+                    window.Telegram.WebApp.CloudStorage.setItem('unlockedCars', JSON.stringify(unlockedCars), function(){});
+                    window.Telegram.WebApp.CloudStorage.setItem('selectedCar', selectedCar, function(){});
+                }
+            } catch (e) {}
+        }
+
+        function triggerHaptic() {
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
