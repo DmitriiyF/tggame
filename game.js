@@ -285,11 +285,17 @@ function seededRandom(seed) {
 
 function generateTerrain(scene, upToX) {
     while (lastGenX < upToX) {
-        // Используем seededRandom вместо Math.random(), чтобы холмы всегда были одинаковыми
-        if (seededRandom(segmentIndex) < 0.15) {
-            targetSlope = (seededRandom(segmentIndex + 1000) * 40) - 20;
+        // Каждые ~10 сегментов меняем цель наклона.
+        if (seededRandom(segmentIndex) < 0.1) {
+            // Прогрессия сложности: чем дальше едешь, тем круче могут быть холмы!
+            // Базовый разброс высот: 40. На каждые 10 блоков добавляем 2 к максимальному перепаду.
+            let maxSlope = Math.min(160, 40 + (segmentIndex / 5)); 
+            
+            // Генерируем цель от -maxSlope (вверх) до +maxSlope (вниз)
+            targetSlope = (seededRandom(segmentIndex + 1000) * (maxSlope * 2)) - maxSlope;
         }
-        currentSlope += (targetSlope - currentSlope) * 0.1;
+        // Делаем переходы более долгими и плавными, чтобы получались огромные длинные горы
+        currentSlope += (targetSlope - currentSlope) * 0.05;
         
         let x = lastGenX + 120; // ширина сегмента
         let y = lastGenY + currentSlope;
