@@ -553,8 +553,8 @@ function update() {
             car.wheelB.setAngularVelocity(car.wheelB.body.angularVelocity + torque);
             car.wheelA.setAngularVelocity(car.wheelA.body.angularVelocity + torque);
         }
-        // Наклон назад в полете
-        car.chassis.setAngularVelocity(car.chassis.body.angularVelocity - 0.008); 
+        // Наклон назад в полете (уменьшено до 0.0015, чтобы не переворачивалась на земле из-за мягкой подвески)
+        car.chassis.setAngularVelocity(car.chassis.body.angularVelocity - 0.0015); 
     } 
     else if ((cursors.left.isDown || isBrakePressed)) {
         // Тормозить можно всегда (даже без бензина)
@@ -563,7 +563,7 @@ function update() {
             car.wheelA.setAngularVelocity(car.wheelA.body.angularVelocity - torque);
         }
         // Наклон вперед в полете
-        car.chassis.setAngularVelocity(car.chassis.body.angularVelocity + 0.008); 
+        car.chassis.setAngularVelocity(car.chassis.body.angularVelocity + 0.0015); 
     }
 }
 
