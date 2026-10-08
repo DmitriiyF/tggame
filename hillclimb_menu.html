@@ -167,7 +167,7 @@
             }
 
             try {
-                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.isVersionAtLeast('6.9')) {
                     window.Telegram.WebApp.CloudStorage.getItem('hillClimbCoins', (err, value) => {
                         let coins = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('hillClimbCoins') || '0';
                         document.getElementById('balance').innerText = coins;
@@ -178,13 +178,15 @@
                         
                         window.Telegram.WebApp.CloudStorage.getItem('engineLevel_' + selectedCar, (err, value) => {
                             let eng = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('engineLevel_' + selectedCar);
-                            if (!eng && selectedCar === 'jeep') eng = localStorage.getItem('engineLevel'); // fallback
+                            if (!eng && selectedCar === 'jeep') eng = localStorage.getItem('engineLevel');
                             document.getElementById('engine-lvl').innerText = eng || '1';
                         });
-                    });
-                    window.Telegram.WebApp.CloudStorage.getItem('maxDistance', (err, value) => {
-                        let dist = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('maxDistance') || '0';
-                        document.getElementById('max-dist').innerText = dist;
+
+                        window.Telegram.WebApp.CloudStorage.getItem('maxDistance_' + selectedCar, (err, value) => {
+                            let dist = (value !== undefined && value !== null && value !== '') ? value : localStorage.getItem('maxDistance_' + selectedCar);
+                            if (!dist && selectedCar === 'jeep') dist = localStorage.getItem('maxDistance');
+                            document.getElementById('max-dist').innerText = dist || '0';
+                        });
                     });
                     
                 } else {
@@ -192,10 +194,16 @@
                 }
             } catch (e) {
                 document.getElementById('balance').innerText = localStorage.getItem('hillClimbCoins') || '0';
-                let eng = localStorage.getItem('engineLevel_' + selectedCar); if (!eng && selectedCar === 'jeep') eng = localStorage.getItem('engineLevel'); document.getElementById('engine-lvl').innerText = eng || '1';
-                document.getElementById('max-dist').innerText = localStorage.getItem('maxDistance') || '0';
                 selectedCar = localStorage.getItem('selectedCar') || 'jeep';
                 updateCarIcon(selectedCar);
+                
+                let eng = localStorage.getItem('engineLevel_' + selectedCar);
+                if (!eng && selectedCar === 'jeep') eng = localStorage.getItem('engineLevel');
+                document.getElementById('engine-lvl').innerText = eng || '1';
+                
+                let dist = localStorage.getItem('maxDistance_' + selectedCar);
+                if (!dist && selectedCar === 'jeep') dist = localStorage.getItem('maxDistance');
+                document.getElementById('max-dist').innerText = dist || '0';
             }
         }
 

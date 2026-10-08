@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Telegram Hill Climb</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js" crossorigin="anonymous"></script>
     <style>
         body { 
             margin: 0; 
@@ -62,7 +62,7 @@
             document.getElementById('error-log').innerText += "\nPromise Error: " + event.reason;
         });
     </script>
-    <script src="game.js?v=1.1"></script>
+    <script src="game.js?v=1.2"></script>
     <button id="menu-btn" onclick="window.location.href='hillclimb_menu.html'">МЕНЮ</button>
 </body>
 </html>

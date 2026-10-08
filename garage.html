@@ -50,12 +50,16 @@
 
         function getCloudItem(key) {
             return new Promise((resolve) => {
-                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
-                    window.Telegram.WebApp.CloudStorage.getItem(key, (err, val) => {
-                        if (val !== undefined && val !== null && val !== '') resolve(val);
-                        else resolve(localStorage.getItem(key));
-                    });
-                } else {
+                try {
+                    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.isVersionAtLeast('6.9')) {
+                        window.Telegram.WebApp.CloudStorage.getItem(key, (err, val) => {
+                            if (val !== undefined && val !== null && val !== '') resolve(val);
+                            else resolve(localStorage.getItem(key));
+                        });
+                    } else {
+                        resolve(localStorage.getItem(key));
+                    }
+                } catch(e) {
                     resolve(localStorage.getItem(key));
                 }
             });

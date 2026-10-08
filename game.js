@@ -71,22 +71,30 @@ function create() {
         if (!val && fallbackKey) val = localStorage.getItem(fallbackKey);
         callback(parseInt(val) || 1);
         
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
-            window.Telegram.WebApp.CloudStorage.getItem(key, (err, cloudVal) => {
-                if (cloudVal) callback(parseInt(cloudVal));
-                else if (fallbackKey) {
-                    window.Telegram.WebApp.CloudStorage.getItem(fallbackKey, (err, fVal) => {
-                        if (fVal) callback(parseInt(fVal));
-                    });
-                }
-            });
+        try {
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.isVersionAtLeast('6.9')) {
+                window.Telegram.WebApp.CloudStorage.getItem(key, (err, cloudVal) => {
+                    if (cloudVal) callback(parseInt(cloudVal));
+                    else if (fallbackKey) {
+                        window.Telegram.WebApp.CloudStorage.getItem(fallbackKey, (err, fVal) => {
+                            if (fVal) callback(parseInt(fVal));
+                        });
+                    }
+                });
+            }
+        } catch (e) {
+            console.error(e);
         }
     }
     
     maxDistance = parseInt(localStorage.getItem('maxDistance')) || 0;
-    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.CloudStorage.getItem) {
-        window.Telegram.WebApp.CloudStorage.getItem('maxDistance', (err, val) => { if(val) { maxDistance = parseInt(val); if(recordText) recordText.setText('РЕКОРД: ' + maxDistance + 'm'); } });
-        window.Telegram.WebApp.CloudStorage.getItem('selectedCar', (err, val) => { if(val) selectedCarId = val; });
+    try {
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.isVersionAtLeast('6.9')) {
+            window.Telegram.WebApp.CloudStorage.getItem('maxDistance', (err, val) => { if(val) { maxDistance = parseInt(val); if(recordText) recordText.setText('РЕКОРД: ' + maxDistance + 'm'); } });
+            window.Telegram.WebApp.CloudStorage.getItem('selectedCar', (err, val) => { if(val) selectedCarId = val; });
+        }
+    } catch (e) {
+        console.error(e);
     }
     
     loadLvl('engineLevel_' + selectedCarId, selectedCarId === 'jeep' ? 'engineLevel' : null, v => engineLvl = v);
@@ -465,19 +473,19 @@ function createCar(scene) {
     let cfg = {
         w: 90, h: 30, // chassis
         rA: 25, rB: 25, // wheels radius
-        wxA: -40, wxB: 40, wy: 25, // wheels offset
+        wxA: -40, wxB: 40, wy: 35, // wheels offset (wy is distance from chassis center to wheel center. Larger = higher chassis)
         cdens: 0.005, wdens: 0.001, fuel: 100, drive: 'rwd',
-        emoji: '🚙', emojiSize: '130px', emojiY: -5
+        emoji: '🚙', emojiSize: '130px', emojiY: -15
     };
 
     if (selectedCarId === 'bike') {
-        cfg = { w: 70, h: 15, rA: 20, rB: 20, wxA: -35, wxB: 35, wy: 15, cdens: 0.002, wdens: 0.0005, fuel: 70, drive: 'rwd', emoji: '🏍️', emojiSize: '120px', emojiY: -10 };
+        cfg = { w: 70, h: 15, rA: 20, rB: 20, wxA: -35, wxB: 35, wy: 25, cdens: 0.002, wdens: 0.0005, fuel: 70, drive: 'rwd', emoji: '🏍️', emojiSize: '120px', emojiY: -20 };
     } else if (selectedCarId === 'tractor') {
-        cfg = { w: 100, h: 40, rA: 35, rB: 25, wxA: -50, wxB: 50, wy: 25, cdens: 0.006, wdens: 0.002, fuel: 120, drive: 'rwd', emoji: '🚜', emojiSize: '150px', emojiY: -15 };
+        cfg = { w: 100, h: 40, rA: 35, rB: 25, wxA: -50, wxB: 50, wy: 40, cdens: 0.006, wdens: 0.002, fuel: 120, drive: 'rwd', emoji: '🚜', emojiSize: '150px', emojiY: -30 };
     } else if (selectedCarId === 'racecar') {
-        cfg = { w: 100, h: 20, rA: 20, rB: 20, wxA: -55, wxB: 55, wy: 15, cdens: 0.004, wdens: 0.0008, fuel: 90, drive: 'rwd', emoji: '🏎️', emojiSize: '160px', emojiY: -15 };
+        cfg = { w: 100, h: 20, rA: 20, rB: 20, wxA: -55, wxB: 55, wy: 25, cdens: 0.004, wdens: 0.0008, fuel: 90, drive: 'rwd', emoji: '🏎️', emojiSize: '160px', emojiY: -25 };
     } else if (selectedCarId === 'tank') {
-        cfg = { w: 120, h: 50, rA: 30, rB: 30, wxA: -60, wxB: 60, wy: 25, cdens: 0.01, wdens: 0.003, fuel: 150, drive: 'awd', emoji: '🚛', emojiSize: '160px', emojiY: -20 };
+        cfg = { w: 120, h: 50, rA: 30, rB: 30, wxA: -60, wxB: 60, wy: 35, cdens: 0.01, wdens: 0.003, fuel: 150, drive: 'awd', emoji: '🚛', emojiSize: '160px', emojiY: -30 };
     }
     
     maxFuel = cfg.fuel;
@@ -575,7 +583,17 @@ function update() {
     distanceText.setText(currentDist + 'm');
     if (currentDist > maxDistance) {
         maxDistance = currentDist;
-        if (recordText) recordText.setText('Рекорд: ' + maxDistance + 'm');
+        if (recordText) recordText.setText('РЕКОРД: ' + maxDistance + 'm');
+        
+        localStorage.setItem('maxDistance_' + selectedCarId, maxDistance.toString());
+        if (selectedCarId === 'jeep') localStorage.setItem('maxDistance', maxDistance.toString());
+        
+        try {
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage && window.Telegram.WebApp.isVersionAtLeast('6.9')) {
+                window.Telegram.WebApp.CloudStorage.setItem('maxDistance_' + selectedCarId, maxDistance.toString(), () => {});
+                if (selectedCarId === 'jeep') window.Telegram.WebApp.CloudStorage.setItem('maxDistance', maxDistance.toString(), () => {});
+            }
+        } catch(e) {}
     }
 
     // 2. Детектор сальто (Трюки)
