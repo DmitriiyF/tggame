@@ -548,6 +548,7 @@ function createCar(scene) {
     car.emoji.deltaY = cfg.emojiY;
     
     car.driveType = cfg.driveType || cfg.drive;
+}
 
 function updateSuspensionPhysics() {
     if (car.springA && car.springB) {
