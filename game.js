@@ -344,16 +344,17 @@ function generateTerrain(scene, upToX) {
         let midX = lastGenX + dx/2;
         let midY = lastGenY + dy/2;
         
-        // Визуальная часть (уходит глубоко вниз)
-        // Чтобы избежать дыр при стыках, ширину делаем чуть больше
-        let groundVis = scene.add.rectangle(midX, midY + 500, length + 20, 1000, 0x4CAF50);
+        // Сдвигаем визуальный блок вниз строго перпендикулярно (по нормали) к склону!
+        // Это полностью убирает дыры на стыках при резких углах.
+        let shiftDist = 490; // на 10px меньше половины высоты (500), чтобы визуальный край совпадал с физическим
+        let cx = midX - Math.sin(angle) * shiftDist;
+        let cy = midY + Math.cos(angle) * shiftDist;
+        
+        let groundVis = scene.add.rectangle(cx, cy, length + 20, 1000, 0x4CAF50);
         groundVis.setRotation(angle);
         groundVis.setStrokeStyle(4, 0x2E7D32);
         
         // ФИЗИЧЕСКАЯ ЧАСТЬ
-        // Чтобы стыки были идеальными, мы не можем использовать прямоугольник высотой 1000, 
-        // так как при его вращении края разъезжаются.
-        // Используем тонкий невидимый прямоугольник по центру стыка.
         let physicsGround = scene.add.rectangle(midX, midY, length, 20, 0x000000, 0); // Прозрачный
         scene.matter.add.gameObject(physicsGround, {
             isStatic: true,
@@ -459,8 +460,10 @@ function createCar(scene) {
     const y = 200;
     const group = scene.matter.world.nextGroup(true);
 
+    // Для физики делаем кузов КОРОЧЕ, чем колесная база или впритык к ней,
+    // чтобы передний/задний бамперы не втыкались в землю на крутых склонах!
     let cfg = {
-        w: 130, h: 30, // chassis
+        w: 90, h: 30, // chassis
         rA: 25, rB: 25, // wheels radius
         wxA: -40, wxB: 40, wy: 25, // wheels offset
         cdens: 0.005, wdens: 0.001, fuel: 100, drive: 'rwd',
@@ -468,14 +471,13 @@ function createCar(scene) {
     };
 
     if (selectedCarId === 'bike') {
-        cfg = { w: 90, h: 15, rA: 20, rB: 20, wxA: -35, wxB: 35, wy: 15, cdens: 0.002, wdens: 0.0005, fuel: 70, drive: 'rwd', emoji: '🏍️', emojiSize: '120px', emojiY: -10 };
+        cfg = { w: 70, h: 15, rA: 20, rB: 20, wxA: -35, wxB: 35, wy: 15, cdens: 0.002, wdens: 0.0005, fuel: 70, drive: 'rwd', emoji: '🏍️', emojiSize: '120px', emojiY: -10 };
     } else if (selectedCarId === 'tractor') {
-        // Трактор: при развороте заднее (большое) колесо будет слева (-wx), а переднее справа (+wx)
-        cfg = { w: 150, h: 40, rA: 35, rB: 25, wxA: -50, wxB: 50, wy: 25, cdens: 0.006, wdens: 0.002, fuel: 120, drive: 'rwd', emoji: '🚜', emojiSize: '150px', emojiY: -15 };
+        cfg = { w: 100, h: 40, rA: 35, rB: 25, wxA: -50, wxB: 50, wy: 25, cdens: 0.006, wdens: 0.002, fuel: 120, drive: 'rwd', emoji: '🚜', emojiSize: '150px', emojiY: -15 };
     } else if (selectedCarId === 'racecar') {
-        cfg = { w: 160, h: 20, rA: 20, rB: 20, wxA: -55, wxB: 55, wy: 15, cdens: 0.004, wdens: 0.0008, fuel: 90, drive: 'rwd', emoji: '🏎️', emojiSize: '160px', emojiY: -15 };
+        cfg = { w: 100, h: 20, rA: 20, rB: 20, wxA: -55, wxB: 55, wy: 15, cdens: 0.004, wdens: 0.0008, fuel: 90, drive: 'rwd', emoji: '🏎️', emojiSize: '160px', emojiY: -15 };
     } else if (selectedCarId === 'tank') {
-        cfg = { w: 180, h: 50, rA: 30, rB: 30, wxA: -60, wxB: 60, wy: 25, cdens: 0.01, wdens: 0.003, fuel: 150, drive: 'awd', emoji: '🚛', emojiSize: '160px', emojiY: -20 };
+        cfg = { w: 120, h: 50, rA: 30, rB: 30, wxA: -60, wxB: 60, wy: 25, cdens: 0.01, wdens: 0.003, fuel: 150, drive: 'awd', emoji: '🚛', emojiSize: '160px', emojiY: -20 };
     }
     
     maxFuel = cfg.fuel;
