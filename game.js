@@ -331,12 +331,18 @@ function generateTerrain(scene, upToX) {
         let midX = lastGenX + dx/2;
         let midY = lastGenY + dy/2;
         
-        // Визуальная часть
-        let ground = scene.add.rectangle(midX, midY + 500, length + 10, 1000, 0x4CAF50);
-        ground.setStrokeStyle(4, 0x2E7D32);
+        // Визуальная часть (уходит глубоко вниз)
+        // Чтобы избежать дыр при стыках, ширину делаем чуть больше
+        let groundVis = scene.add.rectangle(midX, midY + 500, length + 20, 1000, 0x4CAF50);
+        groundVis.setRotation(angle);
+        groundVis.setStrokeStyle(4, 0x2E7D32);
         
-        // Физика
-        scene.matter.add.gameObject(ground, {
+        // ФИЗИЧЕСКАЯ ЧАСТЬ
+        // Чтобы стыки были идеальными, мы не можем использовать прямоугольник высотой 1000, 
+        // так как при его вращении края разъезжаются.
+        // Используем тонкий невидимый прямоугольник по центру стыка.
+        let physicsGround = scene.add.rectangle(midX, midY, length, 20, 0x000000, 0); // Прозрачный
+        scene.matter.add.gameObject(physicsGround, {
             isStatic: true,
             angle: angle,
             friction: 1.5,
@@ -344,7 +350,11 @@ function generateTerrain(scene, upToX) {
             label: 'ground'
         });
         
-        let chunk = { ground: ground, x: midX, coin: null, fuel: null, fuelStripe: null };
+        // Идеальный круглый "сустав" между кусками, чтобы колесо никогда не цеплялось за углы
+        let joint = scene.add.circle(lastGenX, lastGenY, 10, 0x000000, 0); // Прозрачный
+        scene.matter.add.gameObject(joint, { isStatic: true, friction: 1.5, restitution: 0.1, label: 'ground' });
+
+        let chunk = { ground: groundVis, phys: physicsGround, joint: joint, x: midX, coin: null, fuel: null, fuelStripe: null };
         
         // Спавн монеток
         if (segmentIndex > 5 && segmentIndex % 6 === 0) {
@@ -533,18 +543,18 @@ function update() {
     let cleanupX = car.chassis.x - 2500;
     while (terrainChunks.length > 0 && terrainChunks[0].x < cleanupX) {
         let chunk = terrainChunks.shift();
-        if (chunk.ground && chunk.ground.active) {
-            chunk.ground.destroy();
+        if (chunk.ground && chunk.ground.active) chunk.ground.destroy();
+        if (chunk.phys && chunk.phys.active) {
+            this.matter.world.remove(chunk.phys.body);
+            chunk.phys.destroy();
         }
-        if (chunk.coin && chunk.coin.active) {
-            chunk.coin.destroy();
+        if (chunk.joint && chunk.joint.active) {
+            this.matter.world.remove(chunk.joint.body);
+            chunk.joint.destroy();
         }
-        if (chunk.fuel && chunk.fuel.active) {
-            chunk.fuel.destroy();
-        }
-        if (chunk.fuelStripe && chunk.fuelStripe.active) {
-            chunk.fuelStripe.destroy();
-        }
+        if (chunk.coin && chunk.coin.active) chunk.coin.destroy();
+        if (chunk.fuel && chunk.fuel.active) chunk.fuel.destroy();
+        if (chunk.fuelStripe && chunk.fuelStripe.active) chunk.fuelStripe.destroy();
     }
 
     // 1. Расчет дистанции (1 блок = ~50 пикселей, считаем 1 блок за 1 метр)
