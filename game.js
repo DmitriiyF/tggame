@@ -523,6 +523,7 @@ function createCar(scene) {
         friction: 0.5,
         label: 'chassis'
     });
+    Matter.Body.setCentre(car.chassis.body, { x: car.chassis.body.position.x, y: car.chassis.body.position.y + 25 }, true);
     
 
     
@@ -544,8 +545,8 @@ function createCar(scene) {
     car.wheelB = scene.matter.add.gameObject(wB, wheelOptsB);
 
     // Подвеска
-    car.springA = scene.matter.add.spring(car.chassis.body, car.wheelA.body, 0, 0.1, { pointA: { x: cfg.wxA, y: cfg.wy }, damping: 0.05 });
-    car.springB = scene.matter.add.spring(car.chassis.body, car.wheelB.body, 0, 0.1, { pointA: { x: cfg.wxB, y: cfg.wy }, damping: 0.05 });
+    car.springA = scene.matter.add.spring(car.chassis.body, car.wheelA.body, 0, 0.1, { pointA: { x: cfg.wxA, y: cfg.wy - 25 }, damping: 0.05 });
+    car.springB = scene.matter.add.spring(car.chassis.body, car.wheelB.body, 0, 0.1, { pointA: { x: cfg.wxB, y: cfg.wy - 25 }, damping: 0.05 });
     
     // Применяем актуальную прокачку сразу при создании
     updateSuspensionPhysics();
@@ -579,7 +580,9 @@ function updateTiresPhysics() {
 }
 
 function update() {
-    if (isGameOver) return; 
+    if (isGameOver) return;
+    if (isGrounded) car.airFrames = 0; else car.airFrames = (car.airFrames || 0) + 1;
+if (isGrounded) car.airFrames = 0; else car.airFrames = (car.airFrames || 0) + 1; 
 
     // Динамическая генерация холмов впереди (на 3000 пикселей)
     generateTerrain(this, car.chassis.x + 3000);
@@ -674,7 +677,7 @@ function update() {
         let angle = car.chassis.rotation;
         
         // Для текста центрирование работает немного иначе, поэтому используем заданное смещение
-        let dy = car.emoji.deltaY || 0;
+        let dy = (car.emoji.deltaY || 0) - 25;
         
         let offsetX = -Math.sin(angle) * dy;
         let offsetY = Math.cos(angle) * dy;
@@ -705,10 +708,8 @@ function update() {
         }
         
         if (isGrounded) {
-            // На земле прижимаем нос, чтобы машина лучше карабкалась в гору
             car.chassis.body.torque = antiFlipTorque;
-        } else {
-            // В воздухе делаем сальто назад
+        } else if (car.airFrames > 15) {
             car.chassis.body.torque = -airTorque;
         }
     } 
@@ -723,8 +724,7 @@ function update() {
             Matter.Body.setAngularVelocity(car.wheelB.body, -maxSpeed);
         }
         
-        // В воздухе делаем сальто вперед
-        if (!isGrounded) {
+        if (!isGrounded && car.airFrames > 15) {
             car.chassis.body.torque = airTorque;
         }
     }
