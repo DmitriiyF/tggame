@@ -393,17 +393,17 @@ function createCar(scene) {
     const y = 200;
     const group = scene.matter.world.nextGroup(true);
 
-    // Кузов машины (красный джип)
-    const chassisRect = scene.add.rectangle(x, y - 20, 130, 30, 0xE53935);
+    // Кузов машины
+    const chassisRect = scene.add.rectangle(x, y - 40, 130, 30, 0xE53935);
     chassisRect.setStrokeStyle(2, 0xB71C1C);
     
     // Кабина водителя
-    const cabinRect = scene.add.rectangle(x - 20, y - 50, 70, 35, 0xD32F2F);
+    const cabinRect = scene.add.rectangle(x - 20, y - 70, 70, 35, 0xD32F2F);
     cabinRect.setStrokeStyle(2, 0xB71C1C);
     
     car.chassis = scene.matter.add.gameObject(chassisRect, { 
         collisionFilter: { group: group },
-        density: 0.002, // Облегчили кузов
+        density: 0.002, 
         friction: 0.5,
         label: 'chassis'
     });
@@ -412,30 +412,30 @@ function createCar(scene) {
 
     const wheelOptions = { 
         shape: 'circle',
-        radius: 25, // Вернули адекватный размер
+        radius: 25, 
         collisionFilter: { group: group },
         friction: 0.9,    
-        density: 0.008,   // Тяжелые колеса (смещают центр тяжести вниз, машина не переворачивается)
+        density: 0.008,   
         restitution: 0.1, 
         label: 'car'
     };
     
-    // Колеса
-    const wheelACircle = scene.add.circle(x - 45, y, 25, 0x212121);
+    // Колеса спавним чуть ниже
+    const wheelACircle = scene.add.circle(x - 45, y - 10, 25, 0x212121);
     wheelACircle.setStrokeStyle(5, 0x9E9E9E); 
     car.wheelA = scene.matter.add.gameObject(wheelACircle, wheelOptions);
 
-    const wheelBCircle = scene.add.circle(x + 45, y, 25, 0x212121);
+    const wheelBCircle = scene.add.circle(x + 45, y - 10, 25, 0x212121);
     wheelBCircle.setStrokeStyle(5, 0x9E9E9E);
     car.wheelB = scene.matter.add.gameObject(wheelBCircle, wheelOptions);
 
-    // Подвеска (Жесткие оси, чтобы не было 'сопливости')
-    // Длина оси: 20 пикселей. Жесткость: 1.0 (абсолютно жесткая)
-    scene.matter.add.constraint(car.chassis.body, car.wheelA.body, 20, 1.0, {
-        pointA: { x: -45, y: 15 }
+    // Идеально жесткая ось (Pin Joint / Revolute Joint). 
+    // length: 0 означает, что центр колеса прибит к pointA намертво и не может болтаться как маятник.
+    scene.matter.add.constraint(car.chassis.body, car.wheelA.body, 0, 1.0, {
+        pointA: { x: -45, y: 30 } // Точка крепления ниже кузова (кузов высотой 30, значит y:30 это на 15 пикс ниже дна)
     });
-    scene.matter.add.constraint(car.chassis.body, car.wheelB.body, 20, 1.0, {
-        pointA: { x: 45, y: 15 }
+    scene.matter.add.constraint(car.chassis.body, car.wheelB.body, 0, 1.0, {
+        pointA: { x: 45, y: 30 }
     });
 }
 
