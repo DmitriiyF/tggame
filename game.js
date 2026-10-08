@@ -676,8 +676,8 @@ function update() {
     }
 
     // Управление работает только если есть бензин
-    let airTorque = car.chassis.body.mass * 0.5; // Сильный момент для воздуха
-    let antiFlipTorque = car.chassis.body.mass * 0.2; // Момент прижимания к земле
+    let airTorque = car.chassis.body.mass * 0.35; // Момент для сальто в воздухе
+    let antiFlipTorque = car.chassis.body.mass * 0.1; // Легкий прижим носа к земле при разгоне
     let isAnyPressed = false;
 
     if ((cursors.right.isDown || isGasPressed) && currentFuel > 0) {
