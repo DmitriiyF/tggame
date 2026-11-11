@@ -136,11 +136,24 @@
   background: rgba(15, 23, 42, 0.82);
   border: 2px solid #f59e0b;
   border-radius: 99px;
-  padding: 6px 14px;
-  font-size: 18px;
+  padding: 5px 12px;
+  font-size: 16px;
   font-weight: 700;
   color: #fde047;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+#rr-game-root .rr-gem-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 2px solid #38bdf8;
+  border-radius: 99px;
+  padding: 5px 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #7dd3fc;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
 }
 #rr-game-root .rr-icon-btn {
   pointer-events: auto;
@@ -490,6 +503,10 @@
       </div>
 
       <div class="rr-hud-right">
+        <div class="rr-gem-pill">
+          <span>💎</span>
+          <span id="rr-hud-gems">0</span>
+        </div>
         <div class="rr-coin-pill">
           <span>🪙</span>
           <span id="rr-hud-coins">0</span>
@@ -517,9 +534,15 @@
         <button onclick="window.location.href='index.html'" class="rr-icon-btn" style="width:auto;padding:0 12px;font-size:14px;font-family:'Fredoka', sans-serif;">◀ HUB</button>
         <div class="rr-logo">RIDGE RUSH</div>
       </div>
-      <div class="rr-coin-pill">
-        <span>🪙</span>
-        <span id="rr-menu-coins">0</span>
+      <div style="display:flex;align-items:center;gap:8px;font-family:'Fredoka', sans-serif;">
+        <div class="rr-gem-pill" title="Shared Gems across all Hub games">
+          <span>💎</span>
+          <span id="rr-menu-gems">0</span>
+        </div>
+        <div class="rr-coin-pill">
+          <span>🪙</span>
+          <span id="rr-menu-coins">0</span>
+        </div>
       </div>
     </div>
 
@@ -566,14 +589,27 @@
   <div id="rr-screen-upgrades" class="rr-overlay rr-hidden">
     <div class="rr-topbar">
       <div class="rr-logo" id="rr-upg-car-title">UPGRADES</div>
-      <div class="rr-coin-pill">
-        <span>🪙</span>
-        <span id="rr-upg-coins">0</span>
+      <div style="display:flex;align-items:center;gap:8px;font-family:'Fredoka', sans-serif;">
+        <div class="rr-gem-pill">
+          <span>💎</span>
+          <span id="rr-upg-gems">0</span>
+        </div>
+        <div class="rr-coin-pill">
+          <span>🪙</span>
+          <span id="rr-upg-coins">0</span>
+        </div>
       </div>
     </div>
 
     <div class="rr-card">
       <div id="rr-upg-list" class="rr-upg-list"></div>
+      <div class="rr-upg-row" style="border-color:rgba(56,189,248,0.4);background:rgba(14,165,233,0.12);font-family:'Fredoka', sans-serif;">
+        <div class="rr-upg-info">
+          <div class="rr-upg-title" style="color:#7dd3fc;font-family:'Fredoka', sans-serif;">💎 Gem Exchange</div>
+          <div class="rr-upg-desc">Trade 5 shared Hub Gems for +1,000 Coins</div>
+        </div>
+        <button id="rr-exchange-gems-btn" class="rr-upg-buy" style="background:linear-gradient(180deg,#0ea5e9,#0284c7);font-family:'Fredoka', sans-serif;">5 💎 → 1000 🪙</button>
+      </div>
     </div>
 
     <div class="rr-btn-row">
@@ -603,6 +639,7 @@
         <div class="rr-summary-row"><span>Track Coins</span><span id="rr-go-track-coins">+0 🪙</span></div>
         <div class="rr-summary-row"><span>Air Time Bonus</span><span id="rr-go-air-coins">+0 🪙</span></div>
         <div class="rr-summary-row"><span>Flip &amp; Combo Bonus</span><span id="rr-go-flip-coins">+0 🪙</span></div>
+        <div class="rr-summary-row"><span style="color:#7dd3fc;font-family:'Fredoka', sans-serif;">Hub Gems Found</span><span id="rr-go-gems" style="color:#7dd3fc;font-weight:700;font-family:'Fredoka', sans-serif;">+0 💎</span></div>
         <div class="rr-summary-total"><span>Total Run Reward</span><span id="rr-go-total-coins">+0 🪙</span></div>
       </div>
     </div>
@@ -870,6 +907,8 @@
   // SAVE STATE (LOCALSTORAGE WITH TRY/CATCH)
   // ==========================================
   const STORAGE_KEY = 'ridge_rush_save_v1';
+  const GLOBAL_GEMS_KEY = 'arcade_global_gems';
+  let globalGems = 10;
   let saveData = {
     coins: 500,
     selectedCarIndex: 0,
@@ -880,6 +919,14 @@
 
   function loadSave() {
     try {
+      const gRaw = localStorage.getItem(GLOBAL_GEMS_KEY);
+      if (gRaw !== null) {
+        const parsedGems = parseInt(gRaw, 10);
+        if (!isNaN(parsedGems)) globalGems = parsedGems;
+      } else {
+        localStorage.setItem(GLOBAL_GEMS_KEY, String(globalGems));
+      }
+
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
@@ -903,6 +950,7 @@
   function writeSave() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
+      localStorage.setItem(GLOBAL_GEMS_KEY, String(globalGems));
     } catch (e) {}
   }
 
@@ -1013,6 +1061,11 @@
       this.playTone(220, 920, 0.35, 'sawtooth', 0.35);
     }
 
+    playGem() {
+      this.playTone(880, 1480, 0.16, 'sine', 0.35);
+      setTimeout(() => this.playTone(1180, 1960, 0.22, 'triangle', 0.32), 75);
+    }
+
     playClick() {
       this.playTone(500, 650, 0.06, 'sine', 0.2);
     }
@@ -1094,6 +1147,9 @@
   const elHudCoins = document.getElementById('rr-hud-coins');
   const elMenuCoins = document.getElementById('rr-menu-coins');
   const elUpgCoins = document.getElementById('rr-upg-coins');
+  const elHudGems = document.getElementById('rr-hud-gems');
+  const elMenuGems = document.getElementById('rr-menu-gems');
+  const elUpgGems = document.getElementById('rr-upg-gems');
 
   const elPedalGas = document.getElementById('rr-pedal-gas');
   const elPedalBrake = document.getElementById('rr-pedal-brake');
@@ -1138,7 +1194,7 @@
   let terrainChunks = [];
   let nextChunkStartMeters = -20;
   let nextFuelCanisterMeters = 220;
-  let collectibles = []; // { x, y, type: 'coin'|'fuel', value, radius, collected }
+  let collectibles = []; // { x, y, type: 'coin'|'fuel'|'gem', value, radius, collected }
 
   // Run Metrics
   let fuel = 100;
@@ -1146,9 +1202,12 @@
   let startX = 0;
   let currentDistMeters = 0;
   let bestDistMeters = 0;
+  let previousBestMeters = 0;
+  let beatRecordThisRun = false;
   let runTrackCoins = 0;
   let runAirCoins = 0;
   let runFlipCoins = 0;
+  let runGems = 0;
 
   // Air & Flip state
   let airborneTime = 0;
@@ -1234,9 +1293,12 @@
     startX = 4;
     currentDistMeters = 0;
     bestDistMeters = saveData.bestDist[activeCarCfg.id] || 0;
+    previousBestMeters = bestDistMeters;
+    beatRecordThisRun = false;
     runTrackCoins = 0;
     runAirCoins = 0;
     runFlipCoins = 0;
+    runGems = 0;
 
     airborneTime = 0;
     airborneWholeSeconds = 0;
@@ -1464,6 +1526,21 @@
       const distBonus = Math.floor(fx / 1000) * CONFIG.fuel.spacingGrowthPer1000m;
       const spacing = minS + hash1D(fx * 0.91) * (maxS - minS) + distBonus;
       nextFuelCanisterMeters += spacing;
+    }
+
+    // Spawn shared Hub Gem (Алмазик) with ~45% chance per chunk
+    if (hash1D(startMeters * 5.17) > 0.55) {
+      const gx = startMeters + 34 + hash1D(startMeters * 7.3) * 10;
+      const gy = getTerrainHeight(gx) + 2.35;
+      collectibles.push({
+        x: gx,
+        y: gy,
+        type: 'gem',
+        value: 1,
+        color: '#38bdf8',
+        radius: 0.48,
+        collected: false
+      });
     }
   }
 
@@ -1729,6 +1806,16 @@
           fuel = maxFuel;
           sfx.playFuel();
           addFloatingText(item.x, item.y + 0.8, 'FULL TANK!', '#4ade80');
+        } else if (item.type === 'gem') {
+          runGems += item.value;
+          globalGems += item.value;
+          writeSave();
+          sfx.playGem();
+          for (let k = 0; k < 7; k++) {
+            const a = (k / 7) * Math.PI * 2;
+            spawnParticle(item.x, item.y, Math.cos(a) * 4, Math.sin(a) * 4 + 1, '#7dd3fc', 0.16, 0.45);
+          }
+          addFloatingText(item.x, item.y + 0.8, `+${item.value} 💎`, '#7dd3fc');
         }
       }
     }
@@ -1740,6 +1827,14 @@
       if (currentDistMeters > bestDistMeters) {
         bestDistMeters = currentDistMeters;
         saveData.bestDist[activeCarCfg.id] = bestDistMeters;
+        if (previousBestMeters > 10 && !beatRecordThisRun) {
+          beatRecordThisRun = true;
+          runGems += 1;
+          globalGems += 1;
+          writeSave();
+          sfx.playGem();
+          addFloatingText(curPos.x, curPos.y + 2.4, 'NEW RECORD! +1 💎', '#7dd3fc');
+        }
       }
     }
 
@@ -1831,6 +1926,7 @@
     elDistTxt.textContent = `${currentDistMeters} m`;
     elBestTxt.textContent = `BEST: ${bestDistMeters} m`;
     elHudCoins.textContent = saveData.coins.toLocaleString();
+    if (elHudGems) elHudGems.textContent = globalGems.toLocaleString();
   }
 
   // ==========================================
@@ -1949,16 +2045,15 @@
       drawSignpost(ctx, sx, sy, `${m}m`, '#334155', '#f8fafc', camZoom);
     }
 
-    const bestRec = saveData.bestDist[activeCarCfg.id] || 0;
-    if (bestRec > 10) {
-      const bx = startX + bestRec;
+    if (previousBestMeters > 10) {
+      const bx = startX + previousBestMeters;
       if (Math.abs(bx - camX) < 55) {
         const by = getTerrainHeight(bx);
-        drawSignpost(ctx, worldToScreenX(bx), worldToScreenY(by), `★ BEST ${bestRec}m`, '#b45309', '#fde047', camZoom);
+        drawSignpost(ctx, worldToScreenX(bx), worldToScreenY(by), `★ BEST ${previousBestMeters}m`, '#b45309', '#fde047', camZoom);
       }
     }
 
-    // 6. Render Collectibles (Coins & Fuel Canisters)
+    // 6. Render Collectibles (Coins, Fuel Canisters, Shared Hub Gems)
     for (let i = 0; i < collectibles.length; i++) {
       const item = collectibles[i];
       if (item.collected) continue;
@@ -1995,6 +2090,30 @@
         ctx.stroke();
         ctx.fillStyle = '#fde047';
         ctx.fillRect(-rPx * 0.55, -rPx * 0.2, rPx * 1.1, rPx * 0.5);
+        ctx.restore();
+      } else if (item.type === 'gem') {
+        ctx.save();
+        ctx.translate(sx, sy + Math.sin(performance.now() * 0.005 + item.x) * 4);
+        ctx.fillStyle = '#38bdf8';
+        ctx.strokeStyle = '#e0f2fe';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -rPx * 1.15);
+        ctx.lineTo(rPx * 0.95, -rPx * 0.2);
+        ctx.lineTo(0, rPx * 1.15);
+        ctx.lineTo(-rPx * 0.95, -rPx * 0.2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        // Inner facet shine
+        ctx.fillStyle = '#bae6fd';
+        ctx.beginPath();
+        ctx.moveTo(0, -rPx * 0.75);
+        ctx.lineTo(rPx * 0.45, -rPx * 0.2);
+        ctx.lineTo(0, rPx * 0.45);
+        ctx.lineTo(-rPx * 0.45, -rPx * 0.2);
+        ctx.closePath();
+        ctx.fill();
         ctx.restore();
       }
     }
@@ -2222,6 +2341,7 @@
     const stats = computeVehicleStats(carCfg);
 
     elMenuCoins.textContent = saveData.coins.toLocaleString();
+    if (elMenuGems) elMenuGems.textContent = globalGems.toLocaleString();
     document.getElementById('rr-car-name').textContent = carCfg.name;
     document.getElementById('rr-car-role').textContent = `${carCfg.role} • ${carCfg.drive}`;
     document.getElementById('rr-car-trait').textContent = carCfg.traitText;
@@ -2283,6 +2403,9 @@
     const carCfg = CONFIG.cars[saveData.selectedCarIndex];
     const upg = getCarUpgrades(carCfg.id);
     elUpgCoins.textContent = saveData.coins.toLocaleString();
+    if (elUpgGems) elUpgGems.textContent = globalGems.toLocaleString();
+    const exBtn = document.getElementById('rr-exchange-gems-btn');
+    if (exBtn) exBtn.disabled = globalGems < 5;
     document.getElementById('rr-upg-car-title').textContent = `${carCfg.name.toUpperCase()} UPGRADES`;
 
     const listEl = document.getElementById('rr-upg-list');
@@ -2361,6 +2484,8 @@
     document.getElementById('rr-go-track-coins').textContent = `+${runTrackCoins} 🪙`;
     document.getElementById('rr-go-air-coins').textContent = `+${runAirCoins} 🪙`;
     document.getElementById('rr-go-flip-coins').textContent = `+${runFlipCoins} 🪙`;
+    const goGemsEl = document.getElementById('rr-go-gems');
+    if (goGemsEl) goGemsEl.textContent = `+${runGems} 💎`;
 
     const totalEarned = runTrackCoins + runAirCoins + runFlipCoins;
     const totalEl = document.getElementById('rr-go-total-coins');
@@ -2510,6 +2635,17 @@
   });
 
   document.getElementById('rr-upg-drive-btn').addEventListener('click', startRun);
+
+  document.getElementById('rr-exchange-gems-btn').addEventListener('click', () => {
+    sfx.init();
+    if (globalGems >= 5) {
+      globalGems -= 5;
+      saveData.coins += 1000;
+      writeSave();
+      sfx.playGem();
+      renderUpgradesScreen();
+    }
+  });
 
   document.getElementById('rr-pause-btn').addEventListener('click', () => {
     if (gameState !== 'PLAYING') return;

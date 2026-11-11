@@ -30,19 +30,20 @@
 
     .hub-header {
       width: 100%;
-      padding: max(18px, env(safe-area-inset-top, 18px)) 20px 18px 20px;
-      background: rgba(15, 23, 42, 0.85);
+      padding: max(18px, env(safe-area-inset-top, 18px)) 18px 16px 18px;
+      background: rgba(15, 23, 42, 0.88);
       border-bottom: 2px solid rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(10px);
       display: flex;
       justify-content: space-between;
       align-items: center;
       max-width: 600px;
+      gap: 10px;
     }
 
     .hub-title {
       margin: 0;
-      font-size: 26px;
+      font-size: clamp(20px, 5vw, 26px);
       font-weight: 700;
       background: linear-gradient(180deg, #fde047 0%, #f97316 100%);
       -webkit-background-clip: text;
@@ -50,17 +51,48 @@
       letter-spacing: 0.5px;
     }
 
-    .hub-coins {
+    .hub-currencies {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hub-gem-pill {
       display: flex;
       align-items: center;
       gap: 6px;
-      background: rgba(30, 41, 59, 0.9);
-      border: 2px solid #f59e0b;
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(168, 85, 247, 0.25));
+      border: 2px solid #38bdf8;
       border-radius: 99px;
-      padding: 6px 14px;
+      padding: 5px 13px;
       font-size: 16px;
       font-weight: 700;
-      color: #fde047;
+      color: #7dd3fc;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+    }
+
+    .hub-banner {
+      width: calc(100% - 36px);
+      max-width: 504px;
+      margin-top: 16px;
+      background: linear-gradient(135deg, rgba(30, 58, 138, 0.65), rgba(88, 28, 135, 0.65));
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 16px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .hub-banner-text {
+      font-size: 13px;
+      color: #e2e8f0;
+      line-height: 1.35;
+    }
+
+    .hub-banner-text strong {
+      color: #7dd3fc;
     }
 
     .hub-subtitle {
@@ -78,7 +110,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
-      padding: 12px 18px;
+      padding: 10px 18px;
       width: 100%;
       max-width: 540px;
     }
@@ -166,18 +198,26 @@
 
   <div class="hub-header">
     <h1 class="hub-title">🕹 ARCADE HUB</h1>
-    <div class="hub-coins">
-      <span>🪙</span>
-      <span id="hub-coins-val">500</span>
+    <div class="hub-currencies">
+      <div class="hub-gem-pill" title="Общая валюта всех игр">
+        <span>💎</span>
+        <span id="hub-gems-val">10</span>
+      </div>
     </div>
   </div>
 
-  <div class="hub-subtitle">Выбери игру</div>
+  <div class="hub-banner">
+    <div class="hub-banner-text">
+      <strong>💎 Алмазы</strong> — единая валюта для всех мини-игр в хабе! Зарабатывай их на трассах и за рекорды.
+    </div>
+  </div>
+
+  <div class="hub-subtitle">Доступные игры</div>
 
   <div class="games-grid">
-    <!-- Игра 1: Ridge Rush (Hill Climb) -->
+    <!-- Игра 1: Ridge Rush -->
     <div class="game-card active" onclick="startGame('hillclimb.html')">
-      <span class="game-badge">NEW</span>
+      <span class="game-badge">PLAY</span>
       <div class="game-icon ridge-icon">🚙</div>
       <div class="game-info">
         <div class="game-title">Ridge Rush</div>
@@ -191,7 +231,7 @@
       <div class="game-icon soon-icon">🚀</div>
       <div class="game-info">
         <div class="game-title">Игра #2</div>
-        <div class="game-meta">В разработке...</div>
+        <div class="game-meta">Скоро в хабе</div>
       </div>
     </div>
 
@@ -200,7 +240,7 @@
       <div class="game-icon soon-icon">⚔️</div>
       <div class="game-info">
         <div class="game-title">Игра #3</div>
-        <div class="game-meta">В разработке...</div>
+        <div class="game-meta">Скоро в хабе</div>
       </div>
     </div>
 
@@ -209,40 +249,51 @@
       <div class="game-icon soon-icon">🧩</div>
       <div class="game-info">
         <div class="game-title">Игра #4</div>
-        <div class="game-meta">В разработке...</div>
+        <div class="game-meta">Скоро в хабе</div>
       </div>
     </div>
   </div>
 
   <script>
+    const GLOBAL_GEMS_KEY = 'arcade_global_gems';
+
     if (window.Telegram && window.Telegram.WebApp) {
       window.Telegram.WebApp.ready();
       try { window.Telegram.WebApp.expand(); } catch (e) {}
     }
 
-    try {
-      const raw = localStorage.getItem('ridge_rush_save_v1');
-      if (raw) {
-        const data = JSON.parse(raw);
-        if (typeof data.coins === 'number') {
-          document.getElementById('hub-coins-val').textContent = data.coins.toLocaleString();
+    function loadHubData() {
+      try {
+        let gems = parseInt(localStorage.getItem(GLOBAL_GEMS_KEY), 10);
+        if (isNaN(gems)) {
+          gems = 10; // Стартовый бонус алмазов
+          localStorage.setItem(GLOBAL_GEMS_KEY, String(gems));
         }
-        if (data.bestDist) {
-          const maxBest = Math.max(0, ...Object.values(data.bestDist));
-          if (maxBest > 0) {
-            document.getElementById('rr-best-meta').textContent = `Рекорд: ${maxBest} м`;
+        document.getElementById('hub-gems-val').textContent = gems.toLocaleString();
+
+        const raw = localStorage.getItem('ridge_rush_save_v1');
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (data.bestDist) {
+            const maxBest = Math.max(0, ...Object.values(data.bestDist));
+            const coins = typeof data.coins === 'number' ? data.coins : 0;
+            if (maxBest > 0) {
+              document.getElementById('rr-best-meta').textContent = `🏆 ${maxBest} м • 🪙 ${coins}`;
+            }
           }
         }
-      }
-    } catch (e) {}
+      } catch (e) {}
+    }
 
     function startGame(url) {
       window.location.href = url;
     }
 
     function soonAlert() {
-      alert('Эта игра скоро появится в хабе!');
+      alert('Эта игра скоро появится в хабе! Твои 💎 алмазы будут доступны и в ней.');
     }
+
+    loadHubData();
   </script>
 </body>
 </html>
