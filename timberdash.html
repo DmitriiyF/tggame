@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Timber Dash</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+#td-game-root {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0f172a;
+  color: #ffffff;
+  font-family: 'Fredoka', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  box-sizing: border-box;
+}
+#td-game-root *, #td-game-root *::before, #td-game-root *::after {
+  box-sizing: border-box;
+  font-family: 'Fredoka', sans-serif;
+}
+#td-game-root .td-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+#td-game-root .td-topbar {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top, 12px));
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 25;
+  pointer-events: none;
+}
+#td-game-root .td-top-btn {
+  pointer-events: auto;
+  background: rgba(15, 23, 42, 0.75);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+#td-game-root .td-top-btn:active {
+  transform: scale(0.93);
+}
+#td-game-root .td-currencies {
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+#td-game-root .td-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 2px solid #38bdf8;
+  border-radius: 99px;
+  padding: 5px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #7dd3fc;
+}
+#td-game-root .td-pill-wood {
+  border-color: #f59e0b;
+  color: #fde047;
+}
+#td-game-root .td-hud {
+  position: absolute;
+  top: max(58px, calc(env(safe-area-inset-top, 12px) + 46px));
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 15;
+}
+#td-game-root .td-time-container {
+  width: min(240px, 64vw);
+  height: 22px;
+  background: rgba(15, 23, 42, 0.82);
+  border: 3px solid #ffffff;
+  border-radius: 99px;
+  padding: 2px;
+  overflow: hidden;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+#td-game-root .td-time-fill {
+  height: 100%;
+  width: 50%;
+  background: linear-gradient(90deg, #22c55e, #eab308);
+  border-radius: 99px;
+  transition: width 0.04s linear;
+}
+#td-game-root .td-time-fill.td-low {
+  background: linear-gradient(90deg, #ef4444, #f97316);
+  animation: td-pulse 0.28s infinite alternate;
+}
+#td-game-root .td-score-big {
+  margin-top: 8px;
+  font-size: clamp(46px, 11vw, 66px);
+  font-weight: 700;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 0 4px 0 #0f172a, 0 8px 18px rgba(0, 0, 0, 0.45);
+}
+#td-game-root .td-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 20;
+  pointer-events: none;
+}
+#td-game-root .td-start-prompt {
+  margin-top: 220px;
+  background: rgba(15, 23, 42, 0.82);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 20px;
+  padding: 14px 24px;
+  text-align: center;
+  backdrop-filter: blur(6px);
+  animation: td-float 1.6s ease-in-out infinite;
+}
+#td-game-root .td-card {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 360px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+#td-game-root .td-new-record {
+  background: linear-gradient(90deg, #f59e0b, #fde047);
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: 99px;
+}
+#td-game-root .td-btn {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 14px;
+  border: none;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+}
+#td-game-root .td-btn:active {
+  transform: translateY(3px);
+}
+#td-game-root .td-btn-primary {
+  background: linear-gradient(180deg, #22c55e, #16a34a);
+}
+#td-game-root .td-btn-secondary {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+}
+#td-game-root .td-btn-amber {
+  background: linear-gradient(180deg, #f59e0b, #d97706);
+}
+#td-game-root .td-skin-row {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(30, 41, 59, 0.85);
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+#td-game-root .td-hidden {
+  display: none !important;
+}
+@keyframes td-pulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(0.97); filter: brightness(1.3); }
+}
+@keyframes td-squash {
+  0% { transform: scale(1, 1); }
+  50% { transform: scale(1.35, 0.55); }
+  100% { transform: scale(1.15, 0.75); }
+}
+@keyframes td-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+</style>
+</head>
+<body style="margin:0;padding:0;overflow:hidden;background:#0f172a;font-family:'Fredoka', sans-serif;">
+<div id="td-game-root">
+  <canvas id="td-canvas" class="td-canvas"></canvas>
+
+  <div class="td-topbar">
+    <div style="display:flex;gap:8px;pointer-events:auto;font-family:'Fredoka', sans-serif;">
+      <button id="td-hub-btn" class="td-top-btn">◀ HUB</button>
+      <button id="td-skins-btn" class="td-top-btn">🎨 SKINS</button>
+    </div>
+    <div class="td-currencies">
+      <div class="td-pill" title="Shared Hub Gems">
+        <span>💎</span>
+        <span id="td-gems-val">0</span>
+      </div>
+      <div class="td-pill td-pill-wood" title="Timber Coins (1 per 10 chops)">
+        <span>🪵</span>
+        <span id="td-coins-val">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div id="td-hud" class="td-hud">
+    <div class="td-time-container">
+      <div id="td-time-fill" class="td-time-fill"></div>
+    </div>
+    <div id="td-score-txt" class="td-score-big">0</div>
+  </div>
+
+  <!-- START PROMPT -->
+  <div id="td-screen-start" class="td-overlay">
+    <div class="td-start-prompt">
+      <div style="font-size:26px;font-weight:700;color:#fde047;font-family:'Fredoka', sans-serif;">TIMBER DASH</div>
+      <div id="td-start-best" style="font-size:15px;color:#cbd5e1;margin-top:4px;font-family:'Fredoka', sans-serif;">BEST: 0</div>
+      <div style="font-size:18px;font-weight:700;color:#ffffff;margin-top:10px;font-family:'Fredoka', sans-serif;">◀ TAP LEFT OR RIGHT ▶</div>
+      <div style="font-size:12px;color:#7dd3fc;margin-top:6px;font-family:'Fredoka', sans-serif;">Chop Crystal Logs &amp; Level Up for 💎 Hub Gems!</div>
+    </div>
+  </div>
+
+  <!-- SKINS MODAL -->
+  <div id="td-screen-skins" class="td-overlay td-hidden" style="background:rgba(15,23,42,0.85);pointer-events:auto;font-family:'Fredoka', sans-serif;">
+    <div class="td-card">
+      <div style="font-size:24px;font-weight:700;color:#fde047;font-family:'Fredoka', sans-serif;">BEAVER COSMETICS</div>
+      <div id="td-skins-list" style="width:100%;display:flex;flex-direction:column;gap:8px;font-family:'Fredoka', sans-serif;"></div>
+      <button id="td-skins-close" class="td-btn td-btn-secondary">CLOSE</button>
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div id="td-screen-gameover" class="td-overlay td-hidden">
+    <div class="td-card">
+      <div id="td-new-record" class="td-new-record td-hidden">★ NEW RECORD ★</div>
+      <div id="td-go-title" style="font-size:26px;font-weight:700;color:#f87171;font-family:'Fredoka', sans-serif;">TIMBER!</div>
+      <div id="td-go-score" style="font-size:48px;font-weight:700;color:#fde047;line-height:1;font-family:'Fredoka', sans-serif;">0</div>
+      <div id="td-go-best" style="font-size:15px;color:#cbd5e1;font-weight:600;font-family:'Fredoka', sans-serif;">BEST: 0</div>
+      <div id="td-go-rewards" style="font-size:15px;color:#7dd3fc;font-weight:700;background:rgba(14,165,233,0.15);padding:6px 14px;border-radius:99px;font-family:'Fredoka', sans-serif;">+0 💎 • +0 🪵</div>
+      <button id="td-retry-btn" class="td-btn td-btn-primary">▶ PLAY AGAIN</button>
+      <button id="td-share-btn" class="td-btn td-btn-secondary">🏆 CHALLENGE A FRIEND</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const CONFIG = {
+    tree: {
+      visible: 8,
+      segmentHeight: 80,
+      trunkWidth: 110,
+      branchLength: 120
+    },
+    gen: {
+      baseBranchChance: 0.35,
+      branchStep: 0.004,
+      maxBranchChance: 0.75,
+      emptyAfterBranch: 0.5,
+      maxSameSide: 3,
+      safeStart: 3,
+      gemSegmentChance: 0.08
+    },
+    time: {
+      start: 0.5,
+      baseDrain: 0.18,
+      drainStep: 0.03,
+      refill: 0.08,
+      minRefill: 0.04,
+      levelEvery: 20,
+      lowThreshold: 0.25
+    },
+    input: {
+      bufferSize: 2,
+      dedupeMs: 40
+    },
+    fx: {
+      shakeChop: 4,
+      shakeDeath: 12,
+      chips: 8,
+      dropTweenMs: 70,
+      chopAnimMs: 120
+    },
+    themes: [
+      { id: 'day', skyTop: '#0284c7', skyBot: '#bae6fd', hill: '#16a34a', ground: '#15803d' },
+      { id: 'sunset', skyTop: '#7c2d12', skyBot: '#fdba74', hill: '#9a3412', ground: '#431407' },
+      { id: 'night', skyTop: '#090d16', skyBot: '#1e1b4b', hill: '#1e293b', ground: '#0f172a' },
+      { id: 'snow', skyTop: '#0369a1', skyBot: '#f0f9ff', hill: '#cbd5e1', ground: '#e2e8f0' }
+    ],
+    cosmetics: [
+      { id: 'cap_red', name: 'Classic Red Cap', type: 'cap', value: '#ef4444', costWood: 0 },
+      { id: 'cap_gold', name: 'Golden Crown Cap', type: 'cap', value: '#eab308', costWood: 15 },
+      { id: 'cap_cyber', name: 'Neon Cyan Cap', type: 'cap', value: '#06b6d4', costWood: 30 },
+      { id: 'axe_steel', name: 'Steel Lumber Axe', type: 'axe', value: '#cbd5e1', costWood: 0 },
+      { id: 'axe_diamond', name: 'Diamond Crystal Axe', type: 'axe', value: '#38bdf8', costWood: 25 },
+      { id: 'tree_oak', name: 'Oak Bark', type: 'tree', value: '#78350f', costWood: 0 },
+      { id: 'tree_birch', name: 'Silver Birch', type: 'tree', value: '#d6d3d1', costWood: 20 }
+    ],
+    storage: {
+      saveKey: 'timberdash_save_v1',
+      gemsKey: 'arcade_global_gems'
+    },
+    api: {
+      submitEndpoint: '/api/timberdash/submit'
+    },
+    ui: {
+      font: "'Fredoka', sans-serif",
+      texts: {
+        start: 'TAP LEFT OR RIGHT',
+        levelUp: 'LEVEL UP!'
+      }
+    },
+    audio: {
+      masterVolume: 0.45
+    }
+  };
+
+  // ==========================================
+  // DETERMINISTIC MULBERRY32 RNG
+  // ==========================================
+  function mulberry32(seed) {
+    let t = seed >>> 0;
+    return function() {
+      t += 0x6D2B79F5;
+      let r = Math.imul(t ^ (t >>> 15), 1 | t);
+      r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // ==========================================
+  // TELEGRAM INTEGRATION & STORAGE
+  // ==========================================
+  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  if (tg) {
+    try {
+      tg.ready();
+      tg.expand();
+      if (typeof tg.disableVerticalSwipes === 'function') tg.disableVerticalSwipes();
+      if (typeof tg.setHeaderColor === 'function') tg.setHeaderColor('#0284c7');
+    } catch (e) {}
+  }
+
+  function triggerHaptic(type) {
+    if (!tg || !tg.HapticFeedback) return;
+    try {
+      if (type === 'error') tg.HapticFeedback.notificationOccurred('error');
+      else tg.HapticFeedback.impactOccurred(type);
+    } catch (e) {}
+  }
+
+  let save = {
+    best: 0,
+    woodCoins: 0,
+    unlockedSkins: { cap_red: true, axe_steel: true, tree_oak: true },
+    equipped: { cap: '#ef4444', axe: '#cbd5e1', tree: '#78350f' }
+  };
+  let globalGems = 10;
+
+  function loadStorage() {
+    try {
+      const raw = localStorage.getItem(CONFIG.storage.saveKey);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (typeof p.best === 'number') save.best = p.best;
+        if (typeof p.woodCoins === 'number') save.woodCoins = p.woodCoins;
+        if (p.unlockedSkins) save.unlockedSkins = { ...save.unlockedSkins, ...p.unlockedSkins };
+        if (p.equipped) save.equipped = { ...save.equipped, ...p.equipped };
+      }
+      const gRaw = localStorage.getItem(CONFIG.storage.gemsKey);
+      if (gRaw !== null) {
+        const g = parseInt(gRaw, 10);
+        if (!isNaN(g)) globalGems = g;
+      } else {
+        localStorage.setItem(CONFIG.storage.gemsKey, String(globalGems));
+      }
+    } catch (e) {}
+
+    if (tg && tg.CloudStorage && tg.isVersionAtLeast && tg.isVersionAtLeast('6.9')) {
+      try {
+        tg.CloudStorage.getItem(CONFIG.storage.saveKey, (err, val) => {
+          if (!err && val) {
+            const p = JSON.parse(val);
+            if (p && typeof p.best === 'number' && p.best > save.best) {
+              save.best = p.best;
+              updateTopUI();
+            }
+          }
+        });
+      } catch (e) {}
+    }
+    updateTopUI();
+  }
+
+  function writeStorage() {
+    try {
+      localStorage.setItem(CONFIG.storage.saveKey, JSON.stringify(save));
+      localStorage.setItem(CONFIG.storage.gemsKey, String(globalGems));
+    } catch (e) {}
+    if (tg && tg.CloudStorage && tg.isVersionAtLeast && tg.isVersionAtLeast('6.9')) {
+      try {
+        tg.CloudStorage.setItem(CONFIG.storage.saveKey, JSON.stringify(save), () => {});
+      } catch (e) {}
+    }
+    updateTopUI();
+  }
+
+  // ==========================================
+  // WEB AUDIO SYNTHESIZER
+  // ==========================================
+  class SoundEffects {
+    constructor() {
+      this.ctx = null;
+      this.lastTickMs = 0;
+    }
+
+    init() {
+      if (this.ctx) {
+        if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+        return;
+      }
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) this.ctx = new AudioCtx();
+      } catch (e) {}
+    }
+
+    playChop() {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        // Short noise burst
+        const bufferSize = this.ctx.sampleRate * 0.045;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.4));
+        }
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const nGain = this.ctx.createGain();
+        nGain.gain.setValueAtTime(0.28 * CONFIG.audio.masterVolume, now);
+        noise.connect(nGain);
+        nGain.connect(this.ctx.destination);
+        noise.start(now);
+
+        // Low wood thump
+        const osc = this.ctx.createOscillator();
+        const oGain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(145, now);
+        osc.frequency.exponentialRampToValueAtTime(48, now + 0.08);
+        oGain.gain.setValueAtTime(0.35 * CONFIG.audio.masterVolume, now);
+        oGain.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
+        osc.connect(oGain);
+        oGain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.085);
+      } catch (e) {}
+    }
+
+    playWhoosh() {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(280, now);
+        osc.frequency.exponentialRampToValueAtTime(120, now + 0.06);
+        gain.gain.setValueAtTime(0.12 * CONFIG.audio.masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.065);
+      } catch (e) {}
+    }
+
+    playLowTimeTick(timeBar) {
+      if (!this.ctx) return;
+      const nowMs = performance.now();
+      const interval = 160 + timeBar * 650;
+      if (nowMs - this.lastTickMs < interval) return;
+      this.lastTickMs = nowMs;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(820, now);
+        gain.gain.setValueAtTime(0.12 * CONFIG.audio.masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.04);
+      } catch (e) {}
+    }
+
+    playDeathCrunch() {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(32, now + 0.38);
+        gain.gain.setValueAtTime(0.42 * CONFIG.audio.masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.4);
+      } catch (e) {}
+    }
+
+    playGem() {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(920, now);
+        osc.frequency.exponentialRampToValueAtTime(1640, now + 0.18);
+        gain.gain.setValueAtTime(0.3 * CONFIG.audio.masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.19);
+      } catch (e) {}
+    }
+  }
+
+  const sfx = new SoundEffects();
+
+  // ==========================================
+  // DOM ELEMENTS
+  // ==========================================
+  const canvas = document.getElementById('td-canvas');
+  const ctx = canvas.getContext('2d');
+  const elTimeFill = document.getElementById('td-time-fill');
+  const elScoreTxt = document.getElementById('td-score-txt');
+  const elStartScreen = document.getElementById('td-screen-start');
+  const elSkinsScreen = document.getElementById('td-screen-skins');
+  const elGameOverScreen = document.getElementById('td-screen-gameover');
+
+  function updateTopUI() {
+    document.getElementById('td-gems-val').textContent = globalGems.toLocaleString();
+    document.getElementById('td-coins-val').textContent = save.woodCoins.toLocaleString();
+    document.getElementById('td-start-best').textContent = `BEST: ${save.best}`;
+  }
+
+  // ==========================================
+  // GAME STATE & FAIR BRANCH GENERATOR
+  // ==========================================
+  let tree = [];
+  let player = { side: 'left', alive: true };
+  let score = 0;
+  let hasStartedChopping = false;
+  let timeBar = CONFIG.time.start;
+  let runSeed = 2026;
+  let rng = mulberry32(runSeed);
+  let generatedCount = 0;
+  let lastGeneratedBranch = 'none';
+  let sameSideStreak = 0;
+
+  let inputBuffer = [];
+  let lastInputTimeMs = 0;
+  let replayInputs = [];
+  let runStartMs = 0;
+  let runGemsEarned = 0;
+  let runWoodEarned = 0;
+
+  // Visual Animation State
+  let treeDropOffsetPx = 0;
+  let chopAnimTimerMs = 0;
+  let shakeMag = 0;
+  let flyingLogs = [];
+  let woodChips = [];
+  let banners = [];
+
+  function generateSegment() {
+    generatedCount++;
+    // First 3 segments at game start are 'none'
+    if (generatedCount <= CONFIG.gen.safeStart) {
+      lastGeneratedBranch = 'none';
+      return { branch: 'none', hasGem: false, barkSeed: rng() };
+    }
+
+    // After a branch segment: chance emptyAfterBranch (0.5) to force 'none' (breathing room)
+    if (lastGeneratedBranch !== 'none' && rng() < CONFIG.gen.emptyAfterBranch) {
+      lastGeneratedBranch = 'none';
+      return { branch: 'none', hasGem: rng() < CONFIG.gen.gemSegmentChance, barkSeed: rng() };
+    }
+
+    const p = Math.min(
+      CONFIG.gen.maxBranchChance,
+      CONFIG.gen.baseBranchChance + score * CONFIG.gen.branchStep
+    );
+
+    if (rng() < p) {
+      let side = rng() < 0.5 ? 'left' : 'right';
+      if (side === lastGeneratedBranch) {
+        sameSideStreak++;
+        if (sameSideStreak >= CONFIG.gen.maxSameSide) {
+          side = side === 'left' ? 'right' : 'left';
+          sameSideStreak = 1;
+        }
+      } else {
+        sameSideStreak = 1;
+      }
+      lastGeneratedBranch = side;
+      return { branch: side, hasGem: rng() < CONFIG.gen.gemSegmentChance, barkSeed: rng() };
+    }
+
+    lastGeneratedBranch = 'none';
+    return { branch: 'none', hasGem: rng() < CONFIG.gen.gemSegmentChance, barkSeed: rng() };
+  }
+
+  function initGame() {
+    runSeed = (Date.now() ^ Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0;
+    rng = mulberry32(runSeed);
+    generatedCount = 0;
+    lastGeneratedBranch = 'none';
+    sameSideStreak = 0;
+
+    player = { side: 'left', alive: true };
+    score = 0;
+    hasStartedChopping = false;
+    timeBar = CONFIG.time.start;
+    inputBuffer = [];
+    replayInputs = [];
+    runGemsEarned = 0;
+    runWoodEarned = 0;
+
+    treeDropOffsetPx = 0;
+    chopAnimTimerMs = 0;
+    shakeMag = 0;
+    flyingLogs = [];
+    woodChips = [];
+    banners = [];
+
+    tree = [];
+    for (let i = 0; i < CONFIG.tree.visible + 2; i++) {
+      tree.push(generateSegment());
+    }
+
+    elScoreTxt.textContent = '0';
+    elTimeFill.style.width = `${timeBar * 100}%`;
+    elTimeFill.classList.remove('td-low');
+    elStartScreen.classList.remove('td-hidden');
+    elGameOverScreen.classList.add('td-hidden');
+  }
+
+  function spawnFlyingLog(seg, choppedFromSide) {
+    const dir = choppedFromSide === 'left' ? 1 : -1;
+    flyingLogs.push({
+      x: 0,
+      y: 0,
+      vx: dir * 520,
+      vy: -240,
+      rot: 0,
+      vRot: dir * 9.5,
+      branch: seg.branch,
+      life: 0.55
+    });
+
+    for (let i = 0; i < CONFIG.fx.chips; i++) {
+      woodChips.push({
+        x: (choppedFromSide === 'left' ? -1 : 1) * 35,
+        y: -25,
+        vx: (Math.random() - 0.5) * 380 + dir * 140,
+        vy: -120 - Math.random() * 220,
+        size: 5 + Math.random() * 6,
+        life: 0.45
+      });
+    }
+  }
+
+  function getRefillAmount(curScore) {
+    const level = Math.floor(curScore / CONFIG.time.levelEvery);
+    return Math.max(CONFIG.time.minRefill, CONFIG.time.refill - level * 0.004);
+  }
+
+  // ==========================================
+  // CRITICAL TURN RESOLUTION (EXACT ORDER)
+  // ==========================================
+  function onInput(side) {
+    if (!player.alive) return;
+
+    if (!hasStartedChopping) {
+      hasStartedChopping = true;
+      runStartMs = performance.now();
+      elStartScreen.classList.add('td-hidden');
+    }
+
+    const tRel = Math.round(performance.now() - runStartMs);
+    replayInputs.push({ side, t: tRel });
+
+    player.side = side;
+
+    // 1) Instant check: the bottom segment's branch hits the player as they move?
+    if (tree[0].branch === side) {
+      die('branch');
+      return;
+    }
+
+    // 2) Chop: remove the bottom segment
+    const chopped = tree.shift();
+    spawnFlyingLog(chopped, side);
+    tree.push(generateSegment());
+
+    // Visual tween & FX
+    treeDropOffsetPx = CONFIG.tree.segmentHeight;
+    chopAnimTimerMs = CONFIG.fx.chopAnimMs;
+    shakeMag = CONFIG.fx.shakeChop;
+    sfx.playChop();
+    if (chopped.branch !== 'none') sfx.playWhoosh();
+    triggerHaptic('light');
+
+    // Check if chopped segment had a crystal gem inside
+    if (chopped.hasGem) {
+      globalGems += 1;
+      runGemsEarned += 1;
+      sfx.playGem();
+      banners.push({ text: '+1 💎 CRYSTAL LOG!', y: 0, life: 0.9, color: '#7dd3fc' });
+    }
+
+    // 3) Post-check: the new bottom segment dropped onto the player
+    if (tree[0].branch === side) {
+      die('branch');
+      return;
+    }
+
+    score++;
+    timeBar = Math.min(1, timeBar + getRefillAmount(score));
+    elScoreTxt.textContent = String(score);
+
+    // 1 Wood Coin per 10 chops
+    if (score % 10 === 0) {
+      save.woodCoins += 1;
+      runWoodEarned += 1;
+    }
+
+    // Every 20 chops: LEVEL UP + theme change + +1 shared Gem
+    if (score % CONFIG.time.levelEvery === 0) {
+      globalGems += 1;
+      runGemsEarned += 1;
+      triggerHaptic('heavy');
+      sfx.playGem();
+      banners.push({ text: `${CONFIG.ui.texts.levelUp} +1 💎`, y: 0, life: 1.2, color: '#fde047' });
+    }
+
+    writeStorage();
+  }
+
+  function die(reason) {
+    if (!player.alive) return;
+    player.alive = false;
+    shakeMag = CONFIG.fx.shakeDeath;
+    sfx.playDeathCrunch();
+    triggerHaptic('error');
+
+    const isNewRecord = score > save.best;
+    if (isNewRecord) {
+      save.best = score;
+      globalGems += 2;
+      runGemsEarned += 2;
+    }
+    writeStorage();
+
+    // Anti-cheat deterministic replay POST
+    const payload = {
+      initData: tg ? tg.initData : '',
+      score,
+      seed: runSeed,
+      inputs: replayInputs
+    };
+    try {
+      fetch(CONFIG.api.submitEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(() => {});
+    } catch (e) {}
+
+    setTimeout(() => {
+      elGameOverScreen.classList.remove('td-hidden');
+      document.getElementById('td-new-record').classList.toggle('td-hidden', !isNewRecord);
+      document.getElementById('td-go-title').textContent = reason === 'time' ? "TIME'S UP!" : 'SQUASHED BY BRANCH!';
+      document.getElementById('td-go-score').textContent = String(score);
+      document.getElementById('td-go-best').textContent = `BEST: ${save.best}`;
+      document.getElementById('td-go-rewards').textContent = `+${runGemsEarned} 💎 • +${runWoodEarned} 🪵`;
+    }, 360);
+  }
+
+  // ==========================================
+  // UPDATE & RENDER LOOP
+  // ==========================================
+  function resizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  function update(dt) {
+    // Process queued buffered inputs immediately
+    while (inputBuffer.length > 0 && player.alive) {
+      const nextSide = inputBuffer.shift();
+      onInput(nextSide);
+    }
+
+    // Drain timeBar only after first chop
+    if (player.alive && hasStartedChopping) {
+      const level = Math.floor(score / CONFIG.time.levelEvery);
+      const drainRate = CONFIG.time.baseDrain + level * CONFIG.time.drainStep;
+      timeBar = Math.max(0, timeBar - drainRate * dt);
+      elTimeFill.style.width = `${timeBar * 100}%`;
+
+      if (timeBar < CONFIG.time.lowThreshold) {
+        elTimeFill.classList.add('td-low');
+        sfx.playLowTimeTick(timeBar);
+      } else {
+        elTimeFill.classList.remove('td-low');
+      }
+
+      if (timeBar <= 0) {
+        die('time');
+      }
+    }
+
+    // 70ms visual tree drop tween
+    if (treeDropOffsetPx > 0) {
+      const step = (CONFIG.tree.segmentHeight / (CONFIG.fx.dropTweenMs / 1000)) * dt;
+      treeDropOffsetPx = Math.max(0, treeDropOffsetPx - step);
+    }
+
+    if (chopAnimTimerMs > 0) {
+      chopAnimTimerMs = Math.max(0, chopAnimTimerMs - dt * 1000);
+    }
+
+    if (shakeMag > 0) {
+      shakeMag = Math.max(0, shakeMag - 45 * dt);
+    }
+
+    // Update flying logs
+    for (let i = flyingLogs.length - 1; i >= 0; i--) {
+      const fl = flyingLogs[i];
+      fl.life -= dt;
+      if (fl.life <= 0) {
+        flyingLogs.splice(i, 1);
+        continue;
+      }
+      fl.x += fl.vx * dt;
+      fl.y += fl.vy * dt;
+      fl.vy += 980 * dt;
+      fl.rot += fl.vRot * dt;
+    }
+
+    // Update wood chips
+    for (let i = woodChips.length - 1; i >= 0; i--) {
+      const wc = woodChips[i];
+      wc.life -= dt;
+      if (wc.life <= 0) {
+        woodChips.splice(i, 1);
+        continue;
+      }
+      wc.x += wc.vx * dt;
+      wc.y += wc.vy * dt;
+      wc.vy += 850 * dt;
+    }
+
+    // Update floating banners
+    for (let i = banners.length - 1; i >= 0; i--) {
+      const b = banners[i];
+      b.life -= dt;
+      b.y += 55 * dt;
+      if (b.life <= 0) banners.splice(i, 1);
+    }
+  }
+
+  function render() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const level = Math.floor(score / CONFIG.time.levelEvery);
+    const theme = CONFIG.themes[level % CONFIG.themes.length];
+
+    // Sky gradient
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+    skyGrad.addColorStop(0, theme.skyTop);
+    skyGrad.addColorStop(1, theme.skyBot);
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Distant pine hills
+    ctx.fillStyle = theme.hill;
+    ctx.globalAlpha = 0.55;
+    ctx.beginPath();
+    ctx.moveTo(0, h);
+    ctx.quadraticCurveTo(w * 0.25, h * 0.65, w * 0.55, h * 0.78);
+    ctx.quadraticCurveTo(w * 0.8, h * 0.68, w, h * 0.76);
+    ctx.lineTo(w, h);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    const sx = shakeMag > 0 ? (Math.random() - 0.5) * shakeMag * 2 : 0;
+    const sy = shakeMag > 0 ? (Math.random() - 0.5) * shakeMag * 2 : 0;
+
+    const baseX = w * 0.5 + sx;
+    const baseY = h * 0.78 + sy;
+
+    // Ground floor
+    ctx.fillStyle = theme.ground;
+    ctx.fillRect(0, baseY, w, h - baseY + 50);
+
+    // Tree stump base
+    const tw = CONFIG.tree.trunkWidth;
+    const sh = CONFIG.tree.segmentHeight;
+    ctx.fillStyle = '#451a03';
+    ctx.fillRect(baseX - tw * 0.58, baseY - 10, tw * 1.16, 22);
+
+    // Draw stacked tree segments
+    for (let i = 0; i < CONFIG.tree.visible; i++) {
+      const seg = tree[i];
+      if (!seg) continue;
+      const segBottomY = baseY - i * sh - treeDropOffsetPx;
+      const segTopY = segBottomY - sh;
+
+      drawTreeSegment(ctx, baseX, segTopY, tw, sh, seg.branch, seg.hasGem, seg.barkSeed);
+    }
+
+    // Draw flying chopped logs
+    for (let i = 0; i < flyingLogs.length; i++) {
+      const fl = flyingLogs[i];
+      ctx.save();
+      ctx.translate(baseX + fl.x, baseY - sh * 0.5 + fl.y);
+      ctx.rotate(fl.rot);
+      drawTreeSegment(ctx, 0, -sh * 0.5, tw, sh, fl.branch, false, 0.3);
+      ctx.restore();
+    }
+
+    // Draw wood chip particles
+    ctx.fillStyle = '#fde047';
+    for (let i = 0; i < woodChips.length; i++) {
+      const wc = woodChips[i];
+      ctx.fillRect(baseX + wc.x, baseY + wc.y, wc.size, wc.size);
+    }
+
+    // Draw Lumberjack Beaver Character
+    const charSideDir = player.side === 'left' ? -1 : 1;
+    const charX = baseX + charSideDir * (tw * 0.5 + 56);
+    const charY = baseY;
+    drawBeaverLumberjack(ctx, charX, charY, charSideDir, player.alive, chopAnimTimerMs);
+
+    // Subtle bottom arrow hints (fade out after 5 chops)
+    if (score < 5 && player.alive) {
+      const hintAlpha = Math.max(0, 1 - score / 5) * 0.45;
+      ctx.save();
+      ctx.globalAlpha = hintAlpha;
+      ctx.fillStyle = '#ffffff';
+      ctx.font = "700 28px 'Fredoka', sans-serif";
+      ctx.textAlign = 'center';
+      ctx.fillText('◀ CHOP', w * 0.22, h * 0.9);
+      ctx.fillText('CHOP ▶', w * 0.78, h * 0.9);
+      ctx.restore();
+    }
+
+    // Draw Level Up / Gem banners
+    for (let i = 0; i < banners.length; i++) {
+      const b = banners[i];
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, b.life);
+      ctx.font = "700 26px 'Fredoka', sans-serif";
+      ctx.fillStyle = b.color;
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 5;
+      ctx.textAlign = 'center';
+      ctx.strokeText(b.text, w * 0.5, h * 0.32 - b.y);
+      ctx.fillText(b.text, w * 0.5, h * 0.32 - b.y);
+      ctx.restore();
+    }
+  }
+
+  function drawTreeSegment(c, centerX, topY, width, height, branch, hasGem, barkSeed) {
+    // Branch
+    if (branch !== 'none') {
+      const dir = branch === 'left' ? -1 : 1;
+      const bx = centerX + dir * (width * 0.48);
+      const by = topY + height * 0.32;
+      c.fillStyle = '#3f6212';
+      c.strokeStyle = '#14532d';
+      c.lineWidth = 3;
+      c.beginPath();
+      c.roundRect(
+        dir === 1 ? bx : bx - CONFIG.tree.branchLength,
+        by,
+        CONFIG.tree.branchLength,
+        24,
+        10
+      );
+      c.fill();
+      c.stroke();
+
+      // Leaf cluster at branch tip
+      c.fillStyle = '#22c55e';
+      c.beginPath();
+      c.arc(bx + dir * CONFIG.tree.branchLength, by + 10, 20, 0, Math.PI * 2);
+      c.fill();
+    }
+
+    // Trunk body
+    c.fillStyle = save.equipped.tree || '#78350f';
+    c.strokeStyle = '#290f02';
+    c.lineWidth = 3;
+    c.fillRect(centerX - width * 0.5, topY, width, height);
+    c.strokeRect(centerX - width * 0.5, topY, width, height);
+
+    // Bark vertical grain lines
+    c.fillStyle = 'rgba(0, 0, 0, 0.18)';
+    const offset = (barkSeed - 0.5) * 30;
+    c.fillRect(centerX + offset - 6, topY + 8, 8, height - 16);
+
+    // Embedded Crystal Gem icon if hasGem
+    if (hasGem) {
+      const gx = centerX;
+      const gy = topY + height * 0.5;
+      c.fillStyle = '#38bdf8';
+      c.strokeStyle = '#ffffff';
+      c.lineWidth = 2;
+      c.beginPath();
+      c.moveTo(gx, gy - 14);
+      c.lineTo(gx + 12, gy);
+      c.lineTo(gx, gy + 14);
+      c.lineTo(gx - 12, gy);
+      c.closePath();
+      c.fill();
+      c.stroke();
+    }
+  }
+
+  function drawBeaverLumberjack(c, x, y, sideDir, alive, chopMs) {
+    c.save();
+    c.translate(x, y);
+    // Face toward the trunk (if on left, sideDir = -1, face right +1)
+    c.scale(-sideDir, 1);
+
+    if (!alive) {
+      // Knocked out / Tombstone & spinning stars
+      c.fillStyle = '#64748b';
+      c.strokeStyle = '#1e293b';
+      c.lineWidth = 3;
+      c.beginPath();
+      c.roundRect(-28, -64, 56, 64, [28, 28, 4, 4]);
+      c.fill();
+      c.stroke();
+
+      c.fillStyle = '#cbd5e1';
+      c.font = "700 16px 'Fredoka', sans-serif";
+      c.textAlign = 'center';
+      c.fillText('OOPS', 0, -30);
+
+      const starAngle = performance.now() * 0.006;
+      for (let i = 0; i < 3; i++) {
+        const a = starAngle + (i * Math.PI * 2) / 3;
+        c.fillStyle = '#fde047';
+        c.beginPath();
+        c.arc(Math.cos(a) * 26, -78 + Math.sin(a) * 8, 5, 0, Math.PI * 2);
+        c.fill();
+      }
+      c.restore();
+      return;
+    }
+
+    // Idle breathing bounce
+    const breathe = Math.sin(performance.now() * 0.006) * 2.5;
+
+    // Flat beaver tail behind
+    c.fillStyle = '#451a03';
+    c.beginPath();
+    c.ellipse(-28, -16, 18, 9, -0.3, 0, Math.PI * 2);
+    c.fill();
+
+    // Round beaver body + plaid lumberjack vest
+    c.fillStyle = '#92400e';
+    c.strokeStyle = '#290f02';
+    c.lineWidth = 3;
+    c.beginPath();
+    c.roundRect(-24, -56 + breathe, 48, 54, 20);
+    c.fill();
+    c.stroke();
+
+    // Vest
+    c.fillStyle = '#dc2626';
+    c.fillRect(-20, -38 + breathe, 40, 28);
+
+    // Beaver head, ears & buck teeth
+    c.fillStyle = '#b45309';
+    c.beginPath();
+    c.arc(0, -64 + breathe, 22, 0, Math.PI * 2);
+    c.fill();
+    c.stroke();
+
+    // Buck teeth
+    c.fillStyle = '#ffffff';
+    c.fillRect(8, -54 + breathe, 9, 8);
+    c.strokeRect(8, -54 + breathe, 9, 8);
+
+    // Eye
+    c.fillStyle = '#0f172a';
+    c.beginPath();
+    c.arc(9, -66 + breathe, 4, 0, Math.PI * 2);
+    c.fill();
+
+    // Lumberjack Cap
+    c.fillStyle = save.equipped.cap || '#ef4444';
+    c.beginPath();
+    c.arc(0, -72 + breathe, 20, Math.PI, 0);
+    c.fill();
+    c.fillRect(0, -75 + breathe, 28, 6);
+
+    // 3-frame procedural axe swing animation (wind-up, hit, recover)
+    let axeAngle = -0.5;
+    if (chopMs > 80) axeAngle = -1.35; // wind-up
+    else if (chopMs > 35) axeAngle = 0.65; // hit
+    else if (chopMs > 0) axeAngle = 0.1; // recover
+
+    c.save();
+    c.translate(10, -36 + breathe);
+    c.rotate(axeAngle);
+    // Handle
+    c.fillStyle = '#fde68a';
+    c.fillRect(-4, -36, 8, 42);
+    // Axe blade
+    c.fillStyle = save.equipped.axe || '#cbd5e1';
+    c.strokeStyle = '#0f172a';
+    c.lineWidth = 2;
+    c.beginPath();
+    c.moveTo(4, -36);
+    c.lineTo(24, -44);
+    c.lineTo(24, -22);
+    c.lineTo(4, -26);
+    c.closePath();
+    c.fill();
+    c.stroke();
+    c.restore();
+
+    c.restore();
+  }
+
+  // ==========================================
+  // INPUT BUFFER & DEDUPLICATION
+  // ==========================================
+  function queueTapSide(side) {
+    sfx.init();
+    const now = performance.now();
+    if (now - lastInputTimeMs < CONFIG.input.dedupeMs) return;
+    lastInputTimeMs = now;
+
+    if (!player.alive) return;
+    if (inputBuffer.length < CONFIG.input.bufferSize) {
+      inputBuffer.push(side);
+    }
+  }
+
+  canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const side = e.clientX < window.innerWidth * 0.5 ? 'left' : 'right';
+    queueTapSide(side);
+  });
+
+  document.getElementById('td-screen-start').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const side = e.clientX < window.innerWidth * 0.5 ? 'left' : 'right';
+    queueTapSide(side);
+  });
+  document.getElementById('td-screen-start').style.pointerEvents = 'auto';
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+      e.preventDefault();
+      queueTapSide('left');
+    } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+      e.preventDefault();
+      queueTapSide('right');
+    }
+  });
+
+  document.getElementById('td-retry-btn').addEventListener('click', () => {
+    initGame();
+  });
+
+  document.getElementById('td-share-btn').addEventListener('click', () => {
+    if (tg && typeof tg.switchInlineQuery === 'function') {
+      try {
+        tg.switchInlineQuery(`I chopped ${score} logs in Timber Dash! Try to beat my speed!`, ['users', 'groups']);
+        return;
+      } catch (err) {}
+    }
+  });
+
+  document.getElementById('td-hub-btn').addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+
+  // Cosmetics Shop Modal
+  function renderSkinsModal() {
+    const list = document.getElementById('td-skins-list');
+    list.innerHTML = '';
+    CONFIG.cosmetics.forEach(item => {
+      const unlocked = !!save.unlockedSkins[item.id] || item.costWood === 0;
+      const isEquipped = save.equipped[item.type] === item.value;
+
+      const row = document.createElement('div');
+      row.className = 'td-skin-row';
+      row.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;font-family:'Fredoka', sans-serif;">
+          <span style="width:18px;height:18px;border-radius:50%;background:${item.value};display:inline-block;border:2px solid #fff;"></span>
+          <span>${item.name}</span>
+        </div>
+      `;
+      const btn = document.createElement('button');
+      btn.className = 'td-top-btn';
+      if (isEquipped) {
+        btn.textContent = 'EQUIPPED';
+        btn.disabled = true;
+      } else if (unlocked) {
+        btn.textContent = 'EQUIP';
+        btn.onclick = () => {
+          save.equipped[item.type] = item.value;
+          writeStorage();
+          renderSkinsModal();
+        };
+      } else {
+        btn.textContent = `${item.costWood} 🪵`;
+        btn.disabled = save.woodCoins < item.costWood;
+        btn.onclick = () => {
+          if (save.woodCoins >= item.costWood) {
+            save.woodCoins -= item.costWood;
+            save.unlockedSkins[item.id] = true;
+            save.equipped[item.type] = item.value;
+            writeStorage();
+            sfx.playGem();
+            renderSkinsModal();
+          }
+        };
+      }
+      row.appendChild(btn);
+      list.appendChild(row);
+    });
+  }
+
+  document.getElementById('td-skins-btn').addEventListener('click', () => {
+    renderSkinsModal();
+    elSkinsScreen.classList.remove('td-hidden');
+  });
+
+  document.getElementById('td-skins-close').addEventListener('click', () => {
+    elSkinsScreen.classList.add('td-hidden');
+  });
+
+  // ==========================================
+  // MAIN LOOP (DELTA-TIME BASED)
+  // ==========================================
+  let lastTime = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.1, Math.max(0, (now - lastTime) / 1000));
+    lastTime = now;
+    update(dt);
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  loadStorage();
+  initGame();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

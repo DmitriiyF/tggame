@@ -11,7 +11,7 @@
   <style>
     * {
       box-sizing: border-box;
-      font-family: 'Fredoka', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Fredoka', sans-serif;
       user-select: none;
       -webkit-user-select: none;
     }
@@ -25,13 +25,13 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
+      padding-bottom: max(28px, env(safe-area-inset-bottom, 28px));
     }
 
     .hub-header {
       width: 100%;
-      padding: max(18px, env(safe-area-inset-top, 18px)) 18px 16px 18px;
-      background: rgba(15, 23, 42, 0.88);
+      padding: max(16px, env(safe-area-inset-top, 16px)) 18px 14px 18px;
+      background: rgba(15, 23, 42, 0.9);
       border-bottom: 2px solid rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(10px);
       display: flex;
@@ -39,6 +39,9 @@
       align-items: center;
       max-width: 600px;
       gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
     }
 
     .hub-title {
@@ -64,25 +67,31 @@
       background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(168, 85, 247, 0.25));
       border: 2px solid #38bdf8;
       border-radius: 99px;
-      padding: 5px 13px;
+      padding: 5px 14px;
       font-size: 16px;
       font-weight: 700;
       color: #7dd3fc;
       box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+      transition: transform 0.15s ease;
+    }
+
+    .hub-gem-pill.bump {
+      transform: scale(1.16);
     }
 
     .hub-banner {
       width: calc(100% - 36px);
       max-width: 504px;
-      margin-top: 16px;
-      background: linear-gradient(135deg, rgba(30, 58, 138, 0.65), rgba(88, 28, 135, 0.65));
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      border-radius: 16px;
-      padding: 12px 16px;
+      margin-top: 14px;
+      background: linear-gradient(135deg, rgba(30, 58, 138, 0.72), rgba(88, 28, 135, 0.72));
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 18px;
+      padding: 12px 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
     }
 
     .hub-banner-text {
@@ -95,28 +104,57 @@
       color: #7dd3fc;
     }
 
+    .chest-btn {
+      background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+      color: #0f172a;
+      border: none;
+      border-radius: 12px;
+      padding: 9px 12px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 3px 0 #0369a1;
+      transition: transform 0.1s ease, opacity 0.15s ease;
+    }
+
+    .chest-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #0369a1;
+    }
+
+    .chest-btn.cooldown {
+      background: rgba(51, 65, 85, 0.9);
+      color: #94a3b8;
+      box-shadow: none;
+      cursor: default;
+    }
+
     .hub-subtitle {
       width: 100%;
       max-width: 540px;
-      padding: 18px 18px 6px 18px;
-      font-size: 14px;
+      padding: 16px 18px 6px 18px;
+      font-size: 13px;
       color: #94a3b8;
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .games-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      padding: 10px 18px;
+      gap: 14px;
+      padding: 8px 18px;
       width: 100%;
       max-width: 540px;
     }
 
     .game-card {
-      background: rgba(30, 41, 59, 0.88);
+      background: rgba(30, 41, 59, 0.9);
       border-radius: 20px;
       overflow: hidden;
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
@@ -133,8 +171,8 @@
     }
 
     .game-card.active {
-      border-color: #38bdf8;
-      box-shadow: 0 10px 28px rgba(56, 189, 248, 0.22);
+      border-color: rgba(56, 189, 248, 0.65);
+      box-shadow: 0 10px 26px rgba(56, 189, 248, 0.18);
     }
 
     .game-badge {
@@ -151,6 +189,10 @@
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     }
 
+    .game-badge.new-badge {
+      background: linear-gradient(135deg, #f97316, #ec4899);
+    }
+
     .game-badge.soon {
       background: #475569;
       color: #cbd5e1;
@@ -158,15 +200,23 @@
 
     .game-icon {
       width: 100%;
-      height: 128px;
+      height: 120px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 62px;
+      font-size: 58px;
     }
 
     .ridge-icon {
       background: linear-gradient(160deg, #0284c7 0%, #38bdf8 55%, #22c55e 55%, #15803d 100%);
+    }
+
+    .skystack-icon {
+      background: linear-gradient(155deg, #6366f1 0%, #a855f7 52%, #ec4899 100%);
+    }
+
+    .timber-icon {
+      background: linear-gradient(160deg, #0ea5e9 0%, #38bdf8 52%, #854d0e 52%, #15803d 100%);
     }
 
     .soon-icon {
@@ -175,7 +225,7 @@
     }
 
     .game-info {
-      padding: 12px 14px 14px 14px;
+      padding: 11px 13px 13px 13px;
       display: flex;
       flex-direction: column;
       gap: 4px;
@@ -183,7 +233,7 @@
 
     .game-title {
       font-weight: 700;
-      font-size: 18px;
+      font-size: 17px;
       color: #ffffff;
     }
 
@@ -192,6 +242,70 @@
       color: #94a3b8;
       font-weight: 600;
     }
+
+    .missions-list {
+      width: calc(100% - 36px);
+      max-width: 504px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .mission-row {
+      background: rgba(30, 41, 59, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 10px 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .mission-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .mission-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .mission-sub {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .mission-claim-btn {
+      background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
+      color: #052e16;
+      border: none;
+      border-radius: 10px;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 2px 0 #15803d;
+    }
+
+    .mission-claim-btn:disabled {
+      background: rgba(51, 65, 85, 0.7);
+      color: #64748b;
+      box-shadow: none;
+      cursor: default;
+    }
+
+    .mission-claim-btn.claimed {
+      background: rgba(34, 197, 94, 0.18);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.35);
+      box-shadow: none;
+    }
   </style>
 </head>
 <body>
@@ -199,7 +313,7 @@
   <div class="hub-header">
     <h1 class="hub-title">🕹 ARCADE HUB</h1>
     <div class="hub-currencies">
-      <div class="hub-gem-pill" title="Общая валюта всех игр">
+      <div class="hub-gem-pill" id="hub-gem-pill" title="Общая валюта всех игр">
         <span>💎</span>
         <span id="hub-gems-val">10</span>
       </div>
@@ -208,11 +322,15 @@
 
   <div class="hub-banner">
     <div class="hub-banner-text">
-      <strong>💎 Алмазы</strong> — единая валюта для всех мини-игр в хабе! Зарабатывай их на трассах и за рекорды.
+      <strong>💎 Алмазы</strong> — общая валюта для всех игр! Собирай их в играх, за рекорды и из сундука.
     </div>
+    <button class="chest-btn" id="chest-btn" onclick="claimChest()">🎁 +5 💎</button>
   </div>
 
-  <div class="hub-subtitle">Доступные игры</div>
+  <div class="hub-subtitle">
+    <span>Доступные игры (3)</span>
+    <span style="color:#38bdf8;font-size:11px;">Единый банк 💎</span>
+  </div>
 
   <div class="games-grid">
     <!-- Игра 1: Ridge Rush -->
@@ -225,25 +343,27 @@
       </div>
     </div>
 
-    <!-- Слоты под будущие игры -->
-    <div class="game-card" onclick="soonAlert()">
-      <span class="game-badge soon">SOON</span>
-      <div class="game-icon soon-icon">🚀</div>
+    <!-- Игра 2: Sky Stack -->
+    <div class="game-card active" onclick="startGame('skystack.html')">
+      <span class="game-badge new-badge">NEW</span>
+      <div class="game-icon skystack-icon">🧱</div>
       <div class="game-info">
-        <div class="game-title">Игра #2</div>
-        <div class="game-meta">Скоро в хабе</div>
+        <div class="game-title">Sky Stack</div>
+        <div class="game-meta" id="ss-best-meta">Изометрическая башня</div>
       </div>
     </div>
 
-    <div class="game-card" onclick="soonAlert()">
-      <span class="game-badge soon">SOON</span>
-      <div class="game-icon soon-icon">⚔️</div>
+    <!-- Игра 3: Timber Dash -->
+    <div class="game-card active" onclick="startGame('timberdash.html')">
+      <span class="game-badge new-badge">NEW</span>
+      <div class="game-icon timber-icon">🦫</div>
       <div class="game-info">
-        <div class="game-title">Игра #3</div>
-        <div class="game-meta">Скоро в хабе</div>
+        <div class="game-title">Timber Dash</div>
+        <div class="game-meta" id="td-best-meta">Бобёр-дровосек на реакцию</div>
       </div>
     </div>
 
+    <!-- Слот под будущую игру -->
     <div class="game-card" onclick="soonAlert()">
       <span class="game-badge soon">SOON</span>
       <div class="game-icon soon-icon">🧩</div>
@@ -254,35 +374,210 @@
     </div>
   </div>
 
+  <div class="hub-subtitle">
+    <span>🎯 Задания хаба на алмазы</span>
+  </div>
+
+  <div class="missions-list" id="missions-list"></div>
+
   <script>
     const GLOBAL_GEMS_KEY = 'arcade_global_gems';
+    const HUB_CLAIMS_KEY = 'arcade_hub_claims_v1';
+    const CHEST_COOLDOWN_MS = 15 * 60 * 1000; // 15 минут между бесплатными сундуками
 
     if (window.Telegram && window.Telegram.WebApp) {
       window.Telegram.WebApp.ready();
       try { window.Telegram.WebApp.expand(); } catch (e) {}
     }
 
-    function loadHubData() {
+    function getGems() {
       try {
         let gems = parseInt(localStorage.getItem(GLOBAL_GEMS_KEY), 10);
         if (isNaN(gems)) {
-          gems = 10; // Стартовый бонус алмазов
+          gems = 10;
           localStorage.setItem(GLOBAL_GEMS_KEY, String(gems));
         }
-        document.getElementById('hub-gems-val').textContent = gems.toLocaleString();
+        return gems;
+      } catch (e) {
+        return 10;
+      }
+    }
 
-        const raw = localStorage.getItem('ridge_rush_save_v1');
-        if (raw) {
-          const data = JSON.parse(raw);
-          if (data.bestDist) {
-            const maxBest = Math.max(0, ...Object.values(data.bestDist));
-            const coins = typeof data.coins === 'number' ? data.coins : 0;
-            if (maxBest > 0) {
-              document.getElementById('rr-best-meta').textContent = `🏆 ${maxBest} м • 🪙 ${coins}`;
-            }
-          }
+    function addGems(delta) {
+      const next = Math.max(0, getGems() + delta);
+      try {
+        localStorage.setItem(GLOBAL_GEMS_KEY, String(next));
+      } catch (e) {}
+      const el = document.getElementById('hub-gems-val');
+      if (el) el.textContent = next.toLocaleString();
+      const pill = document.getElementById('hub-gem-pill');
+      if (pill) {
+        pill.classList.remove('bump');
+        void pill.offsetWidth;
+        pill.classList.add('bump');
+      }
+    }
+
+    function getClaims() {
+      try {
+        const raw = localStorage.getItem(HUB_CLAIMS_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return { lastChest: 0, missions: {} };
+    }
+
+    function saveClaims(claims) {
+      try {
+        localStorage.setItem(HUB_CLAIMS_KEY, JSON.stringify(claims));
+      } catch (e) {}
+    }
+
+    function getStats() {
+      let rrBest = 0, rrCoins = 0;
+      let ssBest = 0;
+      let tdBest = 0, tdLogs = 0;
+
+      try {
+        const rrRaw = localStorage.getItem('ridge_rush_save_v1');
+        if (rrRaw) {
+          const data = JSON.parse(rrRaw);
+          if (data.bestDist) rrBest = Math.max(0, ...Object.values(data.bestDist));
+          if (typeof data.coins === 'number') rrCoins = data.coins;
         }
       } catch (e) {}
+
+      try {
+        ssBest = parseInt(localStorage.getItem('skystack_best_v1'), 10) || 0;
+      } catch (e) {}
+
+      try {
+        const tdRaw = localStorage.getItem('timberdash_save_v1');
+        if (tdRaw) {
+          const tdData = JSON.parse(tdRaw);
+          tdBest = tdData.best || 0;
+          tdLogs = tdData.logs || 0;
+        }
+      } catch (e) {}
+
+      return { rrBest, rrCoins, ssBest, tdBest, tdLogs };
+    }
+
+    function claimChest() {
+      const claims = getClaims();
+      const now = Date.now();
+      if (now - (claims.lastChest || 0) < CHEST_COOLDOWN_MS) return;
+      claims.lastChest = now;
+      saveClaims(claims);
+      addGems(5);
+      updateChestButton();
+    }
+
+    function updateChestButton() {
+      const btn = document.getElementById('chest-btn');
+      if (!btn) return;
+      const claims = getClaims();
+      const diff = CHEST_COOLDOWN_MS - (Date.now() - (claims.lastChest || 0));
+      if (diff <= 0) {
+        btn.classList.remove('cooldown');
+        btn.textContent = '🎁 Сундук +5 💎';
+      } else {
+        btn.classList.add('cooldown');
+        const mins = Math.ceil(diff / 60000);
+        btn.textContent = `⏳ ${mins} мин`;
+      }
+    }
+
+    function renderMissions(stats) {
+      const missions = [
+        {
+          id: 'rr_200',
+          title: '🚙 Проехать 200 м в Ridge Rush',
+          progress: `${Math.min(stats.rrBest, 200)} / 200 м`,
+          done: stats.rrBest >= 200,
+          reward: 5
+        },
+        {
+          id: 'ss_15',
+          title: '🧱 Построить 15 этажей в Sky Stack',
+          progress: `${Math.min(stats.ssBest, 15)} / 15 блоков`,
+          done: stats.ssBest >= 15,
+          reward: 5
+        },
+        {
+          id: 'td_40',
+          title: '🦫 Срубить 40 секций в Timber Dash',
+          progress: `${Math.min(stats.tdBest, 40)} / 40 секций`,
+          done: stats.tdBest >= 40,
+          reward: 5
+        },
+        {
+          id: 'all_3',
+          title: '🏆 Сыграть во все 3 игры хаба',
+          progress: `${(stats.rrBest > 0 ? 1 : 0) + (stats.ssBest > 0 ? 1 : 0) + (stats.tdBest > 0 ? 1 : 0)} / 3 игр`,
+          done: stats.rrBest > 0 && stats.ssBest > 0 && stats.tdBest > 0,
+          reward: 10
+        }
+      ];
+
+      const claims = getClaims();
+      const container = document.getElementById('missions-list');
+      container.innerHTML = '';
+
+      missions.forEach((m) => {
+        const isClaimed = !!(claims.missions && claims.missions[m.id]);
+        const row = document.createElement('div');
+        row.className = 'mission-row';
+
+        const info = document.createElement('div');
+        info.className = 'mission-info';
+        info.innerHTML = `<div class="mission-title">${m.title}</div><div class="mission-sub">Прогресс: ${m.progress}</div>`;
+
+        const btn = document.createElement('button');
+        if (isClaimed) {
+          btn.className = 'mission-claim-btn claimed';
+          btn.disabled = true;
+          btn.textContent = '✓ Получено';
+        } else if (m.done) {
+          btn.className = 'mission-claim-btn';
+          btn.textContent = `Забрать +${m.reward} 💎`;
+          btn.onclick = () => {
+            const c = getClaims();
+            c.missions = c.missions || {};
+            if (c.missions[m.id]) return;
+            c.missions[m.id] = true;
+            saveClaims(c);
+            addGems(m.reward);
+            renderMissions(getStats());
+          };
+        } else {
+          btn.className = 'mission-claim-btn';
+          btn.disabled = true;
+          btn.textContent = `+${m.reward} 💎`;
+        }
+
+        row.appendChild(info);
+        row.appendChild(btn);
+        container.appendChild(row);
+      });
+    }
+
+    function loadHubData() {
+      const gems = getGems();
+      document.getElementById('hub-gems-val').textContent = gems.toLocaleString();
+
+      const stats = getStats();
+      if (stats.rrBest > 0) {
+        document.getElementById('rr-best-meta').textContent = `🏆 ${stats.rrBest} м • 🪙 ${stats.rrCoins}`;
+      }
+      if (stats.ssBest > 0) {
+        document.getElementById('ss-best-meta').textContent = `🏆 Рекорд: ${stats.ssBest}`;
+      }
+      if (stats.tdBest > 0) {
+        document.getElementById('td-best-meta').textContent = `🏆 ${stats.tdBest} • 🪵 ${stats.tdLogs}`;
+      }
+
+      updateChestButton();
+      renderMissions(stats);
     }
 
     function startGame(url) {
@@ -290,10 +585,11 @@
     }
 
     function soonAlert() {
-      alert('Эта игра скоро появится в хабе! Твои 💎 алмазы будут доступны и в ней.');
+      alert('Четвёртая игра скоро появится в хабе! Твои 💎 алмазы будут доступны и в ней.');
     }
 
     loadHubData();
+    setInterval(updateChestButton, 15000);
   </script>
 </body>
 </html>

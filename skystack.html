@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Sky Stack</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+#ss-game-root {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0f172a;
+  color: #ffffff;
+  font-family: 'Fredoka', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  box-sizing: border-box;
+}
+#ss-game-root *, #ss-game-root *::before, #ss-game-root *::after {
+  box-sizing: border-box;
+  font-family: 'Fredoka', sans-serif;
+}
+#ss-game-root .ss-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+#ss-game-root .ss-topbar {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top, 12px));
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 15;
+  pointer-events: none;
+}
+#ss-game-root .ss-hub-btn {
+  pointer-events: auto;
+  background: rgba(15, 23, 42, 0.72);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 7px 13px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: transform 0.1s ease;
+}
+#ss-game-root .ss-hub-btn:active {
+  transform: scale(0.93);
+}
+#ss-game-root .ss-gem-pill {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 2px solid #38bdf8;
+  border-radius: 99px;
+  padding: 5px 13px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #7dd3fc;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.28);
+}
+#ss-game-root .ss-hud {
+  position: absolute;
+  top: max(62px, calc(env(safe-area-inset-top, 12px) + 50px));
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 10;
+}
+#ss-game-root .ss-score-big {
+  font-size: clamp(54px, 13vw, 76px);
+  font-weight: 700;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+#ss-game-root .ss-combo-badge {
+  margin-top: 8px;
+  background: linear-gradient(135deg, #f59e0b, #ec4899);
+  color: #ffffff;
+  padding: 5px 16px;
+  border-radius: 99px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.45);
+  animation: ss-perfect 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+#ss-game-root .ss-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 20;
+  pointer-events: none;
+}
+#ss-game-root .ss-start-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+#ss-game-root .ss-title {
+  font-size: clamp(42px, 11vw, 62px);
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  letter-spacing: 1.5px;
+}
+#ss-game-root .ss-best-pill {
+  background: rgba(15, 23, 42, 0.65);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 99px;
+  padding: 6px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fde047;
+}
+#ss-game-root .ss-tap-prompt {
+  margin-top: 28px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.16);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 99px;
+  padding: 12px 28px;
+  animation: ss-pulse 1.4s ease-in-out infinite;
+}
+#ss-game-root .ss-gameover-card {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 360px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 24px;
+  padding: 22px 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+#ss-game-root .ss-new-record {
+  background: linear-gradient(90deg, #f59e0b, #eab308);
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: 99px;
+  letter-spacing: 1px;
+  animation: ss-perfect 0.4s ease;
+}
+#ss-game-root .ss-btn {
+  width: 100%;
+  min-height: 50px;
+  border-radius: 14px;
+  border: none;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35);
+  transition: transform 0.08s ease;
+}
+#ss-game-root .ss-btn:active {
+  transform: translateY(3px);
+}
+#ss-game-root .ss-btn-primary {
+  background: linear-gradient(180deg, #22c55e, #16a34a);
+}
+#ss-game-root .ss-btn-secondary {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+}
+#ss-game-root .ss-hidden {
+  display: none !important;
+}
+@keyframes ss-perfect {
+  0% { transform: scale(0.7); opacity: 0.3; }
+  65% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes ss-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.92; }
+  50% { transform: scale(1.06); opacity: 1; }
+}
+</style>
+</head>
+<body style="margin:0;padding:0;overflow:hidden;background:#0f172a;font-family:'Fredoka', sans-serif;">
+<div id="ss-game-root">
+  <canvas id="ss-canvas" class="ss-canvas"></canvas>
+
+  <div class="ss-topbar">
+    <button id="ss-hub-btn" class="ss-hub-btn">◀ HUB</button>
+    <div class="ss-gem-pill" title="Shared Hub Gems">
+      <span>💎</span>
+      <span id="ss-gems-val">0</span>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div id="ss-hud" class="ss-hud ss-hidden">
+    <div id="ss-score-txt" class="ss-score-big">0</div>
+    <div id="ss-combo-badge" class="ss-combo-badge ss-hidden">PERFECT ×1</div>
+  </div>
+
+  <!-- START SCREEN -->
+  <div id="ss-screen-start" class="ss-overlay">
+    <div class="ss-start-box">
+      <div class="ss-title">SKY STACK</div>
+      <div id="ss-start-best" class="ss-best-pill">BEST: 0</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.8);font-family:'Fredoka', sans-serif;">Earn 💎 Gems on 3x Perfect Combos &amp; every 10 blocks!</div>
+      <div id="ss-tap-start" class="ss-tap-prompt">TAP TO START</div>
+    </div>
+  </div>
+
+  <!-- GAME OVER SCREEN -->
+  <div id="ss-screen-gameover" class="ss-overlay ss-hidden">
+    <div class="ss-gameover-card">
+      <div id="ss-new-record-banner" class="ss-new-record ss-hidden">★ NEW RECORD ★</div>
+      <div style="font-size:28px;font-weight:700;color:#f8fafc;font-family:'Fredoka', sans-serif;">TOWER COMPLETE</div>
+      <div id="ss-go-score" style="font-size:46px;font-weight:700;color:#fde047;line-height:1;font-family:'Fredoka', sans-serif;">0</div>
+      <div id="ss-go-best" style="font-size:15px;color:#cbd5e1;font-weight:600;font-family:'Fredoka', sans-serif;">BEST SCORE: 0</div>
+      <div id="ss-go-gems" style="font-size:16px;color:#7dd3fc;font-weight:700;background:rgba(14,165,233,0.15);padding:6px 14px;border-radius:99px;font-family:'Fredoka', sans-serif;">Earned: +0 💎</div>
+      <button id="ss-retry-btn" class="ss-btn ss-btn-primary">▶ PLAY AGAIN</button>
+      <button id="ss-share-btn" class="ss-btn ss-btn-secondary">🏆 CHALLENGE A FRIEND</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const CONFIG = {
+    block: {
+      baseSize: 3.0,
+      height: 0.42,
+      startRange: 4.4
+    },
+    speed: {
+      base: 1.75,
+      step: 0.045,
+      max: 4.3
+    },
+    perfectTolerance: 0.085,
+    combo: {
+      growFrom: 3,
+      growAmount: 0.15
+    },
+    color: {
+      startHue: 200,
+      hueStep: 6,
+      sat: 68,
+      light: 58
+    },
+    camera: {
+      lerp: 0.08,
+      visibleBlocks: 6,
+      baseScale: 52
+    },
+    debris: {
+      gravity: 22,
+      maxCount: 20,
+      fallRemoveDist: 15
+    },
+    simulation: {
+      fixedDt: 1 / 60,
+      debounceMs: 80
+    },
+    storage: {
+      bestKey: 'skystack_best_v1',
+      gemsKey: 'arcade_global_gems'
+    },
+    api: {
+      submitEndpoint: '/api/skystack/submit'
+    },
+    ui: {
+      font: "'Fredoka', sans-serif",
+      texts: {
+        start: 'TAP TO START',
+        perfect: 'PERFECT',
+        newRecord: 'NEW RECORD'
+      }
+    },
+    audio: {
+      masterVolume: 0.45
+    }
+  };
+
+  // ==========================================
+  // DETERMINISTIC SEEDED RNG (MULBERRY32)
+  // ==========================================
+  function mulberry32(seed) {
+    let t = seed >>> 0;
+    return function() {
+      t += 0x6D2B79F5;
+      let r = Math.imul(t ^ (t >>> 15), 1 | t);
+      r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // ==========================================
+  // TELEGRAM INTEGRATION & STORAGE
+  // ==========================================
+  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  if (tg) {
+    try {
+      tg.ready();
+      tg.expand();
+      if (typeof tg.disableVerticalSwipes === 'function') tg.disableVerticalSwipes();
+      if (typeof tg.setHeaderColor === 'function') tg.setHeaderColor('#0f172a');
+    } catch (e) {}
+  }
+
+  function triggerHaptic(type) {
+    if (!tg || !tg.HapticFeedback) return;
+    try {
+      if (type === 'error') tg.HapticFeedback.notificationOccurred('error');
+      else tg.HapticFeedback.impactOccurred(type);
+    } catch (e) {}
+  }
+
+  let bestScore = 0;
+  let globalGems = 10;
+
+  function loadData() {
+    try {
+      const localBest = parseInt(localStorage.getItem(CONFIG.storage.bestKey), 10);
+      if (!isNaN(localBest)) bestScore = localBest;
+
+      const localGems = parseInt(localStorage.getItem(CONFIG.storage.gemsKey), 10);
+      if (!isNaN(localGems)) globalGems = localGems;
+      else localStorage.setItem(CONFIG.storage.gemsKey, String(globalGems));
+    } catch (e) {}
+
+    if (tg && tg.CloudStorage && tg.isVersionAtLeast && tg.isVersionAtLeast('6.9')) {
+      try {
+        tg.CloudStorage.getItem(CONFIG.storage.bestKey, (err, val) => {
+          if (!err && val) {
+            const parsed = parseInt(val, 10);
+            if (!isNaN(parsed) && parsed > bestScore) {
+              bestScore = parsed;
+              updateBestUI();
+            }
+          }
+        });
+      } catch (e) {}
+    }
+    updateBestUI();
+    updateGemsUI();
+  }
+
+  function saveBestScore(newBest) {
+    bestScore = newBest;
+    try {
+      localStorage.setItem(CONFIG.storage.bestKey, String(bestScore));
+    } catch (e) {}
+    if (tg && tg.CloudStorage && tg.isVersionAtLeast && tg.isVersionAtLeast('6.9')) {
+      try {
+        tg.CloudStorage.setItem(CONFIG.storage.bestKey, String(bestScore), () => {});
+      } catch (e) {}
+    }
+  }
+
+  function addGems(amount) {
+    globalGems += amount;
+    runGems += amount;
+    try {
+      localStorage.setItem(CONFIG.storage.gemsKey, String(globalGems));
+    } catch (e) {}
+    updateGemsUI();
+  }
+
+  // ==========================================
+  // WEB AUDIO SYNTHESIZER
+  // ==========================================
+  class SoundSynth {
+    constructor() {
+      this.ctx = null;
+    }
+
+    init() {
+      if (this.ctx) {
+        if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+        return;
+      }
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) this.ctx = new AudioCtx();
+      } catch (e) {}
+    }
+
+    playTone(freqStart, freqEnd, dur, type = 'sine', vol = 0.25) {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freqStart, now);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(20, freqEnd), now + dur);
+
+        gain.gain.setValueAtTime(vol * CONFIG.audio.masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + dur);
+      } catch (e) {}
+    }
+
+    playPlace(level) {
+      const f = 220 + Math.min(350, level * 8);
+      this.playTone(f, f * 0.85, 0.11, 'triangle', 0.28);
+    }
+
+    playPerfect(combo) {
+      const base = 360 + Math.min(600, combo * 55);
+      this.playTone(base, base * 1.45, 0.22, 'sine', 0.36);
+    }
+
+    playGem() {
+      this.playTone(880, 1520, 0.16, 'sine', 0.32);
+    }
+
+    playGameOver() {
+      this.playTone(210, 65, 0.42, 'sawtooth', 0.35);
+    }
+  }
+
+  const sfx = new SoundSynth();
+
+  // ==========================================
+  // DOM ELEMENTS
+  // ==========================================
+  const canvas = document.getElementById('ss-canvas');
+  const ctx = canvas.getContext('2d');
+  const elHud = document.getElementById('ss-hud');
+  const elScoreTxt = document.getElementById('ss-score-txt');
+  const elComboBadge = document.getElementById('ss-combo-badge');
+  const elScreenStart = document.getElementById('ss-screen-start');
+  const elScreenGameOver = document.getElementById('ss-screen-gameover');
+  const elStartBest = document.getElementById('ss-start-best');
+  const elGemsVal = document.getElementById('ss-gems-val');
+
+  function updateBestUI() {
+    elStartBest.textContent = `BEST: ${bestScore}`;
+  }
+
+  function updateGemsUI() {
+    elGemsVal.textContent = globalGems.toLocaleString();
+  }
+
+  // ==========================================
+  // GAME STATE & DETERMINISTIC SIMULATION
+  // ==========================================
+  let state = 'START'; // START | PLAYING | GAMEOVER
+  let runSeed = 1337;
+  let rng = mulberry32(runSeed);
+  let simTick = 0;
+  let tapTimes = [];
+  let lastTapRealTime = 0;
+
+  let stack = [];
+  let activeBlock = null;
+  let debrisPool = [];
+  let ripples = [];
+  let floatingRewards = [];
+
+  let score = 0;
+  let combo = 0;
+  let runGems = 0;
+  let camY = 0;
+  let camZoom = 1.0;
+
+  function initTowerPreview() {
+    stack = [
+      {
+        x: 0,
+        z: 0,
+        y: 0,
+        sizeX: CONFIG.block.baseSize,
+        sizeZ: CONFIG.block.baseSize,
+        level: 0
+      }
+    ];
+    activeBlock = null;
+    debrisPool = [];
+    ripples = [];
+    floatingRewards = [];
+    camY = 0;
+    camZoom = 1.0;
+  }
+
+  function startNewRun() {
+    sfx.init();
+    runSeed = (Date.now() ^ Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0;
+    rng = mulberry32(runSeed);
+    simTick = 0;
+    tapTimes = [];
+    score = 0;
+    combo = 0;
+    runGems = 0;
+    debrisPool = [];
+    ripples = [];
+    floatingRewards = [];
+
+    stack = [
+      {
+        x: 0,
+        z: 0,
+        y: 0,
+        sizeX: CONFIG.block.baseSize,
+        sizeZ: CONFIG.block.baseSize,
+        level: 0
+      }
+    ];
+
+    camY = 0;
+    camZoom = 1.0;
+
+    elScreenStart.classList.add('ss-hidden');
+    elScreenGameOver.classList.add('ss-hidden');
+    elHud.classList.remove('ss-hidden');
+    elScoreTxt.textContent = '0';
+    elComboBadge.classList.add('ss-hidden');
+
+    spawnNextMovingBlock();
+    state = 'PLAYING';
+  }
+
+  function spawnNextMovingBlock() {
+    const prev = stack[stack.length - 1];
+    const nextLevel = stack.length;
+    const axis = nextLevel % 2 === 1 ? 'x' : 'z';
+    const spd = Math.min(CONFIG.speed.max, CONFIG.speed.base + nextLevel * CONFIG.speed.step);
+
+    activeBlock = {
+      x: axis === 'x' ? -CONFIG.block.startRange : prev.x,
+      z: axis === 'z' ? -CONFIG.block.startRange : prev.z,
+      y: nextLevel * CONFIG.block.height,
+      sizeX: prev.sizeX,
+      sizeZ: prev.sizeZ,
+      level: nextLevel,
+      axis,
+      speed: spd,
+      timeOffset: 0
+    };
+  }
+
+  function spawnDebris(x, y, z, sizeX, sizeZ, level, axis) {
+    if (debrisPool.length >= CONFIG.debris.maxCount) {
+      debrisPool.shift();
+    }
+    debrisPool.push({
+      x,
+      y,
+      z,
+      startY: y,
+      sizeX,
+      sizeZ,
+      level,
+      vy: 0,
+      rot: 0,
+      vRot: (rng() - 0.5) * 3.2,
+      axis
+    });
+  }
+
+  function placeActiveBlock() {
+    if (state !== 'PLAYING' || !activeBlock) return;
+
+    tapTimes.push(simTick);
+    const prev = stack[stack.length - 1];
+    const axis = activeBlock.axis;
+    const curPos = activeBlock[axis];
+    const prevPos = prev[axis];
+    const sizeKey = axis === 'x' ? 'sizeX' : 'sizeZ';
+    const prevSize = prev[sizeKey];
+
+    const delta = curPos - prevPos;
+    const absDelta = Math.abs(delta);
+    const overlap = prevSize - absDelta;
+
+    if (overlap <= 0) {
+      // Missed completely -> whole block falls as debris -> Game Over
+      spawnDebris(activeBlock.x, activeBlock.y, activeBlock.z, activeBlock.sizeX, activeBlock.sizeZ, activeBlock.level, axis);
+      activeBlock = null;
+      triggerGameOver();
+      return;
+    }
+
+    let newPos = prevPos;
+    let newSize = prevSize;
+
+    if (absDelta <= CONFIG.perfectTolerance) {
+      // PERFECT DROP
+      combo++;
+      triggerHaptic('medium');
+      sfx.playPerfect(combo);
+
+      // Grow block if combo >= growFrom
+      if (combo >= CONFIG.combo.growFrom) {
+        newSize = Math.min(CONFIG.block.baseSize, prevSize + CONFIG.combo.growAmount);
+        addGems(1);
+        sfx.playGem();
+        floatingRewards.push({ text: '+1 💎 COMBO!', yOffset: 0, life: 1.0 });
+      }
+
+      ripples.push({
+        x: axis === 'x' ? newPos : activeBlock.x,
+        z: axis === 'z' ? newPos : activeBlock.z,
+        y: activeBlock.y,
+        sizeX: axis === 'x' ? newSize : activeBlock.sizeX,
+        sizeZ: axis === 'z' ? newSize : activeBlock.sizeZ,
+        scale: 1.0,
+        alpha: 1.0
+      });
+
+      const mult = combo >= 6 ? 3 : combo >= 3 ? 2 : 1;
+      score += 1 + 1 * mult;
+      elComboBadge.textContent = `${CONFIG.ui.texts.perfect} ×${combo}`;
+      elComboBadge.classList.remove('ss-hidden');
+      // Retrigger animation
+      elComboBadge.style.animation = 'none';
+      void elComboBadge.offsetWidth;
+      elComboBadge.style.animation = '';
+    } else {
+      // PARTIAL CUT
+      combo = 0;
+      elComboBadge.classList.add('ss-hidden');
+      triggerHaptic('light');
+      sfx.playPlace(activeBlock.level);
+
+      newSize = overlap;
+      newPos = prevPos + delta * 0.5;
+
+      // Spawn overhanging cut piece as falling debris
+      const cutSize = absDelta;
+      const sign = Math.sign(delta);
+      const cutPos = newPos + sign * (newSize * 0.5 + cutSize * 0.5);
+
+      spawnDebris(
+        axis === 'x' ? cutPos : activeBlock.x,
+        activeBlock.y,
+        axis === 'z' ? cutPos : activeBlock.z,
+        axis === 'x' ? cutSize : activeBlock.sizeX,
+        axis === 'z' ? cutSize : activeBlock.sizeZ,
+        activeBlock.level,
+        axis
+      );
+
+      score += 1;
+    }
+
+    const placedBlock = {
+      x: axis === 'x' ? newPos : activeBlock.x,
+      z: axis === 'z' ? newPos : activeBlock.z,
+      y: activeBlock.y,
+      sizeX: axis === 'x' ? newSize : activeBlock.sizeX,
+      sizeZ: axis === 'z' ? newSize : activeBlock.sizeZ,
+      level: activeBlock.level
+    };
+
+    stack.push(placedBlock);
+
+    // Every 10 placed blocks grants +1 shared Gem
+    if ((stack.length - 1) % 10 === 0) {
+      addGems(1);
+      floatingRewards.push({ text: '+1 💎 TOWER BONUS!', yOffset: 0, life: 1.1 });
+    }
+
+    elScoreTxt.textContent = String(score);
+    spawnNextMovingBlock();
+  }
+
+  function triggerGameOver() {
+    state = 'GAMEOVER';
+    triggerHaptic('error');
+    sfx.playGameOver();
+
+    const isNewRecord = score > bestScore;
+    if (isNewRecord) {
+      saveBestScore(score);
+      addGems(2);
+    }
+
+    // Anti-cheat deterministic replay submission payload
+    const payload = {
+      initData: tg ? tg.initData : '',
+      score,
+      seed: runSeed,
+      tapTimes
+    };
+    try {
+      fetch(CONFIG.api.submitEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(() => {});
+    } catch (e) {}
+
+    elHud.classList.add('ss-hidden');
+    elScreenGameOver.classList.remove('ss-hidden');
+    document.getElementById('ss-new-record-banner').classList.toggle('ss-hidden', !isNewRecord);
+    document.getElementById('ss-go-score').textContent = String(score);
+    document.getElementById('ss-go-best').textContent = `BEST SCORE: ${bestScore}`;
+    document.getElementById('ss-go-gems').textContent = `Earned: +${runGems} 💎`;
+    updateBestUI();
+  }
+
+  function stepSimulation(dt) {
+    simTick++;
+
+    if (state === 'PLAYING' && activeBlock) {
+      activeBlock.timeOffset += dt;
+      const axis = activeBlock.axis;
+      const center = stack[stack.length - 1][axis];
+      // Smooth sine ping-pong oscillation
+      activeBlock[axis] = center - Math.cos(activeBlock.timeOffset * activeBlock.speed) * CONFIG.block.startRange;
+    }
+
+    // Update falling debris
+    for (let i = debrisPool.length - 1; i >= 0; i--) {
+      const d = debrisPool[i];
+      d.vy -= CONFIG.debris.gravity * dt;
+      d.y += d.vy * dt;
+      d.rot += d.vRot * dt;
+      if (d.startY - d.y > CONFIG.debris.fallRemoveDist) {
+        debrisPool.splice(i, 1);
+      }
+    }
+
+    // Update perfect ripples
+    for (let i = ripples.length - 1; i >= 0; i--) {
+      const r = ripples[i];
+      r.scale += 1.4 * dt;
+      r.alpha -= 1.8 * dt;
+      if (r.alpha <= 0) ripples.splice(i, 1);
+    }
+
+    // Update floating gem texts
+    for (let i = floatingRewards.length - 1; i >= 0; i--) {
+      const f = floatingRewards[i];
+      f.yOffset += 40 * dt;
+      f.life -= dt;
+      if (f.life <= 0) floatingRewards.splice(i, 1);
+    }
+
+    // Camera tracking & Game Over full-tower zoom out
+    const stackHeight = (stack.length - 1) * CONFIG.block.height;
+    if (state === 'GAMEOVER') {
+      const targetY = stackHeight * 0.5;
+      camY += (targetY - camY) * 0.06;
+      const neededFit = Math.max(1, stack.length / 10);
+      const targetZoom = Math.max(0.28, Math.min(1.0, 1.0 / neededFit));
+      camZoom += (targetZoom - camZoom) * 0.06;
+    } else {
+      const offsetBlocks = Math.max(0, stackHeight - CONFIG.camera.visibleBlocks * CONFIG.block.height * 0.45);
+      camY += (offsetBlocks - camY) * CONFIG.camera.lerp;
+      camZoom += (1.0 - camZoom) * 0.1;
+    }
+  }
+
+  // ==========================================
+  // PSEUDO-3D ISOMETRIC RENDERING
+  // ==========================================
+  const COS30 = Math.cos(Math.PI / 6);
+  const SIN30 = Math.sin(Math.PI / 6);
+
+  function resizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  function isoProject(x, y, z, originX, originY, scale) {
+    return {
+      sx: originX + (x - z) * COS30 * scale,
+      sy: originY + ((x + z) * SIN30 - (y - camY)) * scale
+    };
+  }
+
+  function drawIsoBox(b, originX, originY, scale, alpha = 1.0) {
+    const hx = b.sizeX * 0.5;
+    const hz = b.sizeZ * 0.5;
+    const y0 = b.y;
+    const y1 = b.y + CONFIG.block.height;
+
+    const hue = (CONFIG.color.startHue + b.level * CONFIG.color.hueStep) % 360;
+    const s = CONFIG.color.sat;
+    const l = CONFIG.color.light;
+
+    // Top face vertices
+    const t0 = isoProject(b.x - hx, y1, b.z - hz, originX, originY, scale);
+    const t1 = isoProject(b.x + hx, y1, b.z - hz, originX, originY, scale);
+    const t2 = isoProject(b.x + hx, y1, b.z + hz, originX, originY, scale);
+    const t3 = isoProject(b.x - hx, y1, b.z + hz, originX, originY, scale);
+
+    // Bottom visible vertices
+    const b1 = isoProject(b.x + hx, y0, b.z - hz, originX, originY, scale);
+    const b2 = isoProject(b.x + hx, y0, b.z + hz, originX, originY, scale);
+    const b3 = isoProject(b.x - hx, y0, b.z + hz, originX, originY, scale);
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // Left Front Face (Lightness -12%)
+    ctx.fillStyle = `hsl(${hue}, ${s}%, ${l - 12}%)`;
+    ctx.beginPath();
+    ctx.moveTo(t3.sx, t3.sy);
+    ctx.lineTo(t2.sx, t2.sy);
+    ctx.lineTo(b2.sx, b2.sy);
+    ctx.lineTo(b3.sx, b3.sy);
+    ctx.closePath();
+    ctx.fill();
+
+    // Right Front Face (Lightness -20%)
+    ctx.fillStyle = `hsl(${hue}, ${s}%, ${l - 20}%)`;
+    ctx.beginPath();
+    ctx.moveTo(t2.sx, t2.sy);
+    ctx.lineTo(t1.sx, t1.sy);
+    ctx.lineTo(b1.sx, b1.sy);
+    ctx.lineTo(b2.sx, b2.sy);
+    ctx.closePath();
+    ctx.fill();
+
+    // Top Face
+    ctx.fillStyle = `hsl(${hue}, ${s}%, ${l}%)`;
+    ctx.beginPath();
+    ctx.moveTo(t0.sx, t0.sy);
+    ctx.lineTo(t1.sx, t1.sy);
+    ctx.lineTo(t2.sx, t2.sy);
+    ctx.lineTo(t3.sx, t3.sy);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function render() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    // Background vertical gradient that shifts hue slowly with tower height
+    const bgHue = (CONFIG.color.startHue + stack.length * 2.5) % 360;
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, `hsl(${bgHue}, 48%, 16%)`);
+    grad.addColorStop(1, `hsl(${(bgHue + 35) % 360}, 52%, 28%)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    const scale = Math.min(w, h) * 0.125 * camZoom;
+    const originX = w * 0.5;
+    const originY = h * 0.64;
+
+    // Draw base pedestal column under block 0
+    if (stack.length > 0) {
+      const base = {
+        x: 0,
+        z: 0,
+        y: -3.2,
+        sizeX: CONFIG.block.baseSize,
+        sizeZ: CONFIG.block.baseSize,
+        level: 0
+      };
+      const savedH = CONFIG.block.height;
+      CONFIG.block.height = 3.2;
+      drawIsoBox(base, originX, originY, scale, 0.85);
+      CONFIG.block.height = savedH;
+    }
+
+    // Draw placed stack from bottom to top
+    for (let i = 0; i < stack.length; i++) {
+      drawIsoBox(stack[i], originX, originY, scale, 1.0);
+    }
+
+    // Draw Perfect White Ring Waves
+    for (let i = 0; i < ripples.length; i++) {
+      const r = ripples[i];
+      const hx = (r.sizeX * 0.5) * r.scale;
+      const hz = (r.sizeZ * 0.5) * r.scale;
+      const p0 = isoProject(r.x - hx, r.y + CONFIG.block.height, r.z - hz, originX, originY, scale);
+      const p1 = isoProject(r.x + hx, r.y + CONFIG.block.height, r.z - hz, originX, originY, scale);
+      const p2 = isoProject(r.x + hx, r.y + CONFIG.block.height, r.z + hz, originX, originY, scale);
+      const p3 = isoProject(r.x - hx, r.y + CONFIG.block.height, r.z + hz, originX, originY, scale);
+
+      ctx.save();
+      ctx.strokeStyle = `rgba(255, 255, 255, ${Math.max(0, r.alpha)})`;
+      ctx.lineWidth = 4 * camZoom;
+      ctx.beginPath();
+      ctx.moveTo(p0.sx, p0.sy);
+      ctx.lineTo(p1.sx, p1.sy);
+      ctx.lineTo(p2.sx, p2.sy);
+      ctx.lineTo(p3.sx, p3.sy);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Draw active sliding block
+    if (state === 'PLAYING' && activeBlock) {
+      drawIsoBox(activeBlock, originX, originY, scale, 1.0);
+    }
+
+    // Draw falling cut debris
+    for (let i = 0; i < debrisPool.length; i++) {
+      const d = debrisPool[i];
+      const fallDist = d.startY - d.y;
+      const alpha = Math.max(0, 1 - fallDist / CONFIG.debris.fallRemoveDist);
+      drawIsoBox(d, originX, originY, scale, alpha);
+    }
+
+    // Draw floating Gem reward texts
+    for (let i = 0; i < floatingRewards.length; i++) {
+      const f = floatingRewards[i];
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, f.life);
+      ctx.font = "700 20px 'Fredoka', sans-serif";
+      ctx.fillStyle = '#7dd3fc';
+      ctx.textAlign = 'center';
+      ctx.fillText(f.text, w * 0.5, h * 0.34 - f.yOffset);
+      ctx.restore();
+    }
+  }
+
+  // ==========================================
+  // INPUT HANDLERS (80ms DEBOUNCE)
+  // ==========================================
+  function handleTapAction() {
+    const now = performance.now();
+    if (now - lastTapRealTime < CONFIG.simulation.debounceMs) return;
+    lastTapRealTime = now;
+
+    if (state === 'START') {
+      startNewRun();
+    } else if (state === 'PLAYING') {
+      placeActiveBlock();
+    }
+  }
+
+  canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    handleTapAction();
+  });
+
+  document.getElementById('ss-screen-start').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    handleTapAction();
+  });
+  document.getElementById('ss-screen-start').style.pointerEvents = 'auto';
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      handleTapAction();
+    }
+  });
+
+  document.getElementById('ss-retry-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    startNewRun();
+  });
+
+  document.getElementById('ss-share-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (tg && typeof tg.switchInlineQuery === 'function') {
+      try {
+        tg.switchInlineQuery(`I stacked ${score} blocks in Sky Stack! Can you beat my tower?`, ['users', 'groups']);
+        return;
+      } catch (err) {}
+    }
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(`I scored ${score} in Sky Stack!`).catch(() => {});
+    }
+  });
+
+  document.getElementById('ss-hub-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.location.href = 'index.html';
+  });
+
+  // ==========================================
+  // MAIN FIXED-TIMESTEP LOOP
+  // ==========================================
+  let lastTime = performance.now();
+  let accumulator = 0;
+
+  function loop(now) {
+    const dt = Math.min(0.1, Math.max(0, (now - lastTime) / 1000));
+    lastTime = now;
+    accumulator += dt;
+
+    while (accumulator >= CONFIG.simulation.fixedDt) {
+      stepSimulation(CONFIG.simulation.fixedDt);
+      accumulator -= CONFIG.simulation.fixedDt;
+    }
+
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  loadData();
+  initTowerPreview();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

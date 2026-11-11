@@ -1778,7 +1778,15 @@
         saveData.coins += flipReward;
         const label = dirSign > 0 ? CONFIG.ui.texts.backflip : CONFIG.ui.texts.frontflip;
         const comboStr = mult > 1 ? ` x${mult}` : '';
-        addFloatingText(pos.x, pos.y + 2.2, `${label}${comboStr} +${flipReward}`, '#fde047');
+        if (mult >= 2) {
+          runGems += 1;
+          globalGems += 1;
+          writeSave();
+          sfx.playGem();
+          addFloatingText(pos.x, pos.y + 2.2, `${label}${comboStr} +${flipReward} & +1 💎`, '#7dd3fc');
+        } else {
+          addFloatingText(pos.x, pos.y + 2.2, `${label}${comboStr} +${flipReward}`, '#fde047');
+        }
         sfx.playFlip();
       }
     } else {
@@ -1823,17 +1831,26 @@
     // 6. Distance & Best Record
     const dist = Math.max(0, Math.floor(curPos.x - startX));
     if (dist > currentDistMeters) {
+      const prevMilestone = Math.floor(currentDistMeters / 250);
+      const newMilestone = Math.floor(dist / 250);
       currentDistMeters = dist;
+      if (newMilestone > prevMilestone && newMilestone > 0) {
+        runGems += 1;
+        globalGems += 1;
+        writeSave();
+        sfx.playGem();
+        addFloatingText(curPos.x, curPos.y + 2.8, `${newMilestone * 250}m BONUS! +1 💎`, '#7dd3fc');
+      }
       if (currentDistMeters > bestDistMeters) {
         bestDistMeters = currentDistMeters;
         saveData.bestDist[activeCarCfg.id] = bestDistMeters;
         if (previousBestMeters > 10 && !beatRecordThisRun) {
           beatRecordThisRun = true;
-          runGems += 1;
-          globalGems += 1;
+          runGems += 2;
+          globalGems += 2;
           writeSave();
           sfx.playGem();
-          addFloatingText(curPos.x, curPos.y + 2.4, 'NEW RECORD! +1 💎', '#7dd3fc');
+          addFloatingText(curPos.x, curPos.y + 2.4, 'NEW RECORD! +2 💎', '#7dd3fc');
         }
       }
     }
