@@ -630,18 +630,30 @@
   </div>
 
   <!-- GAME OVER SCREEN -->
-  <div id="rr-screen-gameover" class="rr-overlay rr-hidden" style="justify-content:center;gap:16px;font-family:'Fredoka', sans-serif;">
-    <div class="rr-card" style="max-width:440px;font-family:'Fredoka', sans-serif;">
-      <div id="rr-go-reason" style="font-size:28px;font-weight:700;color:#f87171;text-align:center;font-family:'Fredoka', sans-serif;">DRIVER KNOCKED OUT</div>
-      <div id="rr-go-dist" style="font-size:18px;font-weight:600;color:#38bdf8;text-align:center;font-family:'Fredoka', sans-serif;">Distance: 0 m</div>
+  <div id="rr-screen-gameover" class="rr-overlay rr-hidden" style="justify-content:center;gap:10px;font-family:'Fredoka', sans-serif;">
+    <div class="rr-card" style="max-width:440px;font-family:'Fredoka', sans-serif;gap:8px;padding:14px;">
+      <div id="rr-go-reason" style="font-size:22px;font-weight:700;color:#f87171;text-align:center;font-family:'Fredoka', sans-serif;">DRIVER KNOCKED OUT</div>
+      <div id="rr-go-dist" style="font-size:16px;font-weight:600;color:#38bdf8;text-align:center;font-family:'Fredoka', sans-serif;">Distance: 0 m</div>
 
-      <div style="background:rgba(15,23,42,0.65);border-radius:14px;padding:12px 14px;font-family:'Fredoka', sans-serif;">
+      <div style="background:rgba(15,23,42,0.65);border-radius:14px;padding:10px 12px;font-family:'Fredoka', sans-serif;">
         <div class="rr-summary-row"><span>Track Coins</span><span id="rr-go-track-coins">+0 🪙</span></div>
         <div class="rr-summary-row"><span>Air Time Bonus</span><span id="rr-go-air-coins">+0 🪙</span></div>
         <div class="rr-summary-row"><span>Flip &amp; Combo Bonus</span><span id="rr-go-flip-coins">+0 🪙</span></div>
         <div class="rr-summary-row"><span style="color:#7dd3fc;font-family:'Fredoka', sans-serif;">Hub Gems Found</span><span id="rr-go-gems" style="color:#7dd3fc;font-weight:700;font-family:'Fredoka', sans-serif;">+0 💎</span></div>
         <div class="rr-summary-total"><span>Total Run Reward</span><span id="rr-go-total-coins">+0 🪙</span></div>
       </div>
+
+      <div id="rr-chal-box" style="background:rgba(30,41,59,0.92);border:1px solid rgba(56,189,248,0.4);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;font-family:'Fredoka', sans-serif;">
+        <div id="rr-chal-status" style="font-size:12px;font-weight:700;color:#fde047;text-align:center;font-family:'Fredoka', sans-serif;">⚔️ Забег завершён</div>
+        <button id="rr-send-run-btn" class="rr-btn rr-btn-blue" style="min-height:38px;font-size:13px;font-family:'Fredoka', sans-serif;">📤 Отправить результат забега в чат</button>
+        <label style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:#cbd5e1;cursor:pointer;font-family:'Fredoka', sans-serif;">
+          <input type="checkbox" id="rr-auto-send-chk" style="accent-color:#38bdf8;">
+          ⚡ Авто-отправка каждого забега в чат
+        </label>
+      </div>
+
+      <button id="rr-revive-btn" class="rr-btn rr-btn-secondary" style="min-height:42px;font-size:15px;font-family:'Fredoka', sans-serif;">⚡ ПРОДОЛЖИТЬ С ПОЛНЫМ БАКОМ (3 💎)</button>
+      <button id="rr-challenge-btn" class="rr-btn rr-btn-blue" style="min-height:40px;font-size:14px;font-family:'Fredoka', sans-serif;">⚔️ БРОСИТЬ ВЫЗОВ ДРУГУ</button>
     </div>
 
     <div class="rr-btn-row" style="max-width:440px;font-family:'Fredoka', sans-serif;">
@@ -2449,11 +2461,16 @@
         </div>
       `;
 
+      const btnWrap = document.createElement('div');
+      btnWrap.style.display = 'flex';
+      btnWrap.style.gap = '6px';
+
       const buyBtn = document.createElement('button');
       buyBtn.className = 'rr-upg-buy';
       if (isMax) {
         buyBtn.textContent = 'MAXED';
         buyBtn.disabled = true;
+        btnWrap.appendChild(buyBtn);
       } else {
         buyBtn.textContent = `${cost} 🪙`;
         buyBtn.disabled = saveData.coins < cost;
@@ -2466,9 +2483,27 @@
             renderUpgradesScreen();
           }
         });
+        btnWrap.appendChild(buyBtn);
+
+        const gemCost = 3 + lvl * 2;
+        const gemBtn = document.createElement('button');
+        gemBtn.className = 'rr-upg-buy';
+        gemBtn.style.background = 'linear-gradient(180deg, #0ea5e9, #0284c7)';
+        gemBtn.textContent = `${gemCost} 💎`;
+        gemBtn.disabled = globalGems < gemCost;
+        gemBtn.addEventListener('click', () => {
+          if (globalGems >= gemCost && upg[t.key] < CONFIG.upgrades.maxLevel) {
+            globalGems -= gemCost;
+            upg[t.key]++;
+            writeSave();
+            sfx.playGem();
+            renderUpgradesScreen();
+          }
+        });
+        btnWrap.appendChild(gemBtn);
       }
 
-      row.appendChild(buyBtn);
+      row.appendChild(btnWrap);
       listEl.appendChild(row);
     });
   }
@@ -2486,12 +2521,91 @@
     gameState = 'PLAYING';
   }
 
+  let rrRunCounter = 0;
+  let rrActiveChallenge = null;
+  function loadRRChallenge() {
+    try {
+      const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+      const params = new URLSearchParams(window.location.search);
+      const cParam = params.get('challenge') || (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param ? tg.initDataUnsafe.start_param : '');
+      if (cParam && cParam.startsWith('rr_')) {
+        const parts = cParam.split('_');
+        const target = parseInt(parts[1], 10) || 0;
+        const fromName = decodeURIComponent(parts.slice(2).join('_') || 'Друг');
+        rrActiveChallenge = { game: 'rr', target, from: fromName };
+        localStorage.setItem('arcade_active_challenge_v1', JSON.stringify(rrActiveChallenge));
+      } else {
+        const savedChal = localStorage.getItem('arcade_active_challenge_v1');
+        if (savedChal) {
+          const parsed = JSON.parse(savedChal);
+          if (parsed && parsed.game === 'rr') rrActiveChallenge = parsed;
+        }
+      }
+      const autoSend = localStorage.getItem('arcade_auto_send_runs_v1') === '1';
+      const chk = document.getElementById('rr-auto-send-chk');
+      if (chk) chk.checked = autoSend;
+    } catch (e) {}
+  }
+
+  function shareRRViaTelegram(text, url) {
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+    if (tg && typeof tg.openTelegramLink === 'function') {
+      try {
+        tg.openTelegramLink(shareUrl);
+        return;
+      } catch (e) {}
+    }
+    window.open(shareUrl, '_blank');
+  }
+
+  function buildRRReport(isChallengeShare) {
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    const playerName = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name)
+      ? tg.initDataUnsafe.user.first_name
+      : 'Игрок';
+    const baseUrl = window.location.origin + window.location.pathname;
+    const link = `${baseUrl}?challenge=rr_${currentDistMeters}_${encodeURIComponent(playerName)}`;
+    if (isChallengeShare) {
+      return {
+        text: `⚔️ ВЫЗОВ В RIDGE RUSH!\n🚙 ${playerName} проехал ${currentDistMeters} м на ${activeCarCfg ? activeCarCfg.name : 'Buggy'} (Рекорд: ${bestDistMeters} м)!\nПопробуй проехать дальше:`,
+        url: link
+      };
+    }
+    let statusLine = `🚙 Ridge Rush — Забег #${rrRunCounter}: ${currentDistMeters} м (Рекорд: ${bestDistMeters} м)`;
+    if (rrActiveChallenge) {
+      const beat = currentDistMeters > rrActiveChallenge.target;
+      statusLine = beat
+        ? `🏆 ВЫЗОВ ПОБИТ! Забег #${rrRunCounter} в Ridge Rush: я проехал ${currentDistMeters} м против ${rrActiveChallenge.target} м от ${rrActiveChallenge.from}!`
+        : `⚔️ Забег #${rrRunCounter} в Ridge Rush: мой результат ${currentDistMeters} м (Цель вызова от ${rrActiveChallenge.from}: ${rrActiveChallenge.target} м).`;
+    }
+    return {
+      text: `${statusLine}\nОтветь своим заездом:`,
+      url: link
+    };
+  }
+
   function triggerGameOver(reason) {
     if (gameState === 'GAMEOVER') return;
     gameState = 'GAMEOVER';
     sfx.updateEngine(0, false, false);
     sfx.playCrash();
     writeSave();
+
+    rrRunCounter++;
+    try {
+      const raw = localStorage.getItem('arcade_runs_history_v1');
+      const list = raw ? JSON.parse(raw) : [];
+      list.unshift({
+        game: 'Ridge Rush',
+        icon: '🚙',
+        score: `${currentDistMeters} м`,
+        target: rrActiveChallenge ? `${rrActiveChallenge.target} м` : null,
+        beat: rrActiveChallenge ? currentDistMeters > rrActiveChallenge.target : null,
+        ts: Date.now()
+      });
+      localStorage.setItem('arcade_runs_history_v1', JSON.stringify(list.slice(0, 20)));
+    } catch (e) {}
 
     elHud.classList.add('rr-hidden');
     elScreenGameOver.classList.remove('rr-hidden');
@@ -2503,6 +2617,33 @@
     document.getElementById('rr-go-flip-coins').textContent = `+${runFlipCoins} 🪙`;
     const goGemsEl = document.getElementById('rr-go-gems');
     if (goGemsEl) goGemsEl.textContent = `+${runGems} 💎`;
+
+    const revBtn = document.getElementById('rr-revive-btn');
+    if (revBtn) {
+      revBtn.disabled = globalGems < 3;
+      revBtn.style.opacity = globalGems < 3 ? '0.5' : '1';
+      revBtn.textContent = `⚡ ПРОДОЛЖИТЬ ЗА 3 💎 (У тебя: ${globalGems} 💎)`;
+    }
+
+    const chalStatus = document.getElementById('rr-chal-status');
+    if (chalStatus) {
+      if (rrActiveChallenge) {
+        const beat = currentDistMeters > rrActiveChallenge.target;
+        chalStatus.textContent = beat
+          ? `🏆 ВЫЗОВ ОТ ${rrActiveChallenge.from.toUpperCase()} ПОБИТ! (${currentDistMeters} м vs ${rrActiveChallenge.target} м)`
+          : `⚔️ Забег #${rrRunCounter}: ${currentDistMeters} м из ${rrActiveChallenge.target} м (от ${rrActiveChallenge.from})`;
+        chalStatus.style.color = beat ? '#4ade80' : '#fde047';
+      } else {
+        chalStatus.textContent = `⚔️ Забег #${rrRunCounter} завершён • Дистанция: ${currentDistMeters} м`;
+        chalStatus.style.color = '#fde047';
+      }
+    }
+
+    const autoChk = document.getElementById('rr-auto-send-chk');
+    if (autoChk && autoChk.checked && currentDistMeters > 0) {
+      const rep = buildRRReport(false);
+      shareRRViaTelegram(rep.text, rep.url);
+    }
 
     const totalEarned = runTrackCoins + runAirCoins + runFlipCoins;
     const totalEl = document.getElementById('rr-go-total-coins');
@@ -2691,6 +2832,54 @@
 
   document.getElementById('rr-go-retry-btn').addEventListener('click', startRun);
 
+  document.getElementById('rr-revive-btn').addEventListener('click', () => {
+    if (globalGems < 3 || !chassisBody) return;
+    globalGems -= 3;
+    writeSave();
+    sfx.playGem();
+    // Place car upright above terrain with full fuel tank
+    const curPos = chassisBody.getPosition();
+    const safeY = getTerrainHeight(curPos.x) + 2.8;
+    chassisBody.setPosition(Vec2(curPos.x, safeY));
+    chassisBody.setAngle(0);
+    chassisBody.setLinearVelocity(Vec2(0, 0));
+    chassisBody.setAngularVelocity(0);
+    if (wheelBackBody) {
+      wheelBackBody.setPosition(Vec2(curPos.x - activeCarCfg.wheelBase * 0.5, safeY + activeCarCfg.wheelDrop));
+      wheelBackBody.setLinearVelocity(Vec2(0, 0));
+      wheelBackBody.setAngularVelocity(0);
+    }
+    if (wheelFrontBody) {
+      wheelFrontBody.setPosition(Vec2(curPos.x + activeCarCfg.wheelBase * 0.5, safeY + activeCarCfg.wheelDrop));
+      wheelFrontBody.setLinearVelocity(Vec2(0, 0));
+      wheelFrontBody.setAngularVelocity(0);
+    }
+    fuel = maxFuel;
+    headTouchedGround = false;
+    rolloverTimer = 0;
+    zeroFuelStoppedTimer = 0;
+    elScreenGameOver.classList.add('rr-hidden');
+    elHud.classList.remove('rr-hidden');
+    gameState = 'PLAYING';
+    addFloatingText(curPos.x, safeY + 2.0, '⚡ ВТОРОЙ ШАНС + ПОЛНЫЙ БАК!', '#4ade80');
+  });
+
+  document.getElementById('rr-send-run-btn').addEventListener('click', () => {
+    const rep = buildRRReport(false);
+    shareRRViaTelegram(rep.text, rep.url);
+  });
+
+  document.getElementById('rr-auto-send-chk').addEventListener('change', (e) => {
+    try {
+      localStorage.setItem('arcade_auto_send_runs_v1', e.target.checked ? '1' : '0');
+    } catch (err) {}
+  });
+
+  document.getElementById('rr-challenge-btn').addEventListener('click', () => {
+    const rep = buildRRReport(true);
+    shareRRViaTelegram(rep.text, rep.url);
+  });
+
   document.getElementById('rr-go-upg-btn').addEventListener('click', () => {
     sfx.playClick();
     gameState = 'UPGRADES';
@@ -2733,6 +2922,7 @@
     requestAnimationFrame(loop);
   }
 
+  loadRRChallenge();
   renderStartMenu();
   initPhysicsRun();
   gameState = 'START';

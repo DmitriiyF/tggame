@@ -242,6 +242,11 @@
     </div>
   </div>
 
+  <!-- LIVE CHALLENGE BANNER -->
+  <div id="td-challenge-bar" class="td-hidden" style="position:absolute;top:max(54px, calc(env(safe-area-inset-top, 12px) + 44px));left:50%;transform:translateX(-50%);z-index:16;background:linear-gradient(135deg,rgba(234,88,12,0.92),rgba(190,18,60,0.92));border:2px solid #fde047;border-radius:99px;padding:4px 14px;font-size:12px;font-weight:700;color:#ffffff;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.4);pointer-events:none;font-family:'Fredoka', sans-serif;">
+    ⚔️ ЧЕЛЛЕНДЖ: <span id="td-chal-target-txt">Побей 0</span>
+  </div>
+
   <!-- HUD -->
   <div id="td-hud" class="td-hud">
     <div class="td-time-container">
@@ -262,23 +267,35 @@
 
   <!-- SKINS MODAL -->
   <div id="td-screen-skins" class="td-overlay td-hidden" style="background:rgba(15,23,42,0.85);pointer-events:auto;font-family:'Fredoka', sans-serif;">
-    <div class="td-card">
-      <div style="font-size:24px;font-weight:700;color:#fde047;font-family:'Fredoka', sans-serif;">BEAVER COSMETICS</div>
+    <div class="td-card" style="max-height:86dvh;overflow-y:auto;">
+      <div style="font-size:22px;font-weight:700;color:#fde047;font-family:'Fredoka', sans-serif;">🎨 МАГАЗИН СКИНОВ И ТОПОРОВ</div>
+      <div style="font-size:12px;color:#94a3b8;font-family:'Fredoka', sans-serif;">Открывай за брёвна 🪵 или общие алмазы 💎</div>
       <div id="td-skins-list" style="width:100%;display:flex;flex-direction:column;gap:8px;font-family:'Fredoka', sans-serif;"></div>
-      <button id="td-skins-close" class="td-btn td-btn-secondary">CLOSE</button>
+      <button id="td-skins-close" class="td-btn td-btn-secondary">ЗАКРЫТЬ</button>
     </div>
   </div>
 
   <!-- GAME OVER -->
   <div id="td-screen-gameover" class="td-overlay td-hidden">
-    <div class="td-card">
+    <div class="td-card" style="gap:10px;padding:18px;">
       <div id="td-new-record" class="td-new-record td-hidden">★ NEW RECORD ★</div>
-      <div id="td-go-title" style="font-size:26px;font-weight:700;color:#f87171;font-family:'Fredoka', sans-serif;">TIMBER!</div>
-      <div id="td-go-score" style="font-size:48px;font-weight:700;color:#fde047;line-height:1;font-family:'Fredoka', sans-serif;">0</div>
-      <div id="td-go-best" style="font-size:15px;color:#cbd5e1;font-weight:600;font-family:'Fredoka', sans-serif;">BEST: 0</div>
-      <div id="td-go-rewards" style="font-size:15px;color:#7dd3fc;font-weight:700;background:rgba(14,165,233,0.15);padding:6px 14px;border-radius:99px;font-family:'Fredoka', sans-serif;">+0 💎 • +0 🪵</div>
-      <button id="td-retry-btn" class="td-btn td-btn-primary">▶ PLAY AGAIN</button>
-      <button id="td-share-btn" class="td-btn td-btn-secondary">🏆 CHALLENGE A FRIEND</button>
+      <div id="td-go-title" style="font-size:22px;font-weight:700;color:#f87171;font-family:'Fredoka', sans-serif;">TIMBER!</div>
+      <div id="td-go-score" style="font-size:44px;font-weight:700;color:#fde047;line-height:1;font-family:'Fredoka', sans-serif;">0</div>
+      <div id="td-go-best" style="font-size:14px;color:#cbd5e1;font-weight:600;font-family:'Fredoka', sans-serif;">BEST: 0</div>
+      <div id="td-go-rewards" style="font-size:14px;color:#7dd3fc;font-weight:700;background:rgba(14,165,233,0.15);padding:5px 14px;border-radius:99px;font-family:'Fredoka', sans-serif;">+0 💎 • +0 🪵</div>
+
+      <div id="td-chal-box" style="width:100%;background:rgba(30,41,59,0.9);border:1px solid rgba(56,189,248,0.4);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;font-family:'Fredoka', sans-serif;">
+        <div id="td-chal-status" style="font-size:12px;font-weight:700;color:#fde047;text-align:center;font-family:'Fredoka', sans-serif;">⚔️ Забег #1 завершён</div>
+        <button id="td-send-run-btn" class="td-btn" style="min-height:38px;font-size:14px;background:linear-gradient(180deg,#0ea5e9,#0284c7);font-family:'Fredoka', sans-serif;">📤 Отправить результат забега в чат</button>
+        <label style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:#cbd5e1;cursor:pointer;font-family:'Fredoka', sans-serif;">
+          <input type="checkbox" id="td-auto-send-chk" style="accent-color:#38bdf8;">
+          ⚡ Авто-отправка каждого забега в чат
+        </label>
+      </div>
+
+      <button id="td-revive-btn" class="td-btn td-btn-amber" style="min-height:44px;font-size:16px;">⚡ ПРОДОЛЖИТЬ ЗА 3 💎</button>
+      <button id="td-retry-btn" class="td-btn td-btn-primary" style="min-height:44px;font-size:16px;">▶ ИГРАТЬ СНОВА</button>
+      <button id="td-share-btn" class="td-btn td-btn-secondary" style="min-height:42px;font-size:15px;">⚔️ БРОСИТЬ ВЫЗОВ ДРУГУ</button>
     </div>
   </div>
 </div>
@@ -330,13 +347,15 @@
       { id: 'snow', skyTop: '#0369a1', skyBot: '#f0f9ff', hill: '#cbd5e1', ground: '#e2e8f0' }
     ],
     cosmetics: [
-      { id: 'cap_red', name: 'Classic Red Cap', type: 'cap', value: '#ef4444', costWood: 0 },
-      { id: 'cap_gold', name: 'Golden Crown Cap', type: 'cap', value: '#eab308', costWood: 15 },
-      { id: 'cap_cyber', name: 'Neon Cyan Cap', type: 'cap', value: '#06b6d4', costWood: 30 },
-      { id: 'axe_steel', name: 'Steel Lumber Axe', type: 'axe', value: '#cbd5e1', costWood: 0 },
-      { id: 'axe_diamond', name: 'Diamond Crystal Axe', type: 'axe', value: '#38bdf8', costWood: 25 },
-      { id: 'tree_oak', name: 'Oak Bark', type: 'tree', value: '#78350f', costWood: 0 },
-      { id: 'tree_birch', name: 'Silver Birch', type: 'tree', value: '#d6d3d1', costWood: 20 }
+      { id: 'cap_red', name: 'Classic Red Cap', type: 'cap', value: '#ef4444', costWood: 0, costGems: 0 },
+      { id: 'cap_gold', name: 'Golden Crown Cap', type: 'cap', value: '#eab308', costWood: 15, costGems: 5 },
+      { id: 'cap_cyber', name: 'Neon Cyan Cap', type: 'cap', value: '#06b6d4', costWood: 30, costGems: 8 },
+      { id: 'cap_royal', name: '👑 Royal Violet Cap', type: 'cap', value: '#a855f7', costWood: 60, costGems: 12 },
+      { id: 'axe_steel', name: 'Steel Lumber Axe', type: 'axe', value: '#cbd5e1', costWood: 0, costGems: 0 },
+      { id: 'axe_diamond', name: '💎 Diamond Crystal Axe', type: 'axe', value: '#38bdf8', costWood: 25, costGems: 7 },
+      { id: 'axe_plasma', name: '🔥 Crimson Plasma Axe', type: 'axe', value: '#f43f5e', costWood: 55, costGems: 12 },
+      { id: 'tree_oak', name: 'Oak Bark', type: 'tree', value: '#78350f', costWood: 0, costGems: 0 },
+      { id: 'tree_birch', name: 'Silver Birch', type: 'tree', value: '#d6d3d1', costWood: 20, costGems: 6 }
     ],
     storage: {
       saveKey: 'timberdash_save_v1',
@@ -608,7 +627,8 @@
   let runSeed = 2026;
   let rng = mulberry32(runSeed);
   let generatedCount = 0;
-  let lastGeneratedBranch = 'none';
+  let prevSegmentHadBranch = false;
+  let lastBranchSide = 'none';
   let sameSideStreak = 0;
 
   let inputBuffer = [];
@@ -617,6 +637,51 @@
   let runStartMs = 0;
   let runGemsEarned = 0;
   let runWoodEarned = 0;
+  let runCounter = 0;
+
+  // Active Challenge State
+  let activeChallenge = null;
+  function loadChallengeState() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const cParam = params.get('challenge') || (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param ? tg.initDataUnsafe.start_param : '');
+      if (cParam && cParam.startsWith('td_')) {
+        const parts = cParam.split('_');
+        const target = parseInt(parts[1], 10) || 0;
+        const seedVal = parseInt(parts[2], 10) || 2026;
+        const fromName = decodeURIComponent(parts.slice(3).join('_') || 'Друг');
+        activeChallenge = { game: 'td', target, seed: seedVal, from: fromName };
+        localStorage.setItem('arcade_active_challenge_v1', JSON.stringify(activeChallenge));
+      } else {
+        const savedChal = localStorage.getItem('arcade_active_challenge_v1');
+        if (savedChal) {
+          const parsed = JSON.parse(savedChal);
+          if (parsed && parsed.game === 'td') activeChallenge = parsed;
+        }
+      }
+      const autoSend = localStorage.getItem('arcade_auto_send_runs_v1') === '1';
+      const chk = document.getElementById('td-auto-send-chk');
+      if (chk) chk.checked = autoSend;
+    } catch (e) {}
+
+    const bar = document.getElementById('td-challenge-bar');
+    const txt = document.getElementById('td-chal-target-txt');
+    if (activeChallenge && bar && txt) {
+      bar.classList.remove('td-hidden');
+      txt.textContent = `От ${activeChallenge.from} — Побей ${activeChallenge.target} 🪵`;
+    }
+  }
+
+  function shareViaTelegram(text, url) {
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+    if (tg && typeof tg.openTelegramLink === 'function') {
+      try {
+        tg.openTelegramLink(shareUrl);
+        return;
+      } catch (e) {}
+    }
+    window.open(shareUrl, '_blank');
+  }
 
   // Visual Animation State
   let treeDropOffsetPx = 0;
@@ -630,13 +695,15 @@
     generatedCount++;
     // First 3 segments at game start are 'none'
     if (generatedCount <= CONFIG.gen.safeStart) {
-      lastGeneratedBranch = 'none';
+      prevSegmentHadBranch = false;
       return { branch: 'none', hasGem: false, barkSeed: rng() };
     }
 
-    // After a branch segment: chance emptyAfterBranch (0.5) to force 'none' (breathing room)
-    if (lastGeneratedBranch !== 'none' && rng() < CONFIG.gen.emptyAfterBranch) {
-      lastGeneratedBranch = 'none';
+    // CRITICAL FAIRNESS GUARANTEE:
+    // Every segment with a branch occupies the player's side for 2 chops (when dropping into tree[0] and when chopped from tree[0]).
+    // Therefore, ANY segment immediately following a branch segment MUST be 'none' so the player always has a 100% safe side to cross or stay!
+    if (prevSegmentHadBranch) {
+      prevSegmentHadBranch = false;
       return { branch: 'none', hasGem: rng() < CONFIG.gen.gemSegmentChance, barkSeed: rng() };
     }
 
@@ -647,7 +714,7 @@
 
     if (rng() < p) {
       let side = rng() < 0.5 ? 'left' : 'right';
-      if (side === lastGeneratedBranch) {
+      if (side === lastBranchSide) {
         sameSideStreak++;
         if (sameSideStreak >= CONFIG.gen.maxSameSide) {
           side = side === 'left' ? 'right' : 'left';
@@ -656,19 +723,23 @@
       } else {
         sameSideStreak = 1;
       }
-      lastGeneratedBranch = side;
+      lastBranchSide = side;
+      prevSegmentHadBranch = true;
       return { branch: side, hasGem: rng() < CONFIG.gen.gemSegmentChance, barkSeed: rng() };
     }
 
-    lastGeneratedBranch = 'none';
+    prevSegmentHadBranch = false;
     return { branch: 'none', hasGem: rng() < CONFIG.gen.gemSegmentChance, barkSeed: rng() };
   }
 
   function initGame() {
-    runSeed = (Date.now() ^ Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0;
+    runSeed = activeChallenge && activeChallenge.seed
+      ? activeChallenge.seed
+      : ((Date.now() ^ Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0);
     rng = mulberry32(runSeed);
     generatedCount = 0;
-    lastGeneratedBranch = 'none';
+    prevSegmentHadBranch = false;
+    lastBranchSide = 'none';
     sameSideStreak = 0;
 
     player = { side: 'left', alive: true };
@@ -801,6 +872,51 @@
     writeStorage();
   }
 
+  function buildRunReportText(isChallengeShare) {
+    const playerName = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name)
+      ? tg.initDataUnsafe.user.first_name
+      : 'Игрок';
+    const baseUrl = window.location.origin + window.location.pathname;
+    const chalCode = `td_${score}_${runSeed}_${encodeURIComponent(playerName)}`;
+    const link = `${baseUrl}?challenge=${chalCode}`;
+
+    if (isChallengeShare) {
+      return {
+        text: `⚔️ ВЫЗОВ В TIMBER DASH!\n🦫 ${playerName} срубил ${score} секций дерева (Рекорд: ${save.best})!\nПопробуй побить мой результат на этой же трассе:`,
+        url: link
+      };
+    }
+
+    let statusLine = `🦫 Timber Dash — Забег #${runCounter}: ${score} секций (Рекорд: ${save.best})`;
+    if (activeChallenge) {
+      const beat = score > activeChallenge.target;
+      statusLine = beat
+        ? `🏆 ВЫЗОВ ПОБИТ! Забег #${runCounter} в Timber Dash: я набрал ${score} против ${activeChallenge.target} от ${activeChallenge.from}!`
+        : `⚔️ Забег #${runCounter} в Timber Dash: мой результат ${score} (Цель вызова от ${activeChallenge.from}: ${activeChallenge.target}).`;
+    }
+    return {
+      text: `${statusLine}\nОтветь своим забегом:`,
+      url: link
+    };
+  }
+
+  function recordRunInHubLog() {
+    runCounter++;
+    try {
+      const raw = localStorage.getItem('arcade_runs_history_v1');
+      const list = raw ? JSON.parse(raw) : [];
+      list.unshift({
+        game: 'Timber Dash',
+        icon: '🦫',
+        score: `${score} 🪵`,
+        target: activeChallenge ? `${activeChallenge.target} 🪵` : null,
+        beat: activeChallenge ? score > activeChallenge.target : null,
+        ts: Date.now()
+      });
+      localStorage.setItem('arcade_runs_history_v1', JSON.stringify(list.slice(0, 20)));
+    } catch (e) {}
+  }
+
   function die(reason) {
     if (!player.alive) return;
     player.alive = false;
@@ -815,6 +931,7 @@
       runGemsEarned += 2;
     }
     writeStorage();
+    recordRunInHubLog();
 
     // Anti-cheat deterministic replay POST
     const payload = {
@@ -838,6 +955,33 @@
       document.getElementById('td-go-score').textContent = String(score);
       document.getElementById('td-go-best').textContent = `BEST: ${save.best}`;
       document.getElementById('td-go-rewards').textContent = `+${runGemsEarned} 💎 • +${runWoodEarned} 🪵`;
+
+      const revBtn = document.getElementById('td-revive-btn');
+      if (revBtn) {
+        revBtn.disabled = globalGems < 3;
+        revBtn.style.opacity = globalGems < 3 ? '0.5' : '1';
+        revBtn.textContent = `⚡ ПРОДОЛЖИТЬ ЗА 3 💎 (У тебя: ${globalGems} 💎)`;
+      }
+
+      const chalStatus = document.getElementById('td-chal-status');
+      if (chalStatus) {
+        if (activeChallenge) {
+          const beat = score > activeChallenge.target;
+          chalStatus.textContent = beat
+            ? `🏆 ВЫЗОВ ОТ ${activeChallenge.from.toUpperCase()} ПОБИТ! (${score} vs ${activeChallenge.target})`
+            : `⚔️ Забег #${runCounter}: ${score} из ${activeChallenge.target} (вызов от ${activeChallenge.from})`;
+          chalStatus.style.color = beat ? '#4ade80' : '#fde047';
+        } else {
+          chalStatus.textContent = `⚔️ Забег #${runCounter} завершён • Счёт: ${score}`;
+          chalStatus.style.color = '#fde047';
+        }
+      }
+
+      const autoChk = document.getElementById('td-auto-send-chk');
+      if (autoChk && autoChk.checked && score > 0) {
+        const rep = buildRunReportText(false);
+        shareViaTelegram(rep.text, rep.url);
+      }
     }, 360);
   }
 
@@ -1240,20 +1384,44 @@
     initGame();
   });
 
+  document.getElementById('td-revive-btn').addEventListener('click', () => {
+    if (globalGems < 3) return;
+    globalGems -= 3;
+    writeStorage();
+    sfx.playGem();
+    // Make bottom 2 segments safe and refill time bar to 100%
+    if (tree[0]) tree[0].branch = 'none';
+    if (tree[1]) tree[1].branch = 'none';
+    timeBar = 1.0;
+    elTimeFill.style.width = '100%';
+    elTimeFill.classList.remove('td-low');
+    player.alive = true;
+    inputBuffer = [];
+    elGameOverScreen.classList.add('td-hidden');
+    banners.push({ text: '⚡ ВТОРОЙ ШАНС!', y: 0, life: 1.0, color: '#4ade80' });
+  });
+
+  document.getElementById('td-send-run-btn').addEventListener('click', () => {
+    const rep = buildRunReportText(false);
+    shareViaTelegram(rep.text, rep.url);
+  });
+
+  document.getElementById('td-auto-send-chk').addEventListener('change', (e) => {
+    try {
+      localStorage.setItem('arcade_auto_send_runs_v1', e.target.checked ? '1' : '0');
+    } catch (err) {}
+  });
+
   document.getElementById('td-share-btn').addEventListener('click', () => {
-    if (tg && typeof tg.switchInlineQuery === 'function') {
-      try {
-        tg.switchInlineQuery(`I chopped ${score} logs in Timber Dash! Try to beat my speed!`, ['users', 'groups']);
-        return;
-      } catch (err) {}
-    }
+    const rep = buildRunReportText(true);
+    shareViaTelegram(rep.text, rep.url);
   });
 
   document.getElementById('td-hub-btn').addEventListener('click', () => {
     window.location.href = 'index.html';
   });
 
-  // Cosmetics Shop Modal
+  // Cosmetics Shop Modal (Supports buying with Wood 🪵 OR Shared Gems 💎)
   function renderSkinsModal() {
     const list = document.getElementById('td-skins-list');
     list.innerHTML = '';
@@ -1269,22 +1437,36 @@
           <span>${item.name}</span>
         </div>
       `;
-      const btn = document.createElement('button');
-      btn.className = 'td-top-btn';
+
+      const btnWrap = document.createElement('div');
+      btnWrap.style.display = 'flex';
+      btnWrap.style.gap = '6px';
+
       if (isEquipped) {
-        btn.textContent = 'EQUIPPED';
+        const btn = document.createElement('button');
+        btn.className = 'td-top-btn';
+        btn.textContent = 'НАДЕТО';
         btn.disabled = true;
+        btnWrap.appendChild(btn);
       } else if (unlocked) {
-        btn.textContent = 'EQUIP';
+        const btn = document.createElement('button');
+        btn.className = 'td-top-btn';
+        btn.style.background = '#22c55e';
+        btn.textContent = 'НАДЕТЬ';
         btn.onclick = () => {
           save.equipped[item.type] = item.value;
           writeStorage();
           renderSkinsModal();
         };
+        btnWrap.appendChild(btn);
       } else {
-        btn.textContent = `${item.costWood} 🪵`;
-        btn.disabled = save.woodCoins < item.costWood;
-        btn.onclick = () => {
+        // Buy with Wood button
+        const btnWood = document.createElement('button');
+        btnWood.className = 'td-top-btn';
+        btnWood.textContent = `${item.costWood} 🪵`;
+        btnWood.disabled = save.woodCoins < item.costWood;
+        btnWood.style.opacity = save.woodCoins < item.costWood ? '0.45' : '1';
+        btnWood.onclick = () => {
           if (save.woodCoins >= item.costWood) {
             save.woodCoins -= item.costWood;
             save.unlockedSkins[item.id] = true;
@@ -1294,8 +1476,31 @@
             renderSkinsModal();
           }
         };
+        btnWrap.appendChild(btnWood);
+
+        // Buy with Shared Gems button
+        if (item.costGems > 0) {
+          const btnGems = document.createElement('button');
+          btnGems.className = 'td-top-btn';
+          btnGems.style.borderColor = '#38bdf8';
+          btnGems.style.color = '#7dd3fc';
+          btnGems.textContent = `${item.costGems} 💎`;
+          btnGems.disabled = globalGems < item.costGems;
+          btnGems.style.opacity = globalGems < item.costGems ? '0.45' : '1';
+          btnGems.onclick = () => {
+            if (globalGems >= item.costGems) {
+              globalGems -= item.costGems;
+              save.unlockedSkins[item.id] = true;
+              save.equipped[item.type] = item.value;
+              writeStorage();
+              sfx.playGem();
+              renderSkinsModal();
+            }
+          };
+          btnWrap.appendChild(btnGems);
+        }
       }
-      row.appendChild(btn);
+      row.appendChild(btnWrap);
       list.appendChild(row);
     });
   }
@@ -1322,6 +1527,7 @@
   }
 
   loadStorage();
+  loadChallengeState();
   initGame();
   requestAnimationFrame(loop);
 })();

@@ -220,11 +220,20 @@
   <canvas id="ss-canvas" class="ss-canvas"></canvas>
 
   <div class="ss-topbar">
-    <button id="ss-hub-btn" class="ss-hub-btn">◀ HUB</button>
+    <div style="display:flex;gap:8px;pointer-events:auto;font-family:'Fredoka', sans-serif;">
+      <button id="ss-hub-btn" class="ss-hub-btn">◀ HUB</button>
+      <button id="ss-themes-btn" class="ss-hub-btn">🎨 ТЕМЫ</button>
+      <button id="ss-expand-btn" class="ss-hub-btn ss-hidden" style="border-color:#fde047;color:#fde047;">📏 +РАЗМЕР (2 💎)</button>
+    </div>
     <div class="ss-gem-pill" title="Shared Hub Gems">
       <span>💎</span>
       <span id="ss-gems-val">0</span>
     </div>
+  </div>
+
+  <!-- LIVE CHALLENGE BANNER -->
+  <div id="ss-challenge-bar" class="ss-hidden" style="position:absolute;top:max(54px, calc(env(safe-area-inset-top, 12px) + 44px));left:50%;transform:translateX(-50%);z-index:16;background:linear-gradient(135deg,rgba(234,88,12,0.92),rgba(190,18,60,0.92));border:2px solid #fde047;border-radius:99px;padding:4px 14px;font-size:12px;font-weight:700;color:#ffffff;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.4);pointer-events:none;font-family:'Fredoka', sans-serif;">
+    ⚔️ ЧЕЛЛЕНДЖ: <span id="ss-chal-target-txt">Побей 0</span>
   </div>
 
   <!-- HUD -->
@@ -243,16 +252,36 @@
     </div>
   </div>
 
+  <!-- THEMES MODAL -->
+  <div id="ss-screen-themes" class="ss-overlay ss-hidden" style="background:rgba(15,23,42,0.85);pointer-events:auto;font-family:'Fredoka', sans-serif;">
+    <div class="ss-gameover-card">
+      <div style="font-size:22px;font-weight:700;color:#fde047;font-family:'Fredoka', sans-serif;">🎨 ТЕМЫ БАШНИ ЗА 💎</div>
+      <div id="ss-themes-list" style="width:100%;display:flex;flex-direction:column;gap:8px;font-family:'Fredoka', sans-serif;"></div>
+      <button id="ss-themes-close" class="ss-btn ss-btn-secondary">ЗАКРЫТЬ</button>
+    </div>
+  </div>
+
   <!-- GAME OVER SCREEN -->
   <div id="ss-screen-gameover" class="ss-overlay ss-hidden">
-    <div class="ss-gameover-card">
+    <div class="ss-gameover-card" style="gap:9px;padding:18px;">
       <div id="ss-new-record-banner" class="ss-new-record ss-hidden">★ NEW RECORD ★</div>
-      <div style="font-size:28px;font-weight:700;color:#f8fafc;font-family:'Fredoka', sans-serif;">TOWER COMPLETE</div>
-      <div id="ss-go-score" style="font-size:46px;font-weight:700;color:#fde047;line-height:1;font-family:'Fredoka', sans-serif;">0</div>
-      <div id="ss-go-best" style="font-size:15px;color:#cbd5e1;font-weight:600;font-family:'Fredoka', sans-serif;">BEST SCORE: 0</div>
-      <div id="ss-go-gems" style="font-size:16px;color:#7dd3fc;font-weight:700;background:rgba(14,165,233,0.15);padding:6px 14px;border-radius:99px;font-family:'Fredoka', sans-serif;">Earned: +0 💎</div>
-      <button id="ss-retry-btn" class="ss-btn ss-btn-primary">▶ PLAY AGAIN</button>
-      <button id="ss-share-btn" class="ss-btn ss-btn-secondary">🏆 CHALLENGE A FRIEND</button>
+      <div style="font-size:24px;font-weight:700;color:#f8fafc;font-family:'Fredoka', sans-serif;">TOWER COMPLETE</div>
+      <div id="ss-go-score" style="font-size:44px;font-weight:700;color:#fde047;line-height:1;font-family:'Fredoka', sans-serif;">0</div>
+      <div id="ss-go-best" style="font-size:14px;color:#cbd5e1;font-weight:600;font-family:'Fredoka', sans-serif;">BEST SCORE: 0</div>
+      <div id="ss-go-gems" style="font-size:14px;color:#7dd3fc;font-weight:700;background:rgba(14,165,233,0.15);padding:5px 14px;border-radius:99px;font-family:'Fredoka', sans-serif;">Earned: +0 💎</div>
+
+      <div id="ss-chal-box" style="width:100%;background:rgba(30,41,59,0.9);border:1px solid rgba(56,189,248,0.4);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;font-family:'Fredoka', sans-serif;">
+        <div id="ss-chal-status" style="font-size:12px;font-weight:700;color:#fde047;text-align:center;font-family:'Fredoka', sans-serif;">⚔️ Забег #1 завершён</div>
+        <button id="ss-send-run-btn" class="ss-btn" style="min-height:38px;font-size:14px;background:linear-gradient(180deg,#0ea5e9,#0284c7);font-family:'Fredoka', sans-serif;">📤 Отправить результат забега в чат</button>
+        <label style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:#cbd5e1;cursor:pointer;font-family:'Fredoka', sans-serif;">
+          <input type="checkbox" id="ss-auto-send-chk" style="accent-color:#38bdf8;">
+          ⚡ Авто-отправка каждого забега в чат
+        </label>
+      </div>
+
+      <button id="ss-revive-btn" class="ss-btn" style="min-height:44px;font-size:16px;background:linear-gradient(180deg,#f59e0b,#d97706);">⚡ ПРОДОЛЖИТЬ ЗА 3 💎</button>
+      <button id="ss-retry-btn" class="ss-btn ss-btn-primary" style="min-height:44px;font-size:16px;">▶ ИГРАТЬ СНОВА</button>
+      <button id="ss-share-btn" class="ss-btn ss-btn-secondary" style="min-height:42px;font-size:15px;">⚔️ БРОСИТЬ ВЫЗОВ ДРУГУ</button>
     </div>
   </div>
 </div>
@@ -504,6 +533,135 @@
   let runGems = 0;
   let camY = 0;
   let camZoom = 1.0;
+  let runCounter = 0;
+
+  const TOWER_THEMES = [
+    { id: 'rainbow', name: '🌈 Classic Rainbow', startHue: 200, hueStep: 6, sat: 68, light: 58, costGems: 0 },
+    { id: 'cyber', name: '⚡ Cyberpunk Neon', startHue: 290, hueStep: 11, sat: 88, light: 60, costGems: 6 },
+    { id: 'gold', name: '👑 Solar Gold', startHue: 36, hueStep: 2, sat: 85, light: 58, costGems: 10 },
+    { id: 'emerald', name: '💎 Crystal Aurora', startHue: 155, hueStep: 5, sat: 76, light: 54, costGems: 14 }
+  ];
+  let unlockedThemes = { rainbow: true };
+  let activeThemeId = 'rainbow';
+  let activeChallenge = null;
+
+  function loadThemesAndChallenge() {
+    try {
+      const rawT = localStorage.getItem('skystack_themes_v1');
+      if (rawT) {
+        const p = JSON.parse(rawT);
+        if (p.unlocked) unlockedThemes = { ...unlockedThemes, ...p.unlocked };
+        if (p.active) activeThemeId = p.active;
+      }
+      applyTheme(activeThemeId);
+
+      const params = new URLSearchParams(window.location.search);
+      const cParam = params.get('challenge') || (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param ? tg.initDataUnsafe.start_param : '');
+      if (cParam && cParam.startsWith('ss_')) {
+        const parts = cParam.split('_');
+        const target = parseInt(parts[1], 10) || 0;
+        const seedVal = parseInt(parts[2], 10) || 1337;
+        const fromName = decodeURIComponent(parts.slice(3).join('_') || 'Друг');
+        activeChallenge = { game: 'ss', target, seed: seedVal, from: fromName };
+        localStorage.setItem('arcade_active_challenge_v1', JSON.stringify(activeChallenge));
+      } else {
+        const savedChal = localStorage.getItem('arcade_active_challenge_v1');
+        if (savedChal) {
+          const parsed = JSON.parse(savedChal);
+          if (parsed && parsed.game === 'ss') activeChallenge = parsed;
+        }
+      }
+
+      const autoSend = localStorage.getItem('arcade_auto_send_runs_v1') === '1';
+      const chk = document.getElementById('ss-auto-send-chk');
+      if (chk) chk.checked = autoSend;
+    } catch (e) {}
+
+    const bar = document.getElementById('ss-challenge-bar');
+    const txt = document.getElementById('ss-chal-target-txt');
+    if (activeChallenge && bar && txt) {
+      bar.classList.remove('ss-hidden');
+      txt.textContent = `От ${activeChallenge.from} — Побей ${activeChallenge.target} 🧱`;
+    }
+  }
+
+  function applyTheme(id) {
+    const t = TOWER_THEMES.find(x => x.id === id) || TOWER_THEMES[0];
+    activeThemeId = t.id;
+    CONFIG.color.startHue = t.startHue;
+    CONFIG.color.hueStep = t.hueStep;
+    CONFIG.color.sat = t.sat;
+    CONFIG.color.light = t.light;
+    try {
+      localStorage.setItem('skystack_themes_v1', JSON.stringify({ unlocked: unlockedThemes, active: activeThemeId }));
+    } catch (e) {}
+  }
+
+  function spendGems(cost) {
+    if (globalGems < cost) return false;
+    globalGems -= cost;
+    try {
+      localStorage.setItem(CONFIG.storage.gemsKey, String(globalGems));
+    } catch (e) {}
+    updateGemsUI();
+    return true;
+  }
+
+  function shareViaTelegram(text, url) {
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+    if (tg && typeof tg.openTelegramLink === 'function') {
+      try {
+        tg.openTelegramLink(shareUrl);
+        return;
+      } catch (e) {}
+    }
+    window.open(shareUrl, '_blank');
+  }
+
+  function buildRunReportText(isChallengeShare) {
+    const playerName = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name)
+      ? tg.initDataUnsafe.user.first_name
+      : 'Игрок';
+    const baseUrl = window.location.origin + window.location.pathname;
+    const chalCode = `ss_${score}_${runSeed}_${encodeURIComponent(playerName)}`;
+    const link = `${baseUrl}?challenge=${chalCode}`;
+
+    if (isChallengeShare) {
+      return {
+        text: `⚔️ ВЫЗОВ В SKY STACK!\n🧱 ${playerName} построил башню в ${score} очков (Рекорд: ${bestScore})!\nПопробуй побить мой результат:`,
+        url: link
+      };
+    }
+
+    let statusLine = `🧱 Sky Stack — Забег #${runCounter}: ${score} очков (Рекорд: ${bestScore})`;
+    if (activeChallenge) {
+      const beat = score > activeChallenge.target;
+      statusLine = beat
+        ? `🏆 ВЫЗОВ ПОБИТ! Забег #${runCounter} в Sky Stack: я набрал ${score} против ${activeChallenge.target} от ${activeChallenge.from}!`
+        : `⚔️ Забег #${runCounter} в Sky Stack: мой результат ${score} (Цель вызова от ${activeChallenge.from}: ${activeChallenge.target}).`;
+    }
+    return {
+      text: `${statusLine}\nОтветь своим забегом:`,
+      url: link
+    };
+  }
+
+  function recordRunInHubLog() {
+    runCounter++;
+    try {
+      const raw = localStorage.getItem('arcade_runs_history_v1');
+      const list = raw ? JSON.parse(raw) : [];
+      list.unshift({
+        game: 'Sky Stack',
+        icon: '🧱',
+        score: `${score} 🧱`,
+        target: activeChallenge ? `${activeChallenge.target} 🧱` : null,
+        beat: activeChallenge ? score > activeChallenge.target : null,
+        ts: Date.now()
+      });
+      localStorage.setItem('arcade_runs_history_v1', JSON.stringify(list.slice(0, 20)));
+    } catch (e) {}
+  }
 
   function initTowerPreview() {
     stack = [
@@ -526,7 +684,9 @@
 
   function startNewRun() {
     sfx.init();
-    runSeed = (Date.now() ^ Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0;
+    runSeed = activeChallenge && activeChallenge.seed
+      ? activeChallenge.seed
+      : ((Date.now() ^ Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0);
     rng = mulberry32(runSeed);
     simTick = 0;
     tapTimes = [];
@@ -554,6 +714,7 @@
     elScreenStart.classList.add('ss-hidden');
     elScreenGameOver.classList.add('ss-hidden');
     elHud.classList.remove('ss-hidden');
+    document.getElementById('ss-expand-btn').classList.remove('ss-hidden');
     elScoreTxt.textContent = '0';
     elComboBadge.classList.add('ss-hidden');
 
@@ -716,6 +877,7 @@
       saveBestScore(score);
       addGems(2);
     }
+    recordRunInHubLog();
 
     // Anti-cheat deterministic replay submission payload
     const payload = {
@@ -733,11 +895,40 @@
     } catch (e) {}
 
     elHud.classList.add('ss-hidden');
+    document.getElementById('ss-expand-btn').classList.add('ss-hidden');
     elScreenGameOver.classList.remove('ss-hidden');
     document.getElementById('ss-new-record-banner').classList.toggle('ss-hidden', !isNewRecord);
     document.getElementById('ss-go-score').textContent = String(score);
     document.getElementById('ss-go-best').textContent = `BEST SCORE: ${bestScore}`;
     document.getElementById('ss-go-gems').textContent = `Earned: +${runGems} 💎`;
+
+    const revBtn = document.getElementById('ss-revive-btn');
+    if (revBtn) {
+      revBtn.disabled = globalGems < 3;
+      revBtn.style.opacity = globalGems < 3 ? '0.5' : '1';
+      revBtn.textContent = `⚡ ПРОДОЛЖИТЬ ЗА 3 💎 (У тебя: ${globalGems} 💎)`;
+    }
+
+    const chalStatus = document.getElementById('ss-chal-status');
+    if (chalStatus) {
+      if (activeChallenge) {
+        const beat = score > activeChallenge.target;
+        chalStatus.textContent = beat
+          ? `🏆 ВЫЗОВ ОТ ${activeChallenge.from.toUpperCase()} ПОБИТ! (${score} vs ${activeChallenge.target})`
+          : `⚔️ Забег #${runCounter}: ${score} из ${activeChallenge.target} (вызов от ${activeChallenge.from})`;
+        chalStatus.style.color = beat ? '#4ade80' : '#fde047';
+      } else {
+        chalStatus.textContent = `⚔️ Забег #${runCounter} завершён • Счёт: ${score}`;
+        chalStatus.style.color = '#fde047';
+      }
+    }
+
+    const autoChk = document.getElementById('ss-auto-send-chk');
+    if (autoChk && autoChk.checked && score > 0) {
+      const rep = buildRunReportText(false);
+      shareViaTelegram(rep.text, rep.url);
+    }
+
     updateBestUI();
   }
 
@@ -997,17 +1188,107 @@
     startNewRun();
   });
 
+  document.getElementById('ss-revive-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!spendGems(3)) return;
+    sfx.playGem();
+    // Restore top block to at least 75% of base size and continue stacking
+    const top = stack[stack.length - 1];
+    if (top) {
+      top.sizeX = Math.max(top.sizeX, CONFIG.block.baseSize * 0.78);
+      top.sizeZ = Math.max(top.sizeZ, CONFIG.block.baseSize * 0.78);
+    }
+    elScreenGameOver.classList.add('ss-hidden');
+    elHud.classList.remove('ss-hidden');
+    document.getElementById('ss-expand-btn').classList.remove('ss-hidden');
+    spawnNextMovingBlock();
+    state = 'PLAYING';
+    floatingRewards.push({ text: '⚡ ВТОРОЙ ШАНС!', yOffset: 0, life: 1.1 });
+  });
+
+  document.getElementById('ss-expand-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (state !== 'PLAYING' || !activeBlock) return;
+    if (!spendGems(2)) return;
+    sfx.playGem();
+    const top = stack[stack.length - 1];
+    if (top) {
+      top.sizeX = CONFIG.block.baseSize;
+      top.sizeZ = CONFIG.block.baseSize;
+    }
+    activeBlock.sizeX = CONFIG.block.baseSize;
+    activeBlock.sizeZ = CONFIG.block.baseSize;
+    floatingRewards.push({ text: '📏 МАКС РАЗМЕР БЛОКА!', yOffset: 0, life: 1.1 });
+  });
+
+  document.getElementById('ss-send-run-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const rep = buildRunReportText(false);
+    shareViaTelegram(rep.text, rep.url);
+  });
+
+  document.getElementById('ss-auto-send-chk').addEventListener('change', (e) => {
+    try {
+      localStorage.setItem('arcade_auto_send_runs_v1', e.target.checked ? '1' : '0');
+    } catch (err) {}
+  });
+
   document.getElementById('ss-share-btn').addEventListener('click', (e) => {
     e.stopPropagation();
-    if (tg && typeof tg.switchInlineQuery === 'function') {
-      try {
-        tg.switchInlineQuery(`I stacked ${score} blocks in Sky Stack! Can you beat my tower?`, ['users', 'groups']);
-        return;
-      } catch (err) {}
-    }
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(`I scored ${score} in Sky Stack!`).catch(() => {});
-    }
+    const rep = buildRunReportText(true);
+    shareViaTelegram(rep.text, rep.url);
+  });
+
+  function renderThemesModal() {
+    const list = document.getElementById('ss-themes-list');
+    list.innerHTML = '';
+    TOWER_THEMES.forEach(t => {
+      const unlocked = !!unlockedThemes[t.id] || t.costGems === 0;
+      const isSelected = activeThemeId === t.id;
+      const row = document.createElement('div');
+      row.style.cssText = "width:100%;display:flex;justify-content:space-between;align-items:center;background:rgba(30,41,59,0.85);padding:10px 12px;border-radius:12px;font-size:14px;color:#fff;font-family:'Fredoka', sans-serif;";
+      row.innerHTML = `<span>${t.name}</span>`;
+      const btn = document.createElement('button');
+      btn.className = 'ss-hub-btn';
+      if (isSelected) {
+        btn.textContent = 'ВЫБРАНО';
+        btn.disabled = true;
+      } else if (unlocked) {
+        btn.textContent = 'ВЫБРАТЬ';
+        btn.style.background = '#22c55e';
+        btn.onclick = () => {
+          applyTheme(t.id);
+          renderThemesModal();
+        };
+      } else {
+        btn.textContent = `${t.costGems} 💎`;
+        btn.style.borderColor = '#38bdf8';
+        btn.style.color = '#7dd3fc';
+        btn.disabled = globalGems < t.costGems;
+        btn.style.opacity = globalGems < t.costGems ? '0.45' : '1';
+        btn.onclick = () => {
+          if (spendGems(t.costGems)) {
+            sfx.playGem();
+            unlockedThemes[t.id] = true;
+            applyTheme(t.id);
+            renderThemesModal();
+          }
+        };
+      }
+      row.appendChild(btn);
+      list.appendChild(row);
+    });
+  }
+
+  document.getElementById('ss-themes-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    renderThemesModal();
+    document.getElementById('ss-screen-themes').classList.remove('ss-hidden');
+  });
+
+  document.getElementById('ss-themes-close').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('ss-screen-themes').classList.add('ss-hidden');
   });
 
   document.getElementById('ss-hub-btn').addEventListener('click', (e) => {
@@ -1036,6 +1317,7 @@
   }
 
   loadData();
+  loadThemesAndChallenge();
   initTowerPreview();
   requestAnimationFrame(loop);
 })();
