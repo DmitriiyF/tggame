@@ -25,33 +25,75 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding-bottom: max(28px, env(safe-area-inset-bottom, 28px));
+      padding-bottom: calc(78px + env(safe-area-inset-bottom, 12px));
     }
 
+    /* COMPACT STICKY HEADER */
     .hub-header {
       width: 100%;
-      padding: max(16px, env(safe-area-inset-top, 16px)) 18px 14px 18px;
-      background: rgba(15, 23, 42, 0.9);
-      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
+      max-width: 560px;
+      padding: max(12px, env(safe-area-inset-top, 12px)) 16px 10px 16px;
+      background: rgba(15, 23, 42, 0.92);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      max-width: 600px;
       gap: 10px;
       position: sticky;
       top: 0;
-      z-index: 20;
+      z-index: 40;
     }
 
-    .hub-title {
-      margin: 0;
-      font-size: clamp(20px, 5vw, 26px);
+    .profile-mini {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .lvl-circle {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f59e0b, #ea580c);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-weight: 700;
-      background: linear-gradient(180deg, #fde047 0%, #f97316 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      letter-spacing: 0.5px;
+      font-size: 15px;
+      color: #ffffff;
+      box-shadow: 0 4px 10px rgba(234, 88, 12, 0.35);
+    }
+
+    .profile-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .profile-rank {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .xp-bar-bg {
+      width: 110px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .xp-bar-fill {
+      height: 100%;
+      width: 20%;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      border-radius: 99px;
+      transition: width 0.25s ease;
     }
 
     .hub-currencies {
@@ -60,62 +102,111 @@
       gap: 8px;
     }
 
+    .streak-pill {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(249, 115, 22, 0.18);
+      border: 1.5px solid rgba(249, 115, 22, 0.55);
+      border-radius: 99px;
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fdba74;
+    }
+
     .hub-gem-pill {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(168, 85, 247, 0.25));
       border: 2px solid #38bdf8;
       border-radius: 99px;
-      padding: 5px 14px;
-      font-size: 16px;
+      padding: 4px 12px;
+      font-size: 15px;
       font-weight: 700;
       color: #7dd3fc;
-      box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.22);
       transition: transform 0.15s ease;
     }
 
     .hub-gem-pill.bump {
-      transform: scale(1.16);
+      transform: scale(1.15);
     }
 
-    .hub-banner {
-      width: calc(100% - 36px);
-      max-width: 504px;
-      margin-top: 14px;
+    /* TAB VIEWS */
+    .tab-view {
+      width: 100%;
+      max-width: 540px;
+      padding: 12px 16px;
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .tab-view.active {
+      display: flex;
+    }
+
+    /* STREAK & CHEST BANNER */
+    .streak-card {
       background: linear-gradient(135deg, rgba(30, 58, 138, 0.72), rgba(88, 28, 135, 0.72));
-      border: 1px solid rgba(56, 189, 248, 0.4);
+      border: 1px solid rgba(56, 189, 248, 0.38);
       border-radius: 18px;
       padding: 12px 14px;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      flex-direction: column;
+      gap: 10px;
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
     }
 
-    .hub-banner-text {
-      font-size: 13px;
-      color: #e2e8f0;
-      line-height: 1.35;
+    .streak-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
     }
 
-    .hub-banner-text strong {
-      color: #7dd3fc;
+    .streak-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+
+    .streak-day-box {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 5px 2px;
+      text-align: center;
+      font-size: 10px;
+      color: #94a3b8;
+      font-weight: 700;
+    }
+
+    .streak-day-box.done {
+      background: rgba(34, 197, 94, 0.22);
+      border-color: #4ade80;
+      color: #4ade80;
+    }
+
+    .streak-day-box.today {
+      background: rgba(56, 189, 248, 0.28);
+      border-color: #38bdf8;
+      color: #ffffff;
     }
 
     .chest-btn {
       background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
       color: #0f172a;
       border: none;
-      border-radius: 12px;
-      padding: 9px 12px;
+      border-radius: 11px;
+      padding: 8px 12px;
       font-weight: 700;
-      font-size: 13px;
+      font-size: 12px;
       cursor: pointer;
       white-space: nowrap;
       box-shadow: 0 3px 0 #0369a1;
-      transition: transform 0.1s ease, opacity 0.15s ease;
     }
 
     .chest-btn:active {
@@ -124,45 +215,35 @@
     }
 
     .chest-btn.cooldown {
-      background: rgba(51, 65, 85, 0.9);
+      background: rgba(51, 65, 85, 0.85);
       color: #94a3b8;
       box-shadow: none;
       cursor: default;
     }
 
-    .hub-subtitle {
-      width: 100%;
-      max-width: 540px;
-      padding: 16px 18px 6px 18px;
-      font-size: 13px;
-      color: #94a3b8;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .chest-btn.toggle-on {
+      background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
+      color: #052e16;
+      box-shadow: 0 3px 0 #15803d;
     }
 
+    /* GAMES GRID */
     .games-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      padding: 8px 18px;
-      width: 100%;
-      max-width: 540px;
+      gap: 12px;
     }
 
     .game-card {
       background: rgba(30, 41, 59, 0.9);
-      border-radius: 20px;
+      border-radius: 18px;
       overflow: hidden;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
-      transition: transform 0.12s ease, border-color 0.12s ease;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32);
+      transition: transform 0.12s ease;
       cursor: pointer;
       display: flex;
       flex-direction: column;
-      border: 2px solid rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(56, 189, 248, 0.45);
       position: relative;
     }
 
@@ -170,251 +251,386 @@
       transform: scale(0.96);
     }
 
-    .game-card.active {
-      border-color: rgba(56, 189, 248, 0.65);
-      box-shadow: 0 10px 26px rgba(56, 189, 248, 0.18);
+    .game-card.wide {
+      grid-column: span 2;
+      flex-direction: row;
+      align-items: center;
     }
 
     .game-badge {
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 8px;
+      right: 8px;
       background: #22c55e;
       color: #ffffff;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
-      padding: 3px 8px;
+      padding: 2px 7px;
       border-radius: 99px;
       text-transform: uppercase;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     }
 
     .game-badge.new-badge {
       background: linear-gradient(135deg, #f97316, #ec4899);
     }
 
-    .game-badge.soon {
-      background: #475569;
-      color: #cbd5e1;
-    }
-
     .game-icon {
       width: 100%;
-      height: 120px;
+      height: 104px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 58px;
+      font-size: 50px;
     }
 
-    .ridge-icon {
-      background: linear-gradient(160deg, #0284c7 0%, #38bdf8 55%, #22c55e 55%, #15803d 100%);
+    .game-card.wide .game-icon {
+      width: 110px;
+      height: 92px;
+      flex-shrink: 0;
     }
 
-    .skystack-icon {
-      background: linear-gradient(155deg, #6366f1 0%, #a855f7 52%, #ec4899 100%);
-    }
-
-    .timber-icon {
-      background: linear-gradient(160deg, #0ea5e9 0%, #38bdf8 52%, #854d0e 52%, #15803d 100%);
-    }
-
-    .soon-icon {
-      background: linear-gradient(135deg, #1e293b, #0f172a);
-      color: #475569;
-    }
+    .ridge-icon { background: linear-gradient(160deg, #0284c7 0%, #38bdf8 55%, #22c55e 55%, #15803d 100%); }
+    .skystack-icon { background: linear-gradient(155deg, #6366f1 0%, #a855f7 52%, #ec4899 100%); }
+    .timber-icon { background: linear-gradient(160deg, #0ea5e9 0%, #38bdf8 52%, #854d0e 52%, #15803d 100%); }
+    .blade-icon { background: linear-gradient(145deg, #1e293b 0%, #dc2626 55%, #f59e0b 100%); }
+    .puff-icon { background: linear-gradient(160deg, #0284c7 0%, #06b6d4 60%, #fde047 100%); }
 
     .game-info {
-      padding: 11px 13px 13px 13px;
+      padding: 10px 12px 12px 12px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
 
     .game-title {
       font-weight: 700;
-      font-size: 17px;
+      font-size: 16px;
       color: #ffffff;
     }
 
     .game-meta {
-      font-size: 12px;
+      font-size: 11px;
       color: #94a3b8;
       font-weight: 600;
     }
 
-    .missions-list {
-      width: calc(100% - 36px);
-      max-width: 504px;
+    /* SUB-PILLS SWITCHER */
+    .sub-tabs {
+      display: flex;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .sub-tab-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 6px;
+      border-radius: 9px;
+      cursor: pointer;
+    }
+
+    .sub-tab-btn.active {
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+    }
+
+    /* LIST ROWS */
+    .list-stack {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin-top: 4px;
     }
 
-    .mission-row {
-      background: rgba(30, 41, 59, 0.82);
+    .item-row {
+      background: rgba(30, 41, 59, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 14px;
-      padding: 10px 13px;
+      padding: 11px 13px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
     }
 
-    .mission-info {
+    .item-info {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 3px;
     }
 
-    .mission-title {
+    .item-title {
       font-size: 14px;
       font-weight: 700;
       color: #f8fafc;
     }
 
-    .mission-sub {
-      font-size: 12px;
+    .item-sub {
+      font-size: 11px;
       color: #94a3b8;
     }
 
-    .mission-claim-btn {
-      background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
-      color: #052e16;
-      border: none;
-      border-radius: 10px;
-      padding: 7px 11px;
+    .section-label {
       font-size: 12px;
       font-weight: 700;
-      cursor: pointer;
-      white-space: nowrap;
-      box-shadow: 0 2px 0 #15803d;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-top: 4px;
     }
 
-    .mission-claim-btn:disabled {
-      background: rgba(51, 65, 85, 0.7);
+    /* BOTTOM NAVIGATION BAR */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 560px;
+      background: rgba(15, 23, 42, 0.96);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(14px);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding: 6px 8px max(8px, env(safe-area-inset-bottom, 8px)) 8px;
+      z-index: 50;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
       color: #64748b;
-      box-shadow: none;
-      cursor: default;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 4px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
     }
 
-    .mission-claim-btn.claimed {
-      background: rgba(34, 197, 94, 0.18);
-      color: #4ade80;
-      border: 1px solid rgba(74, 222, 128, 0.35);
-      box-shadow: none;
+    .nav-btn .nav-ico {
+      font-size: 20px;
+      line-height: 1.1;
+    }
+
+    .nav-btn.active {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
     }
   </style>
 </head>
 <body>
 
+  <!-- COMPACT HEADER -->
   <div class="hub-header">
-    <h1 class="hub-title">🕹 ARCADE HUB</h1>
+    <div class="profile-mini">
+      <div class="lvl-circle" id="hdr-lvl">1</div>
+      <div class="profile-meta">
+        <div class="profile-rank">
+          <span id="hdr-rank">Новичок</span>
+          <span id="hdr-pet-ico"></span>
+        </div>
+        <div class="xp-bar-bg">
+          <div class="xp-bar-fill" id="hdr-xp-fill"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="hub-currencies">
-      <div class="hub-gem-pill" id="hub-gem-pill" title="Общая валюта всех игр">
+      <div class="streak-pill" title="Ежедневный стрик">
+        <span>🔥</span>
+        <span id="hdr-streak">1 дн.</span>
+      </div>
+      <div class="hub-gem-pill" id="hub-gem-pill" title="Единая валюта хаба">
         <span>💎</span>
         <span id="hub-gems-val">10</span>
       </div>
     </div>
   </div>
 
-  <div class="hub-banner">
-    <div class="hub-banner-text">
-      <strong>💎 Алмазы</strong> — общая валюта для всех игр! Собирай их в играх, за рекорды и из сундука.
+  <!-- TAB 1: GAMES -->
+  <div class="tab-view active" id="tab-games">
+    <div class="streak-card">
+      <div class="streak-top">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#ffffff;">🎁 Ежедневный бонус и сундук</div>
+          <div style="font-size:11px;color:#cbd5e1;" id="streak-sub-txt">Заходи каждый день — награда растёт до +15 💎!</div>
+        </div>
+        <button class="chest-btn" id="chest-btn" onclick="claimChest()">🎁 +5 💎</button>
+      </div>
+      <div class="streak-days" id="streak-days-row"></div>
     </div>
-    <button class="chest-btn" id="chest-btn" onclick="claimChest()">🎁 +5 💎</button>
-  </div>
 
-  <div class="hub-subtitle">
-    <span>Доступные игры (3)</span>
-    <span style="color:#38bdf8;font-size:11px;">Единый банк 💎</span>
-  </div>
+    <div class="section-label">🕹 Все игры хаба (5)</div>
 
-  <div class="games-grid">
-    <!-- Игра 1: Ridge Rush -->
-    <div class="game-card active" onclick="startGame('hillclimb.html')">
-      <span class="game-badge">PLAY</span>
-      <div class="game-icon ridge-icon">🚙</div>
-      <div class="game-info">
-        <div class="game-title">Ridge Rush</div>
-        <div class="game-meta" id="rr-best-meta">Гоночная физика 2D</div>
+    <div class="games-grid">
+      <div class="game-card" onclick="startGame('hillclimb.html')">
+        <span class="game-badge">PLAY</span>
+        <div class="game-icon ridge-icon">🚙</div>
+        <div class="game-info">
+          <div class="game-title">Ridge Rush</div>
+          <div class="game-meta" id="rr-best-meta">Гоночная физика 2D</div>
+        </div>
+      </div>
+
+      <div class="game-card" onclick="startGame('skystack.html')">
+        <span class="game-badge">PLAY</span>
+        <div class="game-icon skystack-icon">🧱</div>
+        <div class="game-info">
+          <div class="game-title">Sky Stack</div>
+          <div class="game-meta" id="ss-best-meta">Изометрическая башня</div>
+        </div>
+      </div>
+
+      <div class="game-card" onclick="startGame('timberdash.html')">
+        <span class="game-badge">PLAY</span>
+        <div class="game-icon timber-icon">🦫</div>
+        <div class="game-info">
+          <div class="game-title">Timber Dash</div>
+          <div class="game-meta" id="td-best-meta">Бобёр-дровосек</div>
+        </div>
+      </div>
+
+      <div class="game-card" onclick="startGame('bladespin.html')">
+        <span class="game-badge new-badge">NEW</span>
+        <div class="game-icon blade-icon">🗡</div>
+        <div class="game-info">
+          <div class="game-title">Blade Spin</div>
+          <div class="game-meta" id="bs-best-meta">Метание кинжалов и боссы</div>
+        </div>
+      </div>
+
+      <div class="game-card wide" onclick="startGame('puffhop.html')">
+        <span class="game-badge new-badge">NEW</span>
+        <div class="game-icon puff-icon">🐡</div>
+        <div class="game-info">
+          <div class="game-title">Puff Hop</div>
+          <div class="game-meta" id="ph-best-meta">Подводный полёт рыбы-ежа сквозь рифы</div>
+        </div>
       </div>
     </div>
-
-    <!-- Игра 2: Sky Stack -->
-    <div class="game-card active" onclick="startGame('skystack.html')">
-      <span class="game-badge new-badge">NEW</span>
-      <div class="game-icon skystack-icon">🧱</div>
-      <div class="game-info">
-        <div class="game-title">Sky Stack</div>
-        <div class="game-meta" id="ss-best-meta">Изометрическая башня</div>
-      </div>
-    </div>
-
-    <!-- Игра 3: Timber Dash -->
-    <div class="game-card active" onclick="startGame('timberdash.html')">
-      <span class="game-badge new-badge">NEW</span>
-      <div class="game-icon timber-icon">🦫</div>
-      <div class="game-info">
-        <div class="game-title">Timber Dash</div>
-        <div class="game-meta" id="td-best-meta">Бобёр-дровосек на реакцию</div>
-      </div>
-    </div>
-
-    <!-- Слот под будущую игру -->
-    <div class="game-card" onclick="soonAlert()">
-      <span class="game-badge soon">SOON</span>
-      <div class="game-icon soon-icon">🧩</div>
-      <div class="game-info">
-        <div class="game-title">Игра #4</div>
-        <div class="game-meta">Скоро в хабе</div>
-      </div>
-    </div>
   </div>
 
-  <div class="hub-subtitle">
-    <span>🛍 Магазин за 💎 Алмазы</span>
+  <!-- TAB 2: QUESTS (DAILY / WEEKLY / TROPHIES) -->
+  <div class="tab-view" id="tab-quests">
+    <div class="sub-tabs">
+      <button class="sub-tab-btn active" id="qbtn-daily" onclick="switchQuestTab('daily')">☀️ Дейлики</button>
+      <button class="sub-tab-btn" id="qbtn-weekly" onclick="switchQuestTab('weekly')">🗓 Виклики</button>
+      <button class="sub-tab-btn" id="qbtn-trophies" onclick="switchQuestTab('trophies')">🏅 Трофеи</button>
+    </div>
+    <div style="font-size:11px;color:#94a3b8;text-align:center;" id="quest-timer-txt">Ежедневные задания обновляются каждые 24 часа</div>
+    <div class="list-stack" id="quests-list"></div>
   </div>
 
-  <div class="missions-list" id="gem-shop-list"></div>
+  <!-- TAB 3: SHOP & PETS -->
+  <div class="tab-view" id="tab-shop">
+    <div class="section-label">🐾 Питомцы-компаньоны (работают во всех 5 играх)</div>
+    <div class="list-stack" id="pets-shop-list"></div>
 
-  <div class="hub-subtitle">
-    <span>⚔️ Челлендж с другом и отчёты забегов</span>
+    <div class="section-label">👑 Статус и Обменник за 💎 Алмазы</div>
+    <div class="list-stack" id="gem-shop-list"></div>
   </div>
 
-  <div class="missions-list" id="challenge-center">
-    <div class="mission-row" style="flex-direction:column;align-items:stretch;gap:8px;background:linear-gradient(135deg,rgba(30,58,138,0.6),rgba(88,28,135,0.6));border-color:rgba(56,189,248,0.4);">
+  <!-- TAB 4: LEADERBOARD & CHALLENGES -->
+  <div class="tab-view" id="tab-social">
+    <div class="item-row" style="flex-direction:column;align-items:stretch;gap:8px;background:linear-gradient(135deg,rgba(30,58,138,0.65),rgba(88,28,135,0.65));border-color:rgba(56,189,248,0.4);">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-        <div class="mission-info">
-          <div class="mission-title">⚔️ Вызов другу на рекорды Хаба</div>
-          <div class="mission-sub" id="hub-active-chal-txt">Отправь прямую ссылку-вызов в чат Telegram (без ввода @бота)</div>
+        <div class="item-info">
+          <div class="item-title">⚔️ Вызов другу на рекорды Хаба</div>
+          <div class="item-sub">Прямая отправка карточки в чат Telegram (без @бота)</div>
         </div>
         <button class="chest-btn" onclick="shareHubChallenge()">⚔️ Вызвать</button>
       </div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#e2e8f0;cursor:pointer;padding-top:4px;border-top:1px solid rgba(255,255,255,0.1);">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#e2e8f0;cursor:pointer;padding-top:6px;border-top:1px solid rgba(255,255,255,0.12);">
         <input type="checkbox" id="hub-auto-send-chk" onchange="toggleAutoSendRuns(this.checked)" style="accent-color:#38bdf8;">
-        <span>⚡ Автоматически отправлять результат каждого забега в чат</span>
+        <span>⚡ Авто-отправка результата каждого забега в чат</span>
       </label>
     </div>
-    <div id="runs-history-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+
+    <div class="section-label">🏆 Таблица лидеров (Общий рейтинг 5 игр)</div>
+    <div class="list-stack" id="leaderboard-list"></div>
+
+    <div class="section-label">📜 История твоих последних забегов</div>
+    <div class="list-stack" id="runs-history-list"></div>
   </div>
 
-  <div class="hub-subtitle">
-    <span>🎯 Задания хаба на алмазы</span>
+  <!-- BOTTOM NAVIGATION -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-games" onclick="switchMainTab('games')">
+      <span class="nav-ico">🎮</span>
+      <span>Игры</span>
+    </button>
+    <button class="nav-btn" id="nav-quests" onclick="switchMainTab('quests')">
+      <span class="nav-ico">🎯</span>
+      <span>Задания</span>
+    </button>
+    <button class="nav-btn" id="nav-shop" onclick="switchMainTab('shop')">
+      <span class="nav-ico">🐾</span>
+      <span>Магазин</span>
+    </button>
+    <button class="nav-btn" id="nav-social" onclick="switchMainTab('social')">
+      <span class="nav-ico">🏆</span>
+      <span>Рейтинг</span>
+    </button>
   </div>
-
-  <div class="missions-list" id="missions-list"></div>
 
   <script>
     const GLOBAL_GEMS_KEY = 'arcade_global_gems';
+    const PROFILE_KEY = 'arcade_profile_v1';
     const HUB_CLAIMS_KEY = 'arcade_hub_claims_v1';
-    const CHEST_COOLDOWN_MS = 15 * 60 * 1000; // 15 минут между бесплатными сундуками
+    const CHEST_COOLDOWN_MS = 15 * 60 * 1000;
 
-    if (window.Telegram && window.Telegram.WebApp) {
-      window.Telegram.WebApp.ready();
-      try { window.Telegram.WebApp.expand(); } catch (e) {}
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+      try {
+        tg.ready();
+        tg.expand();
+      } catch (e) {}
+    }
+
+    let currentQuestSubTab = 'daily';
+
+    const PETS_CATALOG = [
+      {
+        id: 'drone',
+        icon: '🤖',
+        name: 'Кибер-Дрон',
+        desc: '+15% к монетам, брёвнам, яблокам и жемчугу во всех играх',
+        cost: 45
+      },
+      {
+        id: 'fox',
+        icon: '🦊',
+        name: 'Огненный Лис',
+        desc: '+1 💎 бонусный алмаз за каждые 20 очков в любой игре',
+        cost: 90
+      },
+      {
+        id: 'dragon',
+        icon: '🐲',
+        name: 'Золотой Дракон',
+        desc: '+25% к опыту (XP) и бесплатный авто-щит 1 раз за забег',
+        cost: 180
+      }
+    ];
+
+    function getDayKey() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function getWeekKey() {
+      const now = new Date();
+      const w = Math.ceil((((now - new Date(now.getFullYear(), 0, 1)) / 86400000) + 1) / 7);
+      return `${now.getFullYear()}-W${w}`;
     }
 
     function getGems() {
@@ -435,6 +651,7 @@
       try {
         localStorage.setItem(GLOBAL_GEMS_KEY, String(next));
       } catch (e) {}
+      syncCloudStorage();
       const el = document.getElementById('hub-gems-val');
       if (el) el.textContent = next.toLocaleString();
       const pill = document.getElementById('hub-gem-pill');
@@ -445,17 +662,84 @@
       }
     }
 
+    function getProfile() {
+      const dayKey = getDayKey();
+      const weekKey = getWeekKey();
+      let prof = {
+        xp: 0,
+        streak: 1,
+        lastLoginDay: '',
+        unlockedPets: {},
+        equippedPet: null,
+        trophiesClaimed: {},
+        friendsLeaderboard: [],
+        daily: { dayKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, games: {}, claims: {} },
+        weekly: { weekKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, runs: 0, claims: {} }
+      };
+      try {
+        const raw = localStorage.getItem(PROFILE_KEY);
+        if (raw) {
+          const p = JSON.parse(raw);
+          prof = { ...prof, ...p };
+        }
+      } catch (e) {}
+
+      if (!prof.daily || prof.daily.dayKey !== dayKey) {
+        prof.daily = { dayKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, games: {}, claims: {} };
+      }
+      if (!prof.weekly || prof.weekly.weekKey !== weekKey) {
+        prof.weekly = { weekKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, runs: 0, claims: {} };
+      }
+      return prof;
+    }
+
+    function saveProfile(prof) {
+      try {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(prof));
+      } catch (e) {}
+      syncCloudStorage();
+    }
+
+    // Sync to Telegram CloudStorage so player progress persists across phone & desktop
+    function syncCloudStorage() {
+      if (!tg || !tg.CloudStorage || !tg.isVersionAtLeast || !tg.isVersionAtLeast('6.9')) return;
+      try {
+        tg.CloudStorage.setItem(GLOBAL_GEMS_KEY, String(getGems()), () => {});
+        tg.CloudStorage.setItem(PROFILE_KEY, localStorage.getItem(PROFILE_KEY) || '{}', () => {});
+      } catch (e) {}
+    }
+
+    function checkDailyLoginStreak() {
+      const prof = getProfile();
+      const today = getDayKey();
+      if (prof.lastLoginDay !== today) {
+        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+        if (prof.lastLoginDay === yesterday) {
+          prof.streak = Math.min(7, (prof.streak || 1) + 1);
+        } else {
+          prof.streak = 1;
+        }
+        prof.lastLoginDay = today;
+        const streakRewards = [2, 3, 4, 5, 7, 10, 15];
+        const reward = streakRewards[(prof.streak - 1) % 7] || 2;
+        saveProfile(prof);
+        addGems(reward);
+        const sub = document.getElementById('streak-sub-txt');
+        if (sub) sub.textContent = `День ${prof.streak} подряд: получено +${reward} 💎!`;
+      }
+    }
+
     function getClaims() {
       try {
         const raw = localStorage.getItem(HUB_CLAIMS_KEY);
         if (raw) return JSON.parse(raw);
       } catch (e) {}
-      return { lastChest: 0, missions: {} };
+      return { lastChest: 0, vipUnlocked: false, vipEnabled: false, allThemesUnlocked: false };
     }
 
-    function saveClaims(claims) {
+    function saveClaims(c) {
       try {
-        localStorage.setItem(HUB_CLAIMS_KEY, JSON.stringify(claims));
+        localStorage.setItem(HUB_CLAIMS_KEY, JSON.stringify(c));
       } catch (e) {}
     }
 
@@ -463,13 +747,15 @@
       let rrBest = 0, rrCoins = 0;
       let ssBest = 0;
       let tdBest = 0, tdLogs = 0;
+      let bsBest = 0, bsStage = 1, bsApples = 0;
+      let phBest = 0, phPearls = 0;
 
       try {
         const rrRaw = localStorage.getItem('ridge_rush_save_v1');
         if (rrRaw) {
-          const data = JSON.parse(rrRaw);
-          if (data.bestDist) rrBest = Math.max(0, ...Object.values(data.bestDist));
-          if (typeof data.coins === 'number') rrCoins = data.coins;
+          const d = JSON.parse(rrRaw);
+          if (d.bestDist) rrBest = Math.max(0, ...Object.values(d.bestDist));
+          if (typeof d.coins === 'number') rrCoins = d.coins;
         }
       } catch (e) {}
 
@@ -480,192 +766,84 @@
       try {
         const tdRaw = localStorage.getItem('timberdash_save_v1');
         if (tdRaw) {
-          const tdData = JSON.parse(tdRaw);
-          tdBest = tdData.best || 0;
-          tdLogs = tdData.woodCoins || tdData.logs || 0;
+          const d = JSON.parse(tdRaw);
+          tdBest = d.best || 0;
+          tdLogs = d.woodCoins || 0;
         }
       } catch (e) {}
 
-      return { rrBest, rrCoins, ssBest, tdBest, tdLogs };
+      try {
+        const bsRaw = localStorage.getItem('bladespin_save_v1');
+        if (bsRaw) {
+          const d = JSON.parse(bsRaw);
+          bsBest = d.bestScore || 0;
+          bsStage = d.bestStage || 1;
+          bsApples = d.apples || 0;
+        }
+      } catch (e) {}
+
+      try {
+        const phRaw = localStorage.getItem('puffhop_save_v1');
+        if (phRaw) {
+          const d = JSON.parse(phRaw);
+          phBest = d.best || 0;
+          phPearls = d.pearls || 0;
+        }
+      } catch (e) {}
+
+      return { rrBest, rrCoins, ssBest, tdBest, tdLogs, bsBest, bsStage, bsApples, phBest, phPearls };
     }
 
-    function renderGemShop(stats) {
-      const gems = getGems();
-      const claims = getClaims();
-      const hasVip = !!(claims && claims.vipTitle);
-      const items = [
-        {
-          id: 'buy_rr_coins',
-          title: '🪙 +1 500 монет для Ridge Rush',
-          sub: `Сейчас у тебя: ${stats.rrCoins.toLocaleString()} 🪙`,
-          cost: 5,
-          action: () => {
-            if (getGems() < 5) return;
-            addGems(-5);
-            try {
-              const raw = localStorage.getItem('ridge_rush_save_v1');
-              const data = raw ? JSON.parse(raw) : { coins: 0, selectedCarIndex: 0, unlockedCars: { pebble_buggy: true }, upgrades: {}, bestDist: {} };
-              data.coins = (data.coins || 0) + 1500;
-              localStorage.setItem('ridge_rush_save_v1', JSON.stringify(data));
-            } catch (e) {}
-            loadHubData();
-          }
-        },
-        {
-          id: 'buy_td_wood',
-          title: '🪵 +25 брёвен для Timber Dash',
-          sub: `Для покупки скинов бобра и топоров (сейчас: ${stats.tdLogs} 🪵)`,
-          cost: 5,
-          action: () => {
-            if (getGems() < 5) return;
-            addGems(-5);
-            try {
-              const raw = localStorage.getItem('timberdash_save_v1');
-              const data = raw ? JSON.parse(raw) : { best: 0, woodCoins: 0, unlockedSkins: { cap_red: true, axe_steel: true, tree_oak: true }, equipped: { cap: '#ef4444', axe: '#cbd5e1', tree: '#78350f' } };
-              data.woodCoins = (data.woodCoins || 0) + 25;
-              localStorage.setItem('timberdash_save_v1', JSON.stringify(data));
-            } catch (e) {}
-            loadHubData();
-          }
-        },
-        {
-          id: 'buy_ss_themes',
-          title: '🎨 Пакет всех тем башни Sky Stack',
-          sub: 'Открывает Cyberpunk, Solar Gold и Crystal Aurora',
-          cost: 8,
-          action: () => {
-            if (getGems() < 8) return;
-            addGems(-8);
-            try {
-              localStorage.setItem('skystack_themes_v1', JSON.stringify({
-                unlocked: { rainbow: true, cyber: true, gold: true, emerald: true },
-                active: 'cyber'
-              }));
-            } catch (e) {}
-            const c = getClaims();
-            c.allThemesUnlocked = true;
-            saveClaims(c);
-            loadHubData();
-          },
-          once: !!(claims && claims.allThemesUnlocked)
-        },
-        {
-          id: 'buy_vip_title',
-          title: '👑 VIP-титул «Чемпион Хаба» в вызовах',
-          sub: 'Твои челленджи в чате отмечаются короной чемпиона',
-          cost: 12,
-          action: () => {
-            if (getGems() < 12) return;
-            addGems(-12);
-            const c = getClaims();
-            c.vipTitle = true;
-            saveClaims(c);
-            loadHubData();
-          },
-          once: hasVip
-        }
-      ];
-
-      const container = document.getElementById('gem-shop-list');
-      if (!container) return;
-      container.innerHTML = '';
-
-      items.forEach((it) => {
-        const row = document.createElement('div');
-        row.className = 'mission-row';
-        const info = document.createElement('div');
-        info.className = 'mission-info';
-        info.innerHTML = `<div class="mission-title">${it.title}</div><div class="mission-sub">${it.sub}</div>`;
-
-        const btn = document.createElement('button');
-        if (it.once) {
-          btn.className = 'mission-claim-btn claimed';
-          btn.disabled = true;
-          btn.textContent = '✓ Куплено';
-        } else {
-          btn.className = 'chest-btn';
-          btn.textContent = `Купить за ${it.cost} 💎`;
-          btn.disabled = gems < it.cost;
-          if (gems < it.cost) btn.classList.add('cooldown');
-          btn.onclick = it.action;
-        }
-        row.appendChild(info);
-        row.appendChild(btn);
-        container.appendChild(row);
+    function switchMainTab(tabId) {
+      ['games', 'quests', 'shop', 'social'].forEach(id => {
+        document.getElementById(`tab-${id}`).classList.toggle('active', id === tabId);
+        document.getElementById(`nav-${id}`).classList.toggle('active', id === tabId);
       });
+      loadHubData();
     }
 
-    function shareViaTelegramHub(text, url) {
-      const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
-      if (tg && typeof tg.openTelegramLink === 'function') {
-        try {
-          tg.openTelegramLink(shareUrl);
-          return;
-        } catch (e) {}
-      }
-      window.open(shareUrl, '_blank');
+    function switchQuestTab(subId) {
+      currentQuestSubTab = subId;
+      ['daily', 'weekly', 'trophies'].forEach(id => {
+        document.getElementById(`qbtn-${id}`).classList.toggle('active', id === subId);
+      });
+      const timerTxt = document.getElementById('quest-timer-txt');
+      if (subId === 'daily') timerTxt.textContent = '☀️ Ежедневные задания сбрасываются каждые 24 часа';
+      else if (subId === 'weekly') timerTxt.textContent = '🗓 Крупные еженедельные миссии с повышенной наградой 💎';
+      else timerTxt.textContent = '🏅 Постоянные трофеи за рекорды во всех играх';
+      renderQuests(getStats());
     }
 
-    function shareHubChallenge() {
-      const stats = getStats();
+    function renderHeaderAndStreak(stats) {
+      const prof = getProfile();
       const claims = getClaims();
-      const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-      const rawName = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name)
-        ? tg.initDataUnsafe.user.first_name
-        : 'Игрок';
-      const prefix = claims && claims.vipTitle ? '👑 Чемпион ' : '';
-      const name = `${prefix}${rawName}`;
-      const url = `${window.location.origin}${window.location.pathname}`;
-      const text = `⚔️ ВЫЗОВ В ARCADE HUB от ${name}!\nМои рекорды:\n🚙 Ridge Rush: ${stats.rrBest} м\n🧱 Sky Stack: ${stats.ssBest}\n🦫 Timber Dash: ${stats.tdBest}\nПопробуй побить и отправь свой забег в ответ:`;
-      shareViaTelegramHub(text, url);
-    }
+      const totalXP = prof.xp + stats.rrBest + stats.ssBest * 4 + stats.tdBest * 2 + stats.bsBest * 3 + stats.phBest * 4;
+      const level = Math.min(50, Math.floor(totalXP / 120) + 1);
+      const xpInLevel = totalXP % 120;
 
-    function toggleAutoSendRuns(enabled) {
-      try {
-        localStorage.setItem('arcade_auto_send_runs_v1', enabled ? '1' : '0');
-      } catch (e) {}
-    }
+      const ranks = ['Новичок', 'Искатель', 'Мастер', 'Грандмастер', 'Легенда Аркады'];
+      const rankName = ranks[Math.min(ranks.length - 1, Math.floor((level - 1) / 5))];
+      const vipPrefix = (claims.vipUnlocked && claims.vipEnabled) ? '👑 ' : '';
 
-    function renderRunsHistory() {
-      const chk = document.getElementById('hub-auto-send-chk');
-      if (chk) {
-        try {
-          chk.checked = localStorage.getItem('arcade_auto_send_runs_v1') === '1';
-        } catch (e) {}
+      document.getElementById('hdr-lvl').textContent = String(level);
+      document.getElementById('hdr-rank').textContent = `${vipPrefix}${rankName}`;
+      document.getElementById('hdr-xp-fill').style.width = `${Math.round((xpInLevel / 120) * 100)}%`;
+      document.getElementById('hdr-streak').textContent = `${prof.streak || 1} дн.`;
+
+      const petObj = PETS_CATALOG.find(p => p.id === prof.equippedPet);
+      document.getElementById('hdr-pet-ico').textContent = petObj ? petObj.icon : '';
+
+      // 7-day streak boxes
+      const streakRow = document.getElementById('streak-days-row');
+      streakRow.innerHTML = '';
+      const rewards = [2, 3, 4, 5, 7, 10, 15];
+      for (let d = 1; d <= 7; d++) {
+        const box = document.createElement('div');
+        const cur = prof.streak || 1;
+        box.className = 'streak-day-box' + (d < cur ? ' done' : d === cur ? ' today' : '');
+        box.innerHTML = `<div>Д${d}</div><div style="color:#7dd3fc;">+${rewards[d - 1]}💎</div>`;
+        streakRow.appendChild(box);
       }
-      const listEl = document.getElementById('runs-history-list');
-      if (!listEl) return;
-      listEl.innerHTML = '';
-      try {
-        const raw = localStorage.getItem('arcade_runs_history_v1');
-        const runs = raw ? JSON.parse(raw) : [];
-        runs.slice(0, 5).forEach((r, idx) => {
-          const row = document.createElement('div');
-          row.className = 'mission-row';
-          const statusBadge = r.target
-            ? (r.beat ? ' • ✅ Вызов побит!' : ` • Цель: ${r.target}`)
-            : '';
-          row.innerHTML = `
-            <div class="mission-info">
-              <div class="mission-title">${r.icon} ${r.game} — ${r.score}</div>
-              <div class="mission-sub">Забег #${runs.length - idx}${statusBadge}</div>
-            </div>
-          `;
-          const btn = document.createElement('button');
-          btn.className = 'chest-btn';
-          btn.style.padding = '6px 10px';
-          btn.style.fontSize = '12px';
-          btn.textContent = '📤 В чат';
-          btn.onclick = () => {
-            const url = `${window.location.origin}${window.location.pathname}`;
-            const text = `🎮 Мой забег в ${r.game}: ${r.score}${statusBadge}! Попробуй побить:`;
-            shareViaTelegramHub(text, url);
-          };
-          row.appendChild(btn);
-          listEl.appendChild(row);
-        });
-      } catch (e) {}
     }
 
     function claimChest() {
@@ -688,114 +866,385 @@
         btn.textContent = '🎁 Сундук +5 💎';
       } else {
         btn.classList.add('cooldown');
-        const mins = Math.ceil(diff / 60000);
-        btn.textContent = `⏳ ${mins} мин`;
+        btn.textContent = `⏳ ${Math.ceil(diff / 60000)} мин`;
       }
     }
 
-    function renderMissions(stats) {
-      const missions = [
-        {
-          id: 'rr_200',
-          title: '🚙 Проехать 200 м в Ridge Rush',
-          progress: `${Math.min(stats.rrBest, 200)} / 200 м`,
-          done: stats.rrBest >= 200,
-          reward: 5
-        },
-        {
-          id: 'ss_15',
-          title: '🧱 Построить 15 этажей в Sky Stack',
-          progress: `${Math.min(stats.ssBest, 15)} / 15 блоков`,
-          done: stats.ssBest >= 15,
-          reward: 5
-        },
-        {
-          id: 'td_40',
-          title: '🦫 Срубить 40 секций в Timber Dash',
-          progress: `${Math.min(stats.tdBest, 40)} / 40 секций`,
-          done: stats.tdBest >= 40,
-          reward: 5
-        },
-        {
-          id: 'all_3',
-          title: '🏆 Сыграть во все 3 игры хаба',
-          progress: `${(stats.rrBest > 0 ? 1 : 0) + (stats.ssBest > 0 ? 1 : 0) + (stats.tdBest > 0 ? 1 : 0)} / 3 игр`,
-          done: stats.rrBest > 0 && stats.ssBest > 0 && stats.tdBest > 0,
-          reward: 10
-        }
-      ];
-
-      const claims = getClaims();
-      const container = document.getElementById('missions-list');
+    function renderQuests(stats) {
+      const prof = getProfile();
+      const container = document.getElementById('quests-list');
+      if (!container) return;
       container.innerHTML = '';
 
-      missions.forEach((m) => {
-        const isClaimed = !!(claims.missions && claims.missions[m.id]);
+      let list = [];
+      let claimMap = {};
+
+      if (currentQuestSubTab === 'daily') {
+        const d = prof.daily;
+        const gamesTodayCount = Object.keys(d.games || {}).length;
+        claimMap = d.claims || {};
+        list = [
+          { id: 'd_rr', title: '🚙 Проехать 200 м в Ridge Rush сегодня', prog: `${Math.min(d.rr || 0, 200)} / 200 м`, done: (d.rr || 0) >= 200, reward: 5 },
+          { id: 'd_ss', title: '🧱 Построить 15 этажей в Sky Stack сегодня', prog: `${Math.min(d.ss || 0, 15)} / 15 блоков`, done: (d.ss || 0) >= 15, reward: 5 },
+          { id: 'd_td', title: '🦫 Срубить 40 секций в Timber Dash сегодня', prog: `${Math.min(d.td || 0, 40)} / 40 секций`, done: (d.td || 0) >= 40, reward: 5 },
+          { id: 'd_bs', title: '🗡 Воткнуть 15 кинжалов в Blade Spin сегодня', prog: `${Math.min(d.bs || 0, 15)} / 15 кинжалов`, done: (d.bs || 0) >= 15, reward: 5 },
+          { id: 'd_ph', title: '🐡 Проплыть 15 рифов в Puff Hop сегодня', prog: `${Math.min(d.ph || 0, 15)} / 15 рифов`, done: (d.ph || 0) >= 15, reward: 5 },
+          { id: 'd_all3', title: '🔥 Сыграть в 3 разные игры хаба за день', prog: `${Math.min(gamesTodayCount, 3)} / 3 игр`, done: gamesTodayCount >= 3, reward: 10 }
+        ];
+      } else if (currentQuestSubTab === 'weekly') {
+        const w = prof.weekly;
+        claimMap = w.claims || {};
+        list = [
+          { id: 'w_rr', title: '🚙 Марафон: проехать суммарно 2 500 м в Ridge Rush', prog: `${Math.min(w.rr || 0, 2500)} / 2500 м`, done: (w.rr || 0) >= 2500, reward: 35 },
+          { id: 'w_ss', title: '🧱 Архитектор: построить суммарно 150 этажей в Sky Stack', prog: `${Math.min(w.ss || 0, 150)} / 150 блоков`, done: (w.ss || 0) >= 150, reward: 30 },
+          { id: 'w_td', title: '🦫 Дровосек недели: срубить суммарно 400 секций в Timber Dash', prog: `${Math.min(w.td || 0, 400)} / 400 секций`, done: (w.td || 0) >= 400, reward: 35 },
+          { id: 'w_bs_ph', title: '🗡🐡 Набрать суммарно 150 очков в Blade Spin и Puff Hop', prog: `${Math.min((w.bs || 0) + (w.ph || 0), 150)} / 150 очков`, done: ((w.bs || 0) + (w.ph || 0)) >= 150, reward: 40 },
+          { id: 'w_runs', title: '🏆 Завершить 25 забегов в любых играх за неделю', prog: `${Math.min(w.runs || 0, 25)} / 25 забегов`, done: (w.runs || 0) >= 25, reward: 60 }
+        ];
+      } else {
+        claimMap = prof.trophiesClaimed || {};
+        list = [
+          { id: 't_rr500', title: '🏅 Покоритель вершин: рекорд 500 м в Ridge Rush', prog: `${Math.min(stats.rrBest, 500)} / 500 м`, done: stats.rrBest >= 500, reward: 20 },
+          { id: 't_ss40', title: '🏅 Небоскрёб: рекорд 40 этажей в Sky Stack', prog: `${Math.min(stats.ssBest, 40)} / 40`, done: stats.ssBest >= 40, reward: 20 },
+          { id: 't_td100', title: '🏅 Железный топор: рекорд 100 в Timber Dash', prog: `${Math.min(stats.tdBest, 100)} / 100`, done: stats.tdBest >= 100, reward: 25 },
+          { id: 't_bs30', title: '🏅 Мастер куная: рекорд 30 в Blade Spin', prog: `${Math.min(stats.bsBest, 30)} / 30`, done: stats.bsBest >= 30, reward: 25 },
+          { id: 't_ph30', title: '🏅 Король рифов: рекорд 30 в Puff Hop', prog: `${Math.min(stats.phBest, 30)} / 30`, done: stats.phBest >= 30, reward: 25 }
+        ];
+      }
+
+      list.forEach(q => {
+        const isClaimed = !!claimMap[q.id];
         const row = document.createElement('div');
-        row.className = 'mission-row';
-
-        const info = document.createElement('div');
-        info.className = 'mission-info';
-        info.innerHTML = `<div class="mission-title">${m.title}</div><div class="mission-sub">Прогресс: ${m.progress}</div>`;
-
+        row.className = 'item-row';
+        row.innerHTML = `
+          <div class="item-info">
+            <div class="item-title">${q.title}</div>
+            <div class="item-sub">Прогресс: ${q.prog}</div>
+          </div>
+        `;
         const btn = document.createElement('button');
         if (isClaimed) {
-          btn.className = 'mission-claim-btn claimed';
+          btn.className = 'chest-btn cooldown';
           btn.disabled = true;
           btn.textContent = '✓ Получено';
-        } else if (m.done) {
-          btn.className = 'mission-claim-btn';
-          btn.textContent = `Забрать +${m.reward} 💎`;
+        } else if (q.done) {
+          btn.className = 'chest-btn toggle-on';
+          btn.textContent = `Забрать +${q.reward} 💎`;
           btn.onclick = () => {
-            const c = getClaims();
-            c.missions = c.missions || {};
-            if (c.missions[m.id]) return;
-            c.missions[m.id] = true;
-            saveClaims(c);
-            addGems(m.reward);
-            renderMissions(getStats());
+            const p = getProfile();
+            if (currentQuestSubTab === 'daily') p.daily.claims[q.id] = true;
+            else if (currentQuestSubTab === 'weekly') p.weekly.claims[q.id] = true;
+            else {
+              p.trophiesClaimed = p.trophiesClaimed || {};
+              p.trophiesClaimed[q.id] = true;
+            }
+            p.xp = (p.xp || 0) + q.reward * 5;
+            saveProfile(p);
+            addGems(q.reward);
+            loadHubData();
           };
         } else {
-          btn.className = 'mission-claim-btn';
+          btn.className = 'chest-btn cooldown';
           btn.disabled = true;
-          btn.textContent = `+${m.reward} 💎`;
+          btn.textContent = `+${q.reward} 💎`;
         }
-
-        row.appendChild(info);
         row.appendChild(btn);
         container.appendChild(row);
       });
     }
 
-    function loadHubData() {
+    function renderShopAndPets(stats) {
       const gems = getGems();
-      document.getElementById('hub-gems-val').textContent = gems.toLocaleString();
+      const prof = getProfile();
+      const claims = getClaims();
 
+      // 1. Pets Shop (with Equip / Unequip toggle!)
+      const petsContainer = document.getElementById('pets-shop-list');
+      petsContainer.innerHTML = '';
+      PETS_CATALOG.forEach(pet => {
+        const unlocked = !!(prof.unlockedPets && prof.unlockedPets[pet.id]);
+        const isEquipped = prof.equippedPet === pet.id;
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `
+          <div class="item-info">
+            <div class="item-title">${pet.icon} ${pet.name}</div>
+            <div class="item-sub">${pet.desc}</div>
+          </div>
+        `;
+        const btn = document.createElement('button');
+        if (unlocked) {
+          btn.className = isEquipped ? 'chest-btn toggle-on' : 'chest-btn';
+          btn.textContent = isEquipped ? '✓ Надет (Снять)' : 'Надеть';
+          btn.onclick = () => {
+            const p = getProfile();
+            p.equippedPet = p.equippedPet === pet.id ? null : pet.id;
+            saveProfile(p);
+            loadHubData();
+          };
+        } else {
+          btn.className = 'chest-btn' + (gems < pet.cost ? ' cooldown' : '');
+          btn.disabled = gems < pet.cost;
+          btn.textContent = `Купить за ${pet.cost} 💎`;
+          btn.onclick = () => {
+            if (getGems() < pet.cost) return;
+            addGems(-pet.cost);
+            const p = getProfile();
+            p.unlockedPets = p.unlockedPets || {};
+            p.unlockedPets[pet.id] = true;
+            p.equippedPet = pet.id;
+            saveProfile(p);
+            loadHubData();
+          };
+        }
+        row.appendChild(btn);
+        petsContainer.appendChild(row);
+      });
+
+      // 2. VIP Title (150 Gems + Toggle On/Off) & Currency Packs
+      const shopContainer = document.getElementById('gem-shop-list');
+      shopContainer.innerHTML = '';
+
+      // VIP Title Row with On/Off Toggle
+      const vipRow = document.createElement('div');
+      vipRow.className = 'item-row';
+      vipRow.innerHTML = `
+        <div class="item-info">
+          <div class="item-title">👑 VIP-титул «Чемпион Хаба» в вызовах</div>
+          <div class="item-sub">Корона чемпиона в профиле и челленджах (можно включать и отключать)</div>
+        </div>
+      `;
+      const vipBtn = document.createElement('button');
+      const vipCost = 150;
+      if (claims.vipUnlocked) {
+        vipBtn.className = claims.vipEnabled ? 'chest-btn toggle-on' : 'chest-btn';
+        vipBtn.textContent = claims.vipEnabled ? '👑 Вкл (Отключить)' : 'Включить титул';
+        vipBtn.onclick = () => {
+          const c = getClaims();
+          c.vipEnabled = !c.vipEnabled;
+          saveClaims(c);
+          loadHubData();
+        };
+      } else {
+        vipBtn.className = 'chest-btn' + (gems < vipCost ? ' cooldown' : '');
+        vipBtn.disabled = gems < vipCost;
+        vipBtn.textContent = `Купить за ${vipCost} 💎`;
+        vipBtn.onclick = () => {
+          if (getGems() < vipCost) return;
+          addGems(-vipCost);
+          const c = getClaims();
+          c.vipUnlocked = true;
+          c.vipEnabled = true;
+          saveClaims(c);
+          loadHubData();
+        };
+      }
+      vipRow.appendChild(vipBtn);
+      shopContainer.appendChild(vipRow);
+
+      // Currency Exchanges
+      const packs = [
+        {
+          title: '🪙 +1 500 монет для Ridge Rush',
+          sub: `Баланс: ${stats.rrCoins.toLocaleString()} 🪙`,
+          cost: 5,
+          buy: () => {
+            const raw = localStorage.getItem('ridge_rush_save_v1');
+            const d = raw ? JSON.parse(raw) : { coins: 0, selectedCarIndex: 0, unlockedCars: { pebble_buggy: true }, upgrades: {}, bestDist: {} };
+            d.coins = (d.coins || 0) + 1500;
+            localStorage.setItem('ridge_rush_save_v1', JSON.stringify(d));
+          }
+        },
+        {
+          title: '🪵 +25 брёвен для Timber Dash',
+          sub: `Баланс: ${stats.tdLogs} 🪵`,
+          cost: 5,
+          buy: () => {
+            const raw = localStorage.getItem('timberdash_save_v1');
+            const d = raw ? JSON.parse(raw) : { best: 0, woodCoins: 0, unlockedSkins: { cap_red: true, axe_steel: true, tree_oak: true }, equipped: {} };
+            d.woodCoins = (d.woodCoins || 0) + 25;
+            localStorage.setItem('timberdash_save_v1', JSON.stringify(d));
+          }
+        },
+        {
+          title: '🍎 +25 яблок для Blade Spin',
+          sub: `Баланс: ${stats.bsApples} 🍎`,
+          cost: 5,
+          buy: () => {
+            const raw = localStorage.getItem('bladespin_save_v1');
+            const d = raw ? JSON.parse(raw) : { bestScore: 0, bestStage: 1, apples: 0, unlockedSkins: { steel: true }, equippedSkin: 'steel' };
+            d.apples = (d.apples || 0) + 25;
+            localStorage.setItem('bladespin_save_v1', JSON.stringify(d));
+          }
+        },
+        {
+          title: '⚪ +25 жемчужин для Puff Hop',
+          sub: `Баланс: ${stats.phPearls} ⚪`,
+          cost: 5,
+          buy: () => {
+            const raw = localStorage.getItem('puffhop_save_v1');
+            const d = raw ? JSON.parse(raw) : { best: 0, pearls: 0, unlockedSkins: { sunny: true }, equippedSkin: 'sunny' };
+            d.pearls = (d.pearls || 0) + 25;
+            localStorage.setItem('puffhop_save_v1', JSON.stringify(d));
+          }
+        }
+      ];
+
+      packs.forEach(pk => {
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `<div class="item-info"><div class="item-title">${pk.title}</div><div class="item-sub">${pk.sub}</div></div>`;
+        const b = document.createElement('button');
+        b.className = 'chest-btn' + (gems < pk.cost ? ' cooldown' : '');
+        b.disabled = gems < pk.cost;
+        b.textContent = `Купить за ${pk.cost} 💎`;
+        b.onclick = () => {
+          if (getGems() < pk.cost) return;
+          addGems(-pk.cost);
+          pk.buy();
+          loadHubData();
+        };
+        row.appendChild(b);
+        shopContainer.appendChild(row);
+      });
+    }
+
+    function renderLeaderboardAndSocial(stats) {
+      const prof = getProfile();
+      const claims = getClaims();
+      const rawName = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name)
+        ? tg.initDataUnsafe.user.first_name
+        : 'Ты (Игрок)';
+      const myTitle = (claims.vipUnlocked && claims.vipEnabled) ? `👑 ${rawName}` : rawName;
+      const myTotalPts = stats.rrBest + stats.ssBest * 10 + stats.tdBest * 5 + stats.bsBest * 8 + stats.phBest * 10;
+
+      const entries = [
+        { name: '👑 CyberDragon', pts: 4200, isMe: false },
+        { name: '🔥 Alex_Pro', pts: 2850, isMe: false },
+        { name: '⚡ NeoStacker', pts: 1640, isMe: false },
+        { name: '🦫 BeaverKing', pts: 920, isMe: false },
+        { name: myTitle, pts: myTotalPts, isMe: true }
+      ];
+
+      // Add any friends from challenges
+      if (Array.isArray(prof.friendsLeaderboard)) {
+        prof.friendsLeaderboard.forEach(f => {
+          entries.push({ name: `⚔️ ${f.name}`, pts: f.pts, isMe: false });
+        });
+      }
+
+      entries.sort((a, b) => b.pts - a.pts);
+
+      const lbEl = document.getElementById('leaderboard-list');
+      lbEl.innerHTML = '';
+      entries.slice(0, 7).forEach((e, idx) => {
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        if (e.isMe) row.style.borderColor = '#38bdf8';
+        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+        row.innerHTML = `
+          <div class="item-info">
+            <div class="item-title">${medal} ${e.name}</div>
+            <div class="item-sub">Суммарный рейтинг 5 игр</div>
+          </div>
+          <div style="font-size:15px;font-weight:700;color:#fde047;">${e.pts.toLocaleString()} pts</div>
+        `;
+        lbEl.appendChild(row);
+      });
+
+      // Runs History
+      const chk = document.getElementById('hub-auto-send-chk');
+      if (chk) {
+        try {
+          chk.checked = localStorage.getItem('arcade_auto_send_runs_v1') === '1';
+        } catch (e) {}
+      }
+
+      const histEl = document.getElementById('runs-history-list');
+      histEl.innerHTML = '';
+      try {
+        const raw = localStorage.getItem('arcade_runs_history_v1');
+        const runs = raw ? JSON.parse(raw) : [];
+        if (runs.length === 0) {
+          histEl.innerHTML = `<div class="item-row"><div class="item-sub">Сыграй в любую игру, и здесь появятся отчёты твоих забегов!</div></div>`;
+        } else {
+          runs.slice(0, 6).forEach((r, idx) => {
+            const row = document.createElement('div');
+            row.className = 'item-row';
+            const statusBadge = r.target ? (r.beat ? ' • ✅ Вызов побит!' : ` • Цель: ${r.target}`) : '';
+            row.innerHTML = `
+              <div class="item-info">
+                <div class="item-title">${r.icon} ${r.game} — ${r.score}</div>
+                <div class="item-sub">Забег #${runs.length - idx}${statusBadge}</div>
+              </div>
+            `;
+            const btn = document.createElement('button');
+            btn.className = 'chest-btn';
+            btn.textContent = '📤 В чат';
+            btn.onclick = () => {
+              const url = `${window.location.origin}${window.location.pathname}`;
+              const text = `🎮 Мой забег в ${r.game}: ${r.score}${statusBadge}! Попробуй побить:`;
+              shareViaTelegramHub(text, url);
+            };
+            row.appendChild(btn);
+            histEl.appendChild(row);
+          });
+        }
+      } catch (e) {}
+    }
+
+    function shareViaTelegramHub(text, url) {
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+      if (tg && typeof tg.openTelegramLink === 'function') {
+        try {
+          tg.openTelegramLink(shareUrl);
+          return;
+        } catch (e) {}
+      }
+      window.open(shareUrl, '_blank');
+    }
+
+    function shareHubChallenge() {
       const stats = getStats();
-      if (stats.rrBest > 0) {
-        document.getElementById('rr-best-meta').textContent = `🏆 ${stats.rrBest} м • 🪙 ${stats.rrCoins}`;
-      }
-      if (stats.ssBest > 0) {
-        document.getElementById('ss-best-meta').textContent = `🏆 Рекорд: ${stats.ssBest}`;
-      }
-      if (stats.tdBest > 0) {
-        document.getElementById('td-best-meta').textContent = `🏆 ${stats.tdBest} • 🪵 ${stats.tdLogs}`;
-      }
+      const claims = getClaims();
+      const rawName = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name)
+        ? tg.initDataUnsafe.user.first_name
+        : 'Игрок';
+      const prefix = (claims.vipUnlocked && claims.vipEnabled) ? '👑 Чемпион ' : '';
+      const name = `${prefix}${rawName}`;
+      const url = `${window.location.origin}${window.location.pathname}`;
+      const text = `⚔️ ВЫЗОВ В ARCADE HUB от ${name}!\nМои рекорды в 5 играх:\n🚙 Ridge Rush: ${stats.rrBest} м\n🧱 Sky Stack: ${stats.ssBest}\n🦫 Timber Dash: ${stats.tdBest}\n🗡 Blade Spin: ${stats.bsBest}\n🐡 Puff Hop: ${stats.phBest}\nПопробуй побить и отправь свой забег в ответ:`;
+      shareViaTelegramHub(text, url);
+    }
 
+    function toggleAutoSendRuns(enabled) {
+      try {
+        localStorage.setItem('arcade_auto_send_runs_v1', enabled ? '1' : '0');
+      } catch (e) {}
+    }
+
+    function loadHubData() {
+      document.getElementById('hub-gems-val').textContent = getGems().toLocaleString();
+      const stats = getStats();
+
+      if (stats.rrBest > 0) document.getElementById('rr-best-meta').textContent = `🏆 ${stats.rrBest} м • 🪙 ${stats.rrCoins}`;
+      if (stats.ssBest > 0) document.getElementById('ss-best-meta').textContent = `🏆 Рекорд: ${stats.ssBest}`;
+      if (stats.tdBest > 0) document.getElementById('td-best-meta').textContent = `🏆 ${stats.tdBest} • 🪵 ${stats.tdLogs}`;
+      if (stats.bsBest > 0) document.getElementById('bs-best-meta').textContent = `🏆 ${stats.bsBest} • Этап ${stats.bsStage}`;
+      if (stats.phBest > 0) document.getElementById('ph-best-meta').textContent = `🏆 Рекорд: ${stats.phBest} • ⚪ ${stats.phPearls}`;
+
+      renderHeaderAndStreak(stats);
       updateChestButton();
-      renderGemShop(stats);
-      renderRunsHistory();
-      renderMissions(stats);
+      renderQuests(stats);
+      renderShopAndPets(stats);
+      renderLeaderboardAndSocial(stats);
     }
 
     function startGame(url) {
       window.location.href = url;
     }
 
-    function soonAlert() {
-      alert('Четвёртая игра скоро появится в хабе! Твои 💎 алмазы будут доступны и в ней.');
-    }
-
+    checkDailyLoginStreak();
     loadHubData();
     setInterval(updateChestButton, 15000);
   </script>

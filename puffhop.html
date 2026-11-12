@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Puff Hop</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+#ph-game-root,
+#ph-game-root * {
+  box-sizing: border-box;
+  font-family: 'Fredoka', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+#ph-game-root {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: #0284c7;
+  touch-action: none;
+  color: #f8fafc;
+}
+#ph-game-root .ph-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+#ph-game-root .ph-topbar {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top, 12px));
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 20;
+  pointer-events: none;
+}
+#ph-game-root .ph-top-btn {
+  pointer-events: auto;
+  background: rgba(15, 23, 42, 0.72);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  color: #f8fafc;
+  border-radius: 99px;
+  padding: 6px 13px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+#ph-game-root .ph-top-btn:active {
+  transform: scale(0.95);
+}
+#ph-game-root .ph-currencies {
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+#ph-game-root .ph-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 2px solid #38bdf8;
+  border-radius: 99px;
+  padding: 4px 11px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #7dd3fc;
+}
+#ph-game-root .ph-pill-pearl {
+  border-color: #f8fafc;
+  color: #f1f5f9;
+}
+#ph-game-root .ph-hud {
+  position: absolute;
+  top: max(56px, calc(env(safe-area-inset-top, 12px) + 44px));
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 15;
+}
+#ph-game-root .ph-score-big {
+  font-size: clamp(42px, 9vw, 58px);
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  line-height: 1;
+}
+#ph-game-root .ph-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 24px 20px max(34px, env(safe-area-inset-bottom, 34px)) 20px;
+  z-index: 30;
+  pointer-events: none;
+}
+#ph-game-root .ph-ready-box {
+  background: rgba(15, 23, 42, 0.82);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 22px;
+  padding: 16px 24px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  margin-bottom: 24px;
+  animation: ph-float 1.6s infinite ease-in-out;
+}
+#ph-game-root .ph-card {
+  pointer-events: auto;
+  width: min(92vw, 370px);
+  background: rgba(15, 23, 42, 0.95);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 24px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+  margin: auto;
+  animation: ph-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#ph-game-root .ph-btn {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 14px;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+}
+#ph-game-root .ph-btn:active {
+  transform: translateY(2px);
+}
+#ph-game-root .ph-btn-primary {
+  background: linear-gradient(180deg, #22c55e, #16a34a);
+}
+#ph-game-root .ph-btn-secondary {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+}
+#ph-game-root .ph-btn-amber {
+  background: linear-gradient(180deg, #f59e0b, #d97706);
+}
+#ph-game-root .ph-hidden {
+  display: none !important;
+}
+@keyframes ph-slide-up {
+  0% { transform: translateY(80px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes ph-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+</style>
+</head>
+<body style="margin:0;padding:0;overflow:hidden;background:#0284c7;font-family:'Fredoka', sans-serif;">
+<div id="ph-game-root">
+  <canvas id="ph-canvas" class="ph-canvas"></canvas>
+
+  <div class="ph-topbar">
+    <div style="display:flex;gap:8px;pointer-events:auto;font-family:'Fredoka', sans-serif;">
+      <button id="ph-hub-btn" class="ph-top-btn">◀ HUB</button>
+      <button id="ph-skins-btn" class="ph-top-btn">🐡 СКИНЫ</button>
+    </div>
+    <div class="ph-currencies">
+      <div class="ph-pill" title="Shared Hub Gems">
+        <span>💎</span>
+        <span id="ph-gems-val">0</span>
+      </div>
+      <div class="ph-pill ph-pill-pearl" title="Ocean Pearls">
+        <span>⚪</span>
+        <span id="ph-pearls-val">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE CHALLENGE BANNER -->
+  <div id="ph-challenge-bar" class="ph-hidden" style="position:absolute;top:max(50px, calc(env(safe-area-inset-top, 12px) + 38px));left:50%;transform:translateX(-50%);z-index:18;background:linear-gradient(135deg,rgba(234,88,12,0.92),rgba(190,18,60,0.92));border:2px solid #fde047;border-radius:99px;padding:3px 14px;font-size:12px;font-weight:700;color:#ffffff;white-space:nowrap;pointer-events:none;font-family:'Fredoka', sans-serif;">
+    ⚔️ ЧЕЛЛЕНДЖ: <span id="ph-chal-target-txt">Побей 0</span>
+  </div>
+
+  <!-- HUD -->
+  <div id="ph-hud" class="ph-hud">
+    <div id="ph-score-txt" class="ph-score-big">0</div>
+  </div>
+
+  <!-- READY OVERLAY -->
+  <div id="ph-screen-ready" class="ph-overlay">
+    <div class="ph-ready-box">
+      <div style="font-size:26px;font-weight:700;color:#fde047;font-family:'Fredoka', sans-serif;">PUFF HOP</div>
+      <div id="ph-start-best" style="font-size:14px;color:#cbd5e1;margin-top:4px;font-family:'Fredoka', sans-serif;">BEST: 0</div>
+      <div style="font-size:18px;font-weight:700;color:#ffffff;margin-top:10px;font-family:'Fredoka', sans-serif;">👆 TAP TO SWIM</div>
+      <div style="font-size:12px;color:#7dd3fc;margin-top:6px;font-family:'Fredoka', sans-serif;">Collect Pearls ⚪ &amp; Crystal Gems 💎 between corals!</div>
+    </div>
+  </div>
+
+  <!-- SKINS SHOP MODAL -->
+  <div id="ph-screen-skins" class="ph-overlay ph-hidden" style="background:rgba(15,23,42,0.86);pointer-events:auto;font-family:'Fredoka', sans-serif;">
+    <div class="ph-card">
+      <div style="font-size:22px;font-weight:700;color:#fde047;font-family:'Fredoka', sans-serif;">🐡 СКИНЫ РЫБКИ-ЕЖА</div>
+      <div style="font-size:12px;color:#94a3b8;font-family:'Fredoka', sans-serif;">Открывай за жемчужины ⚪ или общие алмазы 💎</div>
+      <div id="ph-skins-list" style="width:100%;display:flex;flex-direction:column;gap:8px;font-family:'Fredoka', sans-serif;"></div>
+      <button id="ph-skins-close" class="ph-btn ph-btn-secondary">ЗАКРЫТЬ</button>
+    </div>
+  </div>
+
+  <!-- GAME OVER MODAL -->
+  <div id="ph-screen-gameover" class="ph-overlay ph-hidden" style="background:rgba(9,13,22,0.72);font-family:'Fredoka', sans-serif;">
+    <div class="ph-card">
+      <div id="ph-new-record" class="ph-hidden" style="background:#f59e0b;color:#0f172a;font-size:12px;font-weight:700;padding:3px 12px;border-radius:99px;font-family:'Fredoka', sans-serif;">★ NEW RECORD ★</div>
+      <div style="font-size:22px;font-weight:700;color:#f87171;font-family:'Fredoka', sans-serif;">GAME OVER</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:16px;width:100%;font-family:'Fredoka', sans-serif;">
+        <canvas id="ph-badge-canvas" width="64" height="64" style="width:64px;height:64px;"></canvas>
+        <div style="text-align:left;font-family:'Fredoka', sans-serif;">
+          <div id="ph-go-score" style="font-size:40px;font-weight:700;color:#fde047;line-height:1;font-family:'Fredoka', sans-serif;">0</div>
+          <div id="ph-go-best" style="font-size:14px;color:#cbd5e1;font-weight:600;font-family:'Fredoka', sans-serif;">BEST: 0</div>
+          <div id="ph-go-badge-txt" style="font-size:12px;color:#38bdf8;font-weight:700;font-family:'Fredoka', sans-serif;">NO BADGE YET</div>
+        </div>
+      </div>
+      <div id="ph-go-rewards" style="font-size:14px;color:#7dd3fc;font-weight:700;background:rgba(14,165,233,0.15);padding:5px 14px;border-radius:99px;font-family:'Fredoka', sans-serif;">+0 💎 • +0 ⚪</div>
+
+      <div id="ph-chal-box" style="width:100%;background:rgba(30,41,59,0.9);border:1px solid rgba(56,189,248,0.4);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;font-family:'Fredoka', sans-serif;">
+        <div id="ph-chal-status" style="font-size:12px;font-weight:700;color:#fde047;text-align:center;font-family:'Fredoka', sans-serif;">⚔️ Забег завершён</div>
+        <button id="ph-send-run-btn" class="ph-btn" style="min-height:38px;font-size:14px;background:linear-gradient(180deg,#0ea5e9,#0284c7);font-family:'Fredoka', sans-serif;">📤 Отправить результат забега в чат</button>
+        <label style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:#cbd5e1;cursor:pointer;font-family:'Fredoka', sans-serif;">
+          <input type="checkbox" id="ph-auto-send-chk" style="accent-color:#38bdf8;">
+          ⚡ Авто-отправка каждого забега в чат
+        </label>
+      </div>
+
+      <button id="ph-revive-btn" class="ph-btn ph-btn-amber">⚡ ПРОДОЛЖИТЬ ЗАПЛЫВ (3 💎)</button>
+      <button id="ph-retry-btn" class="ph-btn ph-btn-primary">▶ ИГРАТЬ СНОВА</button>
+      <button id="ph-share-btn" class="ph-btn ph-btn-secondary">⚔️ БРОСИТЬ ВЫЗОВ ДРУГУ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const CONFIG = {
+    player: {
+      x: 0.3,
+      radius: 22,
+      hitboxScale: 0.8
+    },
+    physics: {
+      gravity: 1500,
+      flapImpulse: 480,
+      maxFall: 720,
+      topLimit: 60
+    },
+    obstacle: {
+      width: 78,
+      spacing: 260,
+      gapStart: 190,
+      gapStep: 6,
+      gapMin: 140,
+      maxGapDelta: 180,
+      marginTop: 90,
+      marginBottom: 140
+    },
+    speed: {
+      start: 170,
+      step: 2,
+      max: 260
+    },
+    pearls: {
+      chance: 0.35
+    },
+    badges: {
+      bronze: 10,
+      silver: 25,
+      gold: 50,
+      platinum: 100
+    },
+    fx: {
+      shake: 8,
+      flashMs: 80
+    },
+    skins: [
+      { id: 'sunny', name: 'Sunny Puffer', body: '#facc15', belly: '#fef08a', costPearls: 0, costGems: 0 },
+      { id: 'coral', name: 'Pink Reef Puffer', body: '#f43f5e', belly: '#fda4af', costPearls: 15, costGems: 5 },
+      { id: 'electric', name: 'Electric Cyan Puffer', body: '#06b6d4', belly: '#cffafe', costPearls: 30, costGems: 8 },
+      { id: 'royal', name: '👑 Royal Amethyst', body: '#a855f7', belly: '#e9d5ff', costPearls: 55, costGems: 12 }
+    ],
+    storage: {
+      saveKey: 'puffhop_save_v1',
+      gemsKey: 'arcade_global_gems'
+    },
+    api: {
+      submitEndpoint: '/api/puffhop/submit'
+    },
+    ui: {
+      font: "'Fredoka', sans-serif",
+      texts: {
+        ready: 'TAP TO SWIM',
+        gameOver: 'GAME OVER'
+      }
+    },
+    audio: {
+      masterVolume: 0.45
+    }
+  };
+
+  function mulberry32(seed) {
+    let t = seed >>> 0;
+    return function() {
+      t += 0x6D2B79F5;
+      let r = Math.imul(t ^ (t >>> 15), 1 | t);
+      r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  if (tg) {
+    try {
+      tg.ready();
+      tg.expand();
+      if (typeof tg.disableVerticalSwipes === 'function') tg.disableVerticalSwipes();
+      if (typeof tg.setHeaderColor === 'function') tg.setHeaderColor('#0284c7');
+    } catch (e) {}
+  }
+
+  function triggerHaptic(type) {
+    if (!tg || !tg.HapticFeedback) return;
+    try {
+      if (type === 'error') tg.HapticFeedback.notificationOccurred('error');
+      else tg.HapticFeedback.impactOccurred(type);
+    } catch (e) {}
+  }
+
+  // ==========================================
+  // WEB AUDIO SYNTHESIZER
+  // ==========================================
+  class SoundSynth {
+    constructor() {
+      this.ctx = null;
+    }
+    init() {
+      if (!this.ctx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) this.ctx = new AC();
+      }
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+    }
+    playBloop() {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(280, now);
+        osc.frequency.exponentialRampToValueAtTime(580, now + 0.085);
+        gain.gain.setValueAtTime(0.26 * CONFIG.audio.masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.09);
+      } catch (e) {}
+    }
+    playDing() {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(740, now);
+        osc.frequency.exponentialRampToValueAtTime(1120, now + 0.12);
+        gain.gain.setValueAtTime(0.25 * CONFIG.audio.masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.13);
+      } catch (e) {}
+    }
+    playHitThump() {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(38, now + 0.25);
+        gain.gain.setValueAtTime(0.42 * CONFIG.audio.masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.27);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.27);
+      } catch (e) {}
+    }
+    playGem() {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(920, now);
+        osc.frequency.exponentialRampToValueAtTime(1680, now + 0.16);
+        gain.gain.setValueAtTime(0.28 * CONFIG.audio.masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      } catch (e) {}
+    }
+  }
+
+  const sfx = new SoundSynth();
+
+  // ==========================================
+  // STORAGE & PETS / XP
+  // ==========================================
+  let save = {
+    best: 0,
+    pearls: 0,
+    unlockedSkins: { sunny: true },
+    equippedSkin: 'sunny'
+  };
+  let globalGems = 10;
+  let activePet = null;
+
+  function loadStorage() {
+    try {
+      const raw = localStorage.getItem(CONFIG.storage.saveKey);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (typeof p.best === 'number') save.best = p.best;
+        if (typeof p.pearls === 'number') save.pearls = p.pearls;
+        if (p.unlockedSkins) save.unlockedSkins = { ...save.unlockedSkins, ...p.unlockedSkins };
+        if (p.equippedSkin) save.equippedSkin = p.equippedSkin;
+      }
+      const gRaw = localStorage.getItem(CONFIG.storage.gemsKey);
+      if (gRaw !== null) {
+        const g = parseInt(gRaw, 10);
+        if (!isNaN(g)) globalGems = g;
+      }
+      const profRaw = localStorage.getItem('arcade_profile_v1');
+      if (profRaw) {
+        const prof = JSON.parse(profRaw);
+        if (prof && prof.equippedPet) activePet = prof.equippedPet;
+      }
+    } catch (e) {}
+    updateUI();
+  }
+
+  function writeStorage() {
+    try {
+      localStorage.setItem(CONFIG.storage.saveKey, JSON.stringify(save));
+      localStorage.setItem(CONFIG.storage.gemsKey, String(globalGems));
+    } catch (e) {}
+    updateUI();
+  }
+
+  function addGlobalXP(xpAmount) {
+    try {
+      const raw = localStorage.getItem('arcade_profile_v1');
+      const prof = raw ? JSON.parse(raw) : { xp: 0, streak: 1, lastLoginDay: '', unlockedPets: {}, equippedPet: null };
+      const mult = prof.equippedPet === 'dragon' ? 1.25 : 1.0;
+      prof.xp = (prof.xp || 0) + Math.round(xpAmount * mult);
+
+      const now = new Date();
+      const dayKey = now.toISOString().slice(0, 10);
+      const weekKey = `${now.getFullYear()}-W${Math.ceil((((now - new Date(now.getFullYear(), 0, 1)) / 86400000) + 1) / 7)}`;
+      if (!prof.daily || prof.daily.dayKey !== dayKey) {
+        prof.daily = { dayKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, games: {}, claims: {} };
+      }
+      if (!prof.weekly || prof.weekly.weekKey !== weekKey) {
+        prof.weekly = { weekKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, runs: 0, claims: {} };
+      }
+      prof.daily.ph = Math.max(prof.daily.ph || 0, score);
+      prof.daily.games.ph = true;
+      prof.weekly.ph = (prof.weekly.ph || 0) + score;
+      prof.weekly.runs = (prof.weekly.runs || 0) + 1;
+
+      localStorage.setItem('arcade_profile_v1', JSON.stringify(prof));
+    } catch (e) {}
+  }
+
+  function updateUI() {
+    document.getElementById('ph-gems-val').textContent = globalGems.toLocaleString();
+    document.getElementById('ph-pearls-val').textContent = save.pearls.toLocaleString();
+    document.getElementById('ph-start-best').textContent = `BEST: ${save.best}`;
+  }
+
+  // ==========================================
+  // CHALLENGE STATE
+  // ==========================================
+  let activeChallenge = null;
+  let runCounter = 0;
+
+  function loadChallenge() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const cParam = params.get('challenge') || (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param ? tg.initDataUnsafe.start_param : '');
+      if (cParam && cParam.startsWith('ph_')) {
+        const parts = cParam.split('_');
+        const target = parseInt(parts[1], 10) || 0;
+        const seedVal = parseInt(parts[2], 10) || 7777;
+        const fromName = decodeURIComponent(parts.slice(3).join('_') || 'Друг');
+        activeChallenge = { game: 'ph', target, seed: seedVal, from: fromName };
+        localStorage.setItem('arcade_active_challenge_v1', JSON.stringify(activeChallenge));
+      } else {
+        const savedChal = localStorage.getItem('arcade_active_challenge_v1');
+        if (savedChal) {
+          const parsed = JSON.parse(savedChal);
+          if (parsed && parsed.game === 'ph') activeChallenge = parsed;
+        }
+      }
+      const autoSend = localStorage.getItem('arcade_auto_send_runs_v1') === '1';
+      const chk = document.getElementById('ph-auto-send-chk');
+      if (chk) chk.checked = autoSend;
+    } catch (e) {}
+
+    if (activeChallenge) {
+      const bar = document.getElementById('ph-challenge-bar');
+      const txt = document.getElementById('ph-chal-target-txt');
+      if (bar && txt) {
+        bar.classList.remove('ph-hidden');
+        txt.textContent = `От ${activeChallenge.from} — Побей ${activeChallenge.target} 🐡`;
+      }
+    }
+  }
+
+  function shareViaTelegram(text, url) {
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+    if (tg && typeof tg.openTelegramLink === 'function') {
+      try {
+        tg.openTelegramLink(shareUrl);
+        return;
+      } catch (e) {}
+    }
+    window.open(shareUrl, '_blank');
+  }
+
+  // ==========================================
+  // GAME STATE & FIXED 1/120 PHYSICS
+  // ==========================================
+  const canvas = document.getElementById('ph-canvas');
+  const ctx = canvas.getContext('2d');
+
+  let state = 'READY'; // READY | PLAYING | DYING | GAME_OVER
+  let runSeed = 7777;
+  let rng = mulberry32(runSeed);
+  let simTick = 0;
+  let tapTimes = [];
+  let gameOverUnlockMs = 0;
+
+  let fish = {
+    y: 300,
+    vy: 0,
+    angle: 0,
+    inflateMs: 0,
+    invulnSec: 0
+  };
+
+  let score = 0;
+  let scrollDist = 0;
+  let nextSpawnDist = 0;
+  let prevGapCenterY = 300;
+  let pillars = []; // max 5 pairs in pool
+  let bubbles = []; // ambient + flap bubbles (max 20)
+  let floatingTexts = [];
+
+  let flashMs = 0;
+  let shakeMag = 0;
+  let runGemsEarned = 0;
+  let runPearlsEarned = 0;
+  let petShieldAvailable = false;
+
+  function resizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  function initBubbles() {
+    bubbles = [];
+    for (let i = 0; i < 15; i++) {
+      bubbles.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        r: 2 + Math.random() * 5,
+        vy: 30 + Math.random() * 45
+      });
+    }
+  }
+
+  function resetToReady() {
+    runSeed = activeChallenge && activeChallenge.seed
+      ? activeChallenge.seed
+      : ((Date.now() ^ Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0);
+    rng = mulberry32(runSeed);
+    simTick = 0;
+    tapTimes = [];
+    score = 0;
+    scrollDist = 0;
+    nextSpawnDist = 0;
+    pillars = [];
+    floatingTexts = [];
+    runGemsEarned = 0;
+    runPearlsEarned = 0;
+    petShieldAvailable = activePet === 'dragon';
+
+    const h = window.innerHeight;
+    fish.y = h * 0.46;
+    fish.vy = 0;
+    fish.angle = 0;
+    fish.inflateMs = 0;
+    fish.invulnSec = 0;
+    prevGapCenterY = h * 0.46;
+
+    document.getElementById('ph-score-txt').textContent = '0';
+    document.getElementById('ph-screen-ready').classList.remove('ph-hidden');
+    document.getElementById('ph-screen-gameover').classList.add('ph-hidden');
+    state = 'READY';
+  }
+
+  function spawnPillarPair(spawnX) {
+    const h = window.innerHeight;
+    const gapSize = Math.max(
+      CONFIG.obstacle.gapMin,
+      CONFIG.obstacle.gapStart - Math.floor(score / 10) * CONFIG.obstacle.gapStep
+    );
+    const minY = CONFIG.obstacle.marginTop + gapSize * 0.5;
+    const maxY = h - CONFIG.obstacle.marginBottom - gapSize * 0.5;
+
+    const low = Math.max(minY, prevGapCenterY - CONFIG.obstacle.maxGapDelta);
+    const high = Math.min(maxY, prevGapCenterY + CONFIG.obstacle.maxGapDelta);
+    const gapCenterY = low + rng() * Math.max(1, high - low);
+    prevGapCenterY = gapCenterY;
+
+    const hasPearl = rng() < CONFIG.pearls.chance;
+    const isCrystal = hasPearl && rng() < 0.28;
+    const pearlOffsetY = (rng() - 0.5) * 36;
+    const moving = score >= 30 && rng() < 0.45;
+
+    if (pillars.length >= 5) pillars.shift();
+    pillars.push({
+      x: spawnX,
+      baseGapY: gapCenterY,
+      gapY: gapCenterY,
+      gapSize,
+      passed: false,
+      moving,
+      phase: rng() * Math.PI * 2,
+      pearl: hasPearl ? { collected: false, isCrystal, offsetY: pearlOffsetY } : null
+    });
+  }
+
+  function onFlap() {
+    sfx.init();
+    if (state === 'GAME_OVER' || state === 'DYING') return;
+    if (state === 'READY') {
+      state = 'PLAYING';
+      document.getElementById('ph-screen-ready').classList.add('ph-hidden');
+      // First obstacle 1.5 screen widths away
+      spawnPillarPair(window.innerWidth * 1.5);
+      nextSpawnDist = scrollDist + CONFIG.obstacle.spacing;
+    }
+
+    tapTimes.push(simTick);
+    // SET vertical velocity (not add) for consistent feel
+    fish.vy = -CONFIG.physics.flapImpulse;
+    fish.inflateMs = 150;
+    sfx.playBloop();
+    triggerHaptic('light');
+
+    // Spawn 3 small flap bubbles below fish
+    const fx = window.innerWidth * CONFIG.player.x;
+    for (let i = 0; i < 3; i++) {
+      if (bubbles.length < 24) {
+        bubbles.push({
+          x: fx - 10 + (Math.random() - 0.5) * 16,
+          y: fish.y + 14,
+          r: 3 + Math.random() * 4,
+          vy: 60 + Math.random() * 50
+        });
+      }
+    }
+  }
+
+  function circleRectCollide(cx, cy, r, rx, ry, rw, rh) {
+    const closestX = Math.max(rx, Math.min(cx, rx + rw));
+    const closestY = Math.max(ry, Math.min(cy, ry + rh));
+    const dx = cx - closestX;
+    const dy = cy - closestY;
+    return dx * dx + dy * dy < r * r;
+  }
+
+  function triggerHitDying() {
+    if (fish.invulnSec > 0) return;
+    if (petShieldAvailable) {
+      petShieldAvailable = false;
+      fish.invulnSec = 1.6;
+      fish.vy = -CONFIG.physics.flapImpulse * 0.7;
+      sfx.playGem();
+      floatingTexts.push({
+        x: window.innerWidth * CONFIG.player.x,
+        y: fish.y - 30,
+        text: '🐲 ЩИТ ДРАКОНА СПАС!',
+        color: '#4ade80',
+        life: 1.1
+      });
+      return;
+    }
+    state = 'DYING';
+    flashMs = CONFIG.fx.flashMs;
+    shakeMag = CONFIG.fx.shake;
+    sfx.playHitThump();
+    triggerHaptic('error');
+  }
+
+  function drawBadge(scoreVal) {
+    const bCanvas = document.getElementById('ph-badge-canvas');
+    const bCtx = bCanvas.getContext('2d');
+    bCtx.clearRect(0, 0, 64, 64);
+
+    let color = '#334155';
+    let rim = '#64748b';
+    let label = 'NO BADGE YET';
+    if (scoreVal >= CONFIG.badges.platinum) {
+      color = '#38bdf8';
+      rim = '#e0f2fe';
+      label = '💎 PLATINUM BADGE';
+    } else if (scoreVal >= CONFIG.badges.gold) {
+      color = '#facc15';
+      rim = '#fef08a';
+      label = '🥇 GOLD BADGE';
+    } else if (scoreVal >= CONFIG.badges.silver) {
+      color = '#cbd5e1';
+      rim = '#f8fafc';
+      label = '🥈 SILVER BADGE';
+    } else if (scoreVal >= CONFIG.badges.bronze) {
+      color = '#d97706';
+      rim = '#fde68a';
+      label = '🥉 BRONZE BADGE';
+    }
+
+    document.getElementById('ph-go-badge-txt').textContent = label;
+
+    // Medal ribbon & star
+    bCtx.fillStyle = '#ef4444';
+    bCtx.fillRect(22, 4, 20, 18);
+    bCtx.fillStyle = color;
+    bCtx.strokeStyle = rim;
+    bCtx.lineWidth = 4;
+    bCtx.beginPath();
+    bCtx.arc(32, 36, 20, 0, Math.PI * 2);
+    bCtx.fill();
+    bCtx.stroke();
+
+    bCtx.fillStyle = rim;
+    bCtx.font = "700 18px 'Fredoka', sans-serif";
+    bCtx.textAlign = 'center';
+    bCtx.textBaseline = 'middle';
+    bCtx.fillText('★', 32, 37);
+  }
+
+  function buildReportText(isChallengeShare) {
+    const playerName = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name)
+      ? tg.initDataUnsafe.user.first_name
+      : 'Игрок';
+    const baseUrl = window.location.origin + window.location.pathname;
+    const link = `${baseUrl}?challenge=ph_${score}_${runSeed}_${encodeURIComponent(playerName)}`;
+    if (isChallengeShare) {
+      return {
+        text: `⚔️ ВЫЗОВ В PUFF HOP!\n🐡 ${playerName} проплыл ${score} коралловых рифов (Рекорд: ${save.best})!\nПопробуй проплыть дальше:`,
+        url: link
+      };
+    }
+    let line = `🐡 Puff Hop — Забег #${runCounter}: ${score} очков (Рекорд: ${save.best})`;
+    if (activeChallenge) {
+      const beat = score > activeChallenge.target;
+      line = beat
+        ? `🏆 ВЫЗОВ ПОБИТ! Забег #${runCounter} в Puff Hop: я набрал ${score} против ${activeChallenge.target} от ${activeChallenge.from}!`
+        : `⚔️ Забег #${runCounter} в Puff Hop: мой результат ${score} (Цель от ${activeChallenge.from}: ${activeChallenge.target}).`;
+    }
+    return { text: `${line}\nОтветь своим заплывом:`, url: link };
+  }
+
+  function showGameOverModal() {
+    state = 'GAME_OVER';
+    gameOverUnlockMs = performance.now() + 500;
+    runCounter++;
+    addGlobalXP(score * 4);
+
+    const isNew = score > save.best;
+    if (isNew) {
+      save.best = score;
+      globalGems += 2;
+      runGemsEarned += 2;
+    }
+    writeStorage();
+
+    try {
+      const raw = localStorage.getItem('arcade_runs_history_v1');
+      const list = raw ? JSON.parse(raw) : [];
+      list.unshift({
+        game: 'Puff Hop',
+        icon: '🐡',
+        score: `${score} 🐡`,
+        target: activeChallenge ? `${activeChallenge.target} 🐡` : null,
+        beat: activeChallenge ? score > activeChallenge.target : null,
+        ts: Date.now()
+      });
+      localStorage.setItem('arcade_runs_history_v1', JSON.stringify(list.slice(0, 20)));
+    } catch (e) {}
+
+    try {
+      fetch(CONFIG.api.submitEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tg ? tg.initData : '', score, seed: runSeed, tapTimes })
+      }).catch(() => {});
+    } catch (e) {}
+
+    drawBadge(score);
+    document.getElementById('ph-screen-gameover').classList.remove('ph-hidden');
+    document.getElementById('ph-new-record').classList.toggle('ph-hidden', !isNew);
+    document.getElementById('ph-go-score').textContent = String(score);
+    document.getElementById('ph-go-best').textContent = `BEST: ${save.best}`;
+    document.getElementById('ph-go-rewards').textContent = `+${runGemsEarned} 💎 • +${runPearlsEarned} ⚪`;
+
+    const revBtn = document.getElementById('ph-revive-btn');
+    if (revBtn) {
+      revBtn.disabled = globalGems < 3;
+      revBtn.style.opacity = globalGems < 3 ? '0.5' : '1';
+      revBtn.textContent = `⚡ ПРОДОЛЖИТЬ ЗА 3 💎 (У тебя: ${globalGems} 💎)`;
+    }
+
+    const chalStatus = document.getElementById('ph-chal-status');
+    if (chalStatus) {
+      if (activeChallenge) {
+        const beat = score > activeChallenge.target;
+        chalStatus.textContent = beat
+          ? `🏆 ВЫЗОВ ОТ ${activeChallenge.from.toUpperCase()} ПОБИТ! (${score} vs ${activeChallenge.target})`
+          : `⚔️ Забег #${runCounter}: ${score} из ${activeChallenge.target} (от ${activeChallenge.from})`;
+        chalStatus.style.color = beat ? '#4ade80' : '#fde047';
+      } else {
+        chalStatus.textContent = `⚔️ Забег #${runCounter} завершён • Очков: ${score}`;
+      }
+    }
+
+    const autoChk = document.getElementById('ph-auto-send-chk');
+    if (autoChk && autoChk.checked && score > 0) {
+      const rep = buildReportText(false);
+      shareViaTelegram(rep.text, rep.url);
+    }
+  }
+
+  function stepFixed(dt) {
+    simTick++;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const seabedY = h - 54;
+    const fx = w * CONFIG.player.x;
+
+    if (flashMs > 0) flashMs = Math.max(0, flashMs - dt * 1000);
+    if (shakeMag > 0) shakeMag = Math.max(0, shakeMag - 35 * dt);
+    if (fish.inflateMs > 0) fish.inflateMs = Math.max(0, fish.inflateMs - dt * 1000);
+    if (fish.invulnSec > 0) fish.invulnSec = Math.max(0, fish.invulnSec - dt);
+
+    // Ambient bubbles rising
+    for (let i = 0; i < bubbles.length; i++) {
+      const b = bubbles[i];
+      b.y -= b.vy * dt;
+      if (b.y < -15) {
+        b.y = h + 10;
+        b.x = Math.random() * w;
+      }
+    }
+
+    if (state === 'READY') {
+      fish.y = h * 0.46 + Math.sin(simTick * 0.025) * 8;
+      fish.angle = 0;
+      return;
+    }
+
+    if (state === 'DYING') {
+      fish.vy = Math.min(CONFIG.physics.maxFall, fish.vy + CONFIG.physics.gravity * dt);
+      fish.y += fish.vy * dt;
+      fish.angle += (Math.PI * 0.5 - fish.angle) * 10 * dt; // belly-up 90 deg
+      if (fish.y >= seabedY - CONFIG.player.radius) {
+        fish.y = seabedY - CONFIG.player.radius;
+        showGameOverModal();
+      }
+      return;
+    }
+
+    if (state !== 'PLAYING') return;
+
+    // 1. Fish vertical physics
+    fish.vy = Math.min(CONFIG.physics.maxFall, fish.vy + CONFIG.physics.gravity * dt);
+    fish.y += fish.vy * dt;
+
+    // Visual rotation: nose dips gradually after vy > 0.4 * maxFall
+    let targetAngle = -0.42 * (-fish.vy / CONFIG.physics.flapImpulse);
+    if (fish.vy > 0.4 * CONFIG.physics.maxFall) {
+      const diveT = (fish.vy - 0.4 * CONFIG.physics.maxFall) / (0.6 * CONFIG.physics.maxFall);
+      targetAngle = Math.min(1.35, diveT * 1.35);
+    } else {
+      targetAngle = Math.max(-0.44, Math.min(0.25, (fish.vy / CONFIG.physics.maxFall) * 0.5));
+    }
+    fish.angle += (targetAngle - fish.angle) * 12 * dt;
+
+    // Top limit & seabed collision
+    const hitR = CONFIG.player.radius * CONFIG.player.hitboxScale;
+    if (fish.y < -CONFIG.physics.topLimit || fish.y + hitR >= seabedY) {
+      triggerHitDying();
+      return;
+    }
+
+    // 2. Scroll world & spawn obstacles by distance
+    const spd = Math.min(CONFIG.speed.max, CONFIG.speed.start + score * CONFIG.speed.step);
+    const stepScroll = spd * dt;
+    scrollDist += stepScroll;
+
+    if (scrollDist >= nextSpawnDist && pillars.length > 0) {
+      const lastP = pillars[pillars.length - 1];
+      spawnPillarPair(lastP.x + CONFIG.obstacle.spacing);
+      nextSpawnDist = scrollDist + CONFIG.obstacle.spacing;
+    }
+
+    // 3. Update pillars, check pass & collision
+    for (let i = pillars.length - 1; i >= 0; i--) {
+      const p = pillars[i];
+      p.x -= stepScroll;
+
+      if (p.moving) {
+        p.phase += 1.6 * dt;
+        p.gapY = p.baseGapY + Math.sin(p.phase) * 36;
+      }
+
+      const topH = p.gapY - p.gapSize * 0.5;
+      const botY = p.gapY + p.gapSize * 0.5;
+      const botH = seabedY - botY;
+
+      // Collision with top or bottom coral pillar
+      if (
+        circleRectCollide(fx, fish.y, hitR, p.x, 0, CONFIG.obstacle.width, topH) ||
+        circleRectCollide(fx, fish.y, hitR, p.x, botY, CONFIG.obstacle.width, botH)
+      ) {
+        triggerHitDying();
+        return;
+      }
+
+      // Collectible pearl check
+      if (p.pearl && !p.pearl.collected) {
+        const px = p.x + CONFIG.obstacle.width * 0.5;
+        const py = p.gapY + p.pearl.offsetY;
+        const dx = fx - px;
+        const dy = fish.y - py;
+        if (dx * dx + dy * dy < (hitR + 14) * (hitR + 14)) {
+          p.pearl.collected = true;
+          triggerHaptic('medium');
+          if (p.pearl.isCrystal) {
+            globalGems += 1;
+            runGemsEarned += 1;
+            sfx.playGem();
+            floatingTexts.push({ x: px, y: py, text: '+1 💎', color: '#7dd3fc', life: 0.9 });
+          } else {
+            const bonus = activePet === 'drone' ? 2 : 1;
+            save.pearls += bonus;
+            runPearlsEarned += bonus;
+            sfx.playDing();
+            floatingTexts.push({ x: px, y: py, text: `+${bonus} ⚪`, color: '#f8fafc', life: 0.9 });
+          }
+          writeStorage();
+        }
+      }
+
+      // Score +1 when passing center of pillar
+      if (!p.passed && fx >= p.x + CONFIG.obstacle.width * 0.5) {
+        p.passed = true;
+        score++;
+        document.getElementById('ph-score-txt').textContent = String(score);
+        sfx.playDing();
+
+        if (score % 15 === 0 || (activePet === 'fox' && score % 20 === 0)) {
+          globalGems += 1;
+          runGemsEarned += 1;
+          writeStorage();
+          floatingTexts.push({ x: fx, y: fish.y - 34, text: '+1 💎 BONUS!', color: '#7dd3fc', life: 1.0 });
+        }
+      }
+
+      if (p.x + CONFIG.obstacle.width < -20) {
+        pillars.splice(i, 1);
+      }
+    }
+
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+      const ft = floatingTexts[i];
+      ft.life -= dt;
+      ft.y -= 40 * dt;
+      if (ft.life <= 0) floatingTexts.splice(i, 1);
+    }
+  }
+
+  // ==========================================
+  // RENDERING
+  // ==========================================
+  function drawPufferFish(c, x, y, angle, inflateMs, invuln) {
+    const skin = CONFIG.skins.find(s => s.id === save.equippedSkin) || CONFIG.skins[0];
+    const infT = inflateMs > 0 ? Math.sin((inflateMs / 150) * Math.PI) : 0;
+    const scale = 1.0 + infT * 0.25;
+    const r = CONFIG.player.radius;
+
+    c.save();
+    c.translate(x, y);
+    c.rotate(angle);
+    c.scale(scale, scale);
+    if (invuln > 0 && Math.floor(performance.now() / 80) % 2 === 0) {
+      c.globalAlpha = 0.5;
+    }
+
+    // Little spikes around puffer body
+    c.fillStyle = skin.body;
+    for (let i = 0; i < 8; i++) {
+      const a = (i * Math.PI) / 4;
+      c.beginPath();
+      c.moveTo(Math.cos(a) * (r - 2), Math.sin(a) * (r - 2));
+      c.lineTo(Math.cos(a) * (r + 6), Math.sin(a) * (r + 6));
+      c.lineTo(Math.cos(a + 0.25) * (r - 2), Math.sin(a + 0.25) * (r - 2));
+      c.closePath();
+      c.fill();
+    }
+
+    // Tail fin
+    c.fillStyle = skin.body;
+    c.beginPath();
+    c.moveTo(-r + 2, 0);
+    c.lineTo(-r - 12, -9);
+    c.lineTo(-r - 12, 9);
+    c.closePath();
+    c.fill();
+
+    // Round body
+    c.fillStyle = skin.body;
+    c.strokeStyle = '#0f172a';
+    c.lineWidth = 2.5;
+    c.beginPath();
+    c.arc(0, 0, r, 0, Math.PI * 2);
+    c.fill();
+    c.stroke();
+
+    // Lighter belly arc
+    c.fillStyle = skin.belly;
+    c.beginPath();
+    c.arc(2, 4, r * 0.72, 0.15, Math.PI - 0.15);
+    c.fill();
+
+    // Big cute eye
+    c.fillStyle = '#ffffff';
+    c.beginPath();
+    c.arc(9, -6, 7, 0, Math.PI * 2);
+    c.fill();
+    c.stroke();
+
+    c.fillStyle = '#0f172a';
+    c.beginPath();
+    c.arc(11, -6, 3.2, 0, Math.PI * 2);
+    c.fill();
+
+    // Puffed cheeks
+    c.fillStyle = '#fb7185';
+    c.beginPath();
+    c.arc(10, 4, 4, 0, Math.PI * 2);
+    c.fill();
+
+    c.restore();
+  }
+
+  function render() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const seabedY = h - 54;
+
+    const sx = shakeMag > 0 ? (Math.random() - 0.5) * shakeMag * 2 : 0;
+    const sy = shakeMag > 0 ? (Math.random() - 0.5) * shakeMag * 2 : 0;
+
+    ctx.save();
+    ctx.translate(sx, sy);
+
+    // 1. Far water gradient shifting slowly every 25 points
+    const depthStage = Math.floor(score / 25);
+    const hueTop = (195 + depthStage * 12) % 360;
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, `hsl(${hueTop}, 84%, 38%)`);
+    grad.addColorStop(1, `hsl(${(hueTop + 18) % 360}, 88%, 18%)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(-20, -20, w + 40, h + 40);
+
+    // Diagonal sun light rays
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+    for (let i = 0; i < 3; i++) {
+      const rx = ((i * 180 - scrollDist * 0.08) % (w + 200) + (w + 200)) % (w + 200) - 100;
+      ctx.beginPath();
+      ctx.moveTo(rx, 0);
+      ctx.lineTo(rx + 70, 0);
+      ctx.lineTo(rx - 40, seabedY);
+      ctx.lineTo(rx - 110, seabedY);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // 2. Mid seaweed silhouettes (parallax 0.35x)
+    ctx.fillStyle = 'rgba(15, 118, 110, 0.45)';
+    for (let i = 0; i < 7; i++) {
+      const wx = ((i * 110 - scrollDist * 0.35) % (w + 110) + (w + 110)) % (w + 110) - 55;
+      ctx.beginPath();
+      ctx.roundRect(wx, seabedY - 75 - (i % 3) * 22, 18, 85 + (i % 3) * 22, 9);
+      ctx.fill();
+    }
+
+    // 3. Ambient bubbles
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < bubbles.length; i++) {
+      const b = bubbles[i];
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // 4. Coral Pillars (2-tone shading + rounded cap at gap side)
+    const pw = CONFIG.obstacle.width;
+    for (let i = 0; i < pillars.length; i++) {
+      const p = pillars[i];
+      const topH = Math.max(0, p.gapY - p.gapSize * 0.5);
+      const botY = p.gapY + p.gapSize * 0.5;
+      const botH = Math.max(0, seabedY - botY);
+
+      ctx.fillStyle = '#fb7185';
+      ctx.strokeStyle = '#881337';
+      ctx.lineWidth = 3;
+
+      // Top coral column
+      if (topH > 0) {
+        ctx.fillRect(p.x, 0, pw, topH);
+        ctx.fillStyle = '#f43f5e';
+        ctx.fillRect(p.x + pw * 0.6, 0, pw * 0.4, topH);
+        ctx.strokeRect(p.x, -4, pw, topH + 4);
+
+        // Rounded cap at gap
+        ctx.fillStyle = '#fda4af';
+        ctx.beginPath();
+        ctx.roundRect(p.x - 5, topH - 20, pw + 10, 20, 10);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // Bottom coral column
+      if (botH > 0) {
+        ctx.fillStyle = '#fb7185';
+        ctx.fillRect(p.x, botY, pw, botH);
+        ctx.fillStyle = '#f43f5e';
+        ctx.fillRect(p.x + pw * 0.6, botY, pw * 0.4, botH);
+        ctx.strokeRect(p.x, botY, pw, botH);
+
+        // Rounded cap at gap
+        ctx.fillStyle = '#fda4af';
+        ctx.beginPath();
+        ctx.roundRect(p.x - 5, botY, pw + 10, 20, 10);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // Collectible pearl or crystal gem in gap
+      if (p.pearl && !p.pearl.collected) {
+        const px = p.x + pw * 0.5;
+        const py = p.gapY + p.pearl.offsetY;
+        ctx.save();
+        ctx.fillStyle = p.pearl.isCrystal ? '#38bdf8' : '#ffffff';
+        ctx.strokeStyle = '#0ea5e9';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(px, py, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // 5. Scrolling sandy seabed
+    ctx.fillStyle = '#fde68a';
+    ctx.fillRect(0, seabedY, w, h - seabedY);
+    ctx.fillStyle = '#f59e0b';
+    ctx.fillRect(0, seabedY, w, 8);
+    for (let i = 0; i < 10; i++) {
+      const sxDot = ((i * 75 - scrollDist) % (w + 75) + (w + 75)) % (w + 75) - 35;
+      ctx.beginPath();
+      ctx.arc(sxDot, seabedY + 24 + (i % 2) * 10, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 6. Companion Pet swimming behind Puffer Fish
+    const fx = w * CONFIG.player.x;
+    if (activePet) {
+      const petX = fx - 44;
+      const petY = fish.y - 18 + Math.sin(performance.now() * 0.006) * 7;
+      ctx.save();
+      ctx.font = "24px 'Fredoka', sans-serif";
+      ctx.textAlign = 'center';
+      const icon = activePet === 'drone' ? '🤖' : activePet === 'fox' ? '🦊' : '🐲';
+      ctx.fillText(icon, petX, petY);
+      ctx.restore();
+    }
+
+    // 7. Puffer Fish character
+    drawPufferFish(ctx, fx, fish.y, fish.angle, fish.inflateMs, fish.invulnSec);
+
+    // 8. Floating texts
+    floatingTexts.forEach(ft => {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, ft.life);
+      ctx.font = "700 20px 'Fredoka', sans-serif";
+      ctx.fillStyle = ft.color;
+      ctx.textAlign = 'center';
+      ctx.fillText(ft.text, ft.x, ft.y);
+      ctx.restore();
+    });
+
+    // White flash on hit
+    if (flashMs > 0) {
+      ctx.fillStyle = `rgba(255, 255, 255, ${(flashMs / CONFIG.fx.flashMs) * 0.65})`;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    ctx.restore();
+  }
+
+  // ==========================================
+  // INPUT & LISTENERS
+  // ==========================================
+  canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    onFlap();
+  });
+
+  document.getElementById('ph-screen-ready').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    onFlap();
+  });
+  document.getElementById('ph-screen-ready').style.pointerEvents = 'auto';
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'ArrowUp') {
+      e.preventDefault();
+      onFlap();
+    }
+  });
+
+  document.getElementById('ph-retry-btn').addEventListener('click', () => {
+    if (performance.now() < gameOverUnlockMs) return;
+    resetToReady();
+  });
+
+  document.getElementById('ph-revive-btn').addEventListener('click', () => {
+    if (globalGems < 3) return;
+    globalGems -= 3;
+    writeStorage();
+    sfx.playGem();
+    fish.y = window.innerHeight * 0.44;
+    fish.vy = -CONFIG.physics.flapImpulse * 0.5;
+    fish.angle = 0;
+    fish.invulnSec = 2.0; // 2 seconds invulnerability after revive
+    document.getElementById('ph-screen-gameover').classList.add('ph-hidden');
+    state = 'PLAYING';
+  });
+
+  document.getElementById('ph-send-run-btn').addEventListener('click', () => {
+    const rep = buildReportText(false);
+    shareViaTelegram(rep.text, rep.url);
+  });
+
+  document.getElementById('ph-auto-send-chk').addEventListener('change', (e) => {
+    try {
+      localStorage.setItem('arcade_auto_send_runs_v1', e.target.checked ? '1' : '0');
+    } catch (err) {}
+  });
+
+  document.getElementById('ph-share-btn').addEventListener('click', () => {
+    const rep = buildReportText(true);
+    shareViaTelegram(rep.text, rep.url);
+  });
+
+  document.getElementById('ph-hub-btn').addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+
+  function renderSkinsModal() {
+    const list = document.getElementById('ph-skins-list');
+    list.innerHTML = '';
+    CONFIG.skins.forEach(s => {
+      const unlocked = !!save.unlockedSkins[s.id] || s.costPearls === 0;
+      const equipped = save.equippedSkin === s.id;
+      const row = document.createElement('div');
+      row.style.cssText = "width:100%;display:flex;justify-content:space-between;align-items:center;background:rgba(30,41,59,0.88);padding:10px 12px;border-radius:12px;font-size:14px;font-family:'Fredoka', sans-serif;";
+      row.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;font-family:'Fredoka', sans-serif;">
+          <span style="width:18px;height:18px;border-radius:50%;background:${s.body};border:2px solid ${s.belly};display:inline-block;"></span>
+          <span>${s.name}</span>
+        </div>
+      `;
+      const wrap = document.createElement('div');
+      wrap.style.display = 'flex';
+      wrap.style.gap = '6px';
+
+      if (equipped) {
+        const b = document.createElement('button');
+        b.className = 'ph-top-btn';
+        b.textContent = 'НАДЕТО';
+        b.disabled = true;
+        wrap.appendChild(b);
+      } else if (unlocked) {
+        const b = document.createElement('button');
+        b.className = 'ph-top-btn';
+        b.style.background = '#22c55e';
+        b.textContent = 'ВЫБРАТЬ';
+        b.onclick = () => {
+          save.equippedSkin = s.id;
+          writeStorage();
+          renderSkinsModal();
+        };
+        wrap.appendChild(b);
+      } else {
+        const bPrl = document.createElement('button');
+        bPrl.className = 'ph-top-btn';
+        bPrl.textContent = `${s.costPearls} ⚪`;
+        bPrl.disabled = save.pearls < s.costPearls;
+        bPrl.style.opacity = save.pearls < s.costPearls ? '0.45' : '1';
+        bPrl.onclick = () => {
+          if (save.pearls >= s.costPearls) {
+            save.pearls -= s.costPearls;
+            save.unlockedSkins[s.id] = true;
+            save.equippedSkin = s.id;
+            writeStorage();
+            sfx.playGem();
+            renderSkinsModal();
+          }
+        };
+        wrap.appendChild(bPrl);
+
+        const bGem = document.createElement('button');
+        bGem.className = 'ph-top-btn';
+        bGem.style.borderColor = '#38bdf8';
+        bGem.style.color = '#7dd3fc';
+        bGem.textContent = `${s.costGems} 💎`;
+        bGem.disabled = globalGems < s.costGems;
+        bGem.style.opacity = globalGems < s.costGems ? '0.45' : '1';
+        bGem.onclick = () => {
+          if (globalGems >= s.costGems) {
+            globalGems -= s.costGems;
+            save.unlockedSkins[s.id] = true;
+            save.equippedSkin = s.id;
+            writeStorage();
+            sfx.playGem();
+            renderSkinsModal();
+          }
+        };
+        wrap.appendChild(bGem);
+      }
+      row.appendChild(wrap);
+      list.appendChild(row);
+    });
+  }
+
+  document.getElementById('ph-skins-btn').addEventListener('click', () => {
+    renderSkinsModal();
+    document.getElementById('ph-screen-skins').classList.remove('ph-hidden');
+  });
+
+  document.getElementById('ph-skins-close').addEventListener('click', () => {
+    document.getElementById('ph-screen-skins').classList.add('ph-hidden');
+  });
+
+  // ==========================================
+  // FIXED TIMESTEP 1/120 LOOP
+  // ==========================================
+  const FIXED_DT = 1 / 120;
+  let lastTime = performance.now();
+  let accumulator = 0;
+
+  function loop(now) {
+    const dt = Math.min(0.1, Math.max(0, (now - lastTime) / 1000));
+    lastTime = now;
+    accumulator += dt;
+    while (accumulator >= FIXED_DT) {
+      stepFixed(FIXED_DT);
+      accumulator -= FIXED_DT;
+    }
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  loadStorage();
+  loadChallenge();
+  initBubbles();
+  resetToReady();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

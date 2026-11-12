@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Blade Spin</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+#bs-game-root,
+#bs-game-root * {
+  box-sizing: border-box;
+  font-family: 'Fredoka', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+#bs-game-root {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 28%, #1e293b 0%, #090d16 100%);
+  touch-action: none;
+  color: #f8fafc;
+}
+#bs-game-root .bs-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+#bs-game-root .bs-topbar {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top, 12px));
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 20;
+  pointer-events: none;
+}
+#bs-game-root .bs-top-btn {
+  pointer-events: auto;
+  background: rgba(15, 23, 42, 0.78);
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  color: #f8fafc;
+  border-radius: 99px;
+  padding: 6px 13px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+#bs-game-root .bs-top-btn:active {
+  transform: scale(0.95);
+}
+#bs-game-root .bs-currencies {
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+#bs-game-root .bs-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 2px solid #38bdf8;
+  border-radius: 99px;
+  padding: 4px 11px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #7dd3fc;
+}
+#bs-game-root .bs-pill-apple {
+  border-color: #f43f5e;
+  color: #fda4af;
+}
+#bs-game-root .bs-hud {
+  position: absolute;
+  top: max(54px, calc(env(safe-area-inset-top, 12px) + 42px));
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 15;
+}
+#bs-game-root .bs-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 16px;
+  letter-spacing: 2px;
+  margin-bottom: 2px;
+}
+#bs-game-root .bs-stage-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+#bs-game-root .bs-score-big {
+  font-size: clamp(36px, 8vw, 52px);
+  font-weight: 700;
+  color: #fde047;
+  text-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+  line-height: 1.05;
+}
+#bs-game-root .bs-boss-banner {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(90deg, rgba(220, 38, 38, 0.95), rgba(234, 88, 12, 0.95));
+  border: 3px solid #fde047;
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 700;
+  padding: 10px 28px;
+  border-radius: 18px;
+  z-index: 25;
+  pointer-events: none;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+  animation: bs-boss-pop 0.35s ease;
+}
+#bs-game-root .bs-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 24px 20px max(34px, env(safe-area-inset-bottom, 34px)) 20px;
+  z-index: 30;
+  pointer-events: none;
+}
+#bs-game-root .bs-start-prompt {
+  background: rgba(15, 23, 42, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  padding: 16px 24px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  margin-bottom: 18px;
+  animation: bs-pulse 1.5s infinite ease-in-out;
+}
+#bs-game-root .bs-card {
+  pointer-events: auto;
+  width: min(92vw, 370px);
+  background: rgba(15, 23, 42, 0.95);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 24px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+  margin: auto;
+}
+#bs-game-root .bs-btn {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 14px;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+}
+#bs-game-root .bs-btn:active {
+  transform: translateY(2px);
+}
+#bs-game-root .bs-btn-primary {
+  background: linear-gradient(180deg, #22c55e, #16a34a);
+}
+#bs-game-root .bs-btn-secondary {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+}
+#bs-game-root .bs-btn-amber {
+  background: linear-gradient(180deg, #f59e0b, #d97706);
+}
+#bs-game-root .bs-hidden {
+  display: none !important;
+}
+@keyframes bs-recoil {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
+}
+@keyframes bs-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+@keyframes bs-boss-pop {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  80% { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+</style>
+</head>
+<body style="margin:0;padding:0;overflow:hidden;background:#090d16;font-family:'Fredoka', sans-serif;">
+<div id="bs-game-root">
+  <canvas id="bs-canvas" class="bs-canvas"></canvas>
+
+  <div class="bs-topbar">
+    <div style="display:flex;gap:8px;pointer-events:auto;font-family:'Fredoka', sans-serif;">
+      <button id="bs-hub-btn" class="bs-top-btn">◀ HUB</button>
+      <button id="bs-skins-btn" class="bs-top-btn">🗡 СКИНЫ</button>
+    </div>
+    <div class="bs-currencies">
+      <div class="bs-pill" title="Shared Hub Gems">
+        <span>💎</span>
+        <span id="bs-gems-val">0</span>
+      </div>
+      <div class="bs-pill bs-pill-apple" title="Sliced Apples">
+        <span>🍎</span>
+        <span id="bs-apples-val">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE CHALLENGE BANNER -->
+  <div id="bs-challenge-bar" class="bs-hidden" style="position:absolute;top:max(50px, calc(env(safe-area-inset-top, 12px) + 38px));left:50%;transform:translateX(-50%);z-index:18;background:linear-gradient(135deg,rgba(234,88,12,0.92),rgba(190,18,60,0.92));border:2px solid #fde047;border-radius:99px;padding:3px 14px;font-size:12px;font-weight:700;color:#ffffff;white-space:nowrap;pointer-events:none;font-family:'Fredoka', sans-serif;">
+    ⚔️ ЧЕЛЛЕНДЖ: <span id="bs-chal-target-txt">Побей 0</span>
+  </div>
+
+  <!-- HUD -->
+  <div id="bs-hud" class="bs-hud">
+    <div id="bs-dots" class="bs-dots">● ● ● ● ★</div>
+    <div id="bs-stage-txt" class="bs-stage-label">STAGE 1</div>
+    <div id="bs-score-txt" class="bs-score-big">0</div>
+  </div>
+
+  <!-- BOSS INTRO BANNER -->
+  <div id="bs-boss-banner" class="bs-boss-banner bs-hidden">⚔️ BOSS FIGHT!</div>
+
+  <!-- START OVERLAY -->
+  <div id="bs-screen-start" class="bs-overlay">
+    <div class="bs-start-prompt">
+      <div style="font-size:26px;font-weight:700;color:#fde047;font-family:'Fredoka', sans-serif;">BLADE SPIN</div>
+      <div id="bs-start-best" style="font-size:14px;color:#cbd5e1;margin-top:4px;font-family:'Fredoka', sans-serif;">BEST SCORE: 0 • STAGE 1</div>
+      <div style="font-size:18px;font-weight:700;color:#ffffff;margin-top:10px;font-family:'Fredoka', sans-serif;">🗡 TAP TO THROW</div>
+      <div style="font-size:12px;color:#7dd3fc;margin-top:6px;font-family:'Fredoka', sans-serif;">Slice apples 🍎 &amp; defeat Bosses for shared 💎 Hub Gems!</div>
+    </div>
+  </div>
+
+  <!-- SKINS SHOP MODAL -->
+  <div id="bs-screen-skins" class="bs-overlay bs-hidden" style="background:rgba(9,13,22,0.86);pointer-events:auto;font-family:'Fredoka', sans-serif;">
+    <div class="bs-card">
+      <div style="font-size:22px;font-weight:700;color:#fde047;font-family:'Fredoka', sans-serif;">🗡 АРСЕНАЛ КИНЖАЛОВ</div>
+      <div style="font-size:12px;color:#94a3b8;font-family:'Fredoka', sans-serif;">Открывай за яблоки 🍎 или общие алмазы 💎</div>
+      <div id="bs-skins-list" style="width:100%;display:flex;flex-direction:column;gap:8px;font-family:'Fredoka', sans-serif;"></div>
+      <button id="bs-skins-close" class="bs-btn bs-btn-secondary">ЗАКРЫТЬ</button>
+    </div>
+  </div>
+
+  <!-- GAME OVER MODAL -->
+  <div id="bs-screen-gameover" class="bs-overlay bs-hidden" style="background:rgba(9,13,22,0.75);font-family:'Fredoka', sans-serif;">
+    <div class="bs-card">
+      <div id="bs-new-record" class="bs-hidden" style="background:#f59e0b;color:#0f172a;font-size:12px;font-weight:700;padding:3px 12px;border-radius:99px;font-family:'Fredoka', sans-serif;">★ NEW RECORD ★</div>
+      <div style="font-size:24px;font-weight:700;color:#f87171;font-family:'Fredoka', sans-serif;">BLADE DEFLECTED!</div>
+      <div id="bs-go-score" style="font-size:44px;font-weight:700;color:#fde047;line-height:1;font-family:'Fredoka', sans-serif;">0</div>
+      <div id="bs-go-stage" style="font-size:14px;color:#cbd5e1;font-weight:600;font-family:'Fredoka', sans-serif;">STAGE 1 • BEST: 0</div>
+      <div id="bs-go-rewards" style="font-size:14px;color:#7dd3fc;font-weight:700;background:rgba(14,165,233,0.15);padding:5px 14px;border-radius:99px;font-family:'Fredoka', sans-serif;">+0 💎 • +0 🍎</div>
+
+      <div id="bs-chal-box" style="width:100%;background:rgba(30,41,59,0.9);border:1px solid rgba(56,189,248,0.4);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;font-family:'Fredoka', sans-serif;">
+        <div id="bs-chal-status" style="font-size:12px;font-weight:700;color:#fde047;text-align:center;font-family:'Fredoka', sans-serif;">⚔️ Забег завершён</div>
+        <button id="bs-send-run-btn" class="bs-btn" style="min-height:38px;font-size:14px;background:linear-gradient(180deg,#0ea5e9,#0284c7);font-family:'Fredoka', sans-serif;">📤 Отправить результат забега в чат</button>
+        <label style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:#cbd5e1;cursor:pointer;font-family:'Fredoka', sans-serif;">
+          <input type="checkbox" id="bs-auto-send-chk" style="accent-color:#38bdf8;">
+          ⚡ Авто-отправка каждого забега в чат
+        </label>
+      </div>
+
+      <button id="bs-revive-btn" class="bs-btn bs-btn-amber">⚡ ПРОДОЛЖИТЬ ЭТАП (3 💎)</button>
+      <button id="bs-retry-btn" class="bs-btn bs-btn-primary">▶ ИГРАТЬ СНОВА</button>
+      <button id="bs-share-btn" class="bs-btn bs-btn-secondary">⚔️ БРОСИТЬ ВЫЗОВ ДРУГУ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const CONFIG = {
+    target: {
+      radius: 102,
+      y: 0.33,
+      embed: 18
+    },
+    dagger: {
+      speed: 2200,
+      length: 88
+    },
+    hit: {
+      minGap: 0.21,
+      fruitTolerance: 0.20
+    },
+    stages: {
+      daggersBase: 5,
+      daggersCap: 11,
+      bossEvery: 5,
+      patterns: [
+        { from: 1, type: 'constant', w: 1.65 },
+        { from: 3, type: 'surge', w: 2.05, f: 1.5 },
+        { from: 6, type: 'wobble', w: 3.0, f: 0.95 },
+        { from: 9, type: 'stepReverse', w: 2.6, k: 1.8 },
+        { from: 12, type: 'stopGo', w: 3.2 }
+      ],
+      preStuckMax: 4
+    },
+    fx: {
+      shakeFail: 10,
+      recoil: 6,
+      flashMs: 60
+    },
+    skins: [
+      { id: 'steel', name: 'Steel Kunai', blade: '#e2e8f0', hilt: '#ef4444', costApples: 0, costGems: 0 },
+      { id: 'gold', name: 'Golden Fang', blade: '#fde047', hilt: '#b45309', costApples: 15, costGems: 5 },
+      { id: 'cyber', name: 'Cyber Neon Blade', blade: '#38bdf8', hilt: '#a855f7', costApples: 30, costGems: 8 },
+      { id: 'emerald', name: 'Jade Dragon Dagger', blade: '#4ade80', hilt: '#065f46', costApples: 50, costGems: 12 },
+      { id: 'crimson', name: '🔥 Crimson Demon', blade: '#f43f5e', hilt: '#1e293b', costApples: 80, costGems: 16 }
+    ],
+    storage: {
+      saveKey: 'bladespin_save_v1',
+      gemsKey: 'arcade_global_gems'
+    },
+    api: {
+      submitEndpoint: '/api/bladespin/submit'
+    },
+    ui: {
+      font: "'Fredoka', sans-serif",
+      texts: {
+        start: 'TAP TO THROW',
+        boss: 'BOSS FIGHT'
+      }
+    },
+    audio: {
+      masterVolume: 0.45
+    }
+  };
+
+  function mulberry32(seed) {
+    let t = seed >>> 0;
+    return function() {
+      t += 0x6D2B79F5;
+      let r = Math.imul(t ^ (t >>> 15), 1 | t);
+      r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function normalizeAngle(a) {
+    const twoPi = Math.PI * 2;
+    return ((a % twoPi) + twoPi) % twoPi;
+  }
+
+  function angularDistance(a, b) {
+    return Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
+  }
+
+  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  if (tg) {
+    try {
+      tg.ready();
+      tg.expand();
+      if (typeof tg.disableVerticalSwipes === 'function') tg.disableVerticalSwipes();
+      if (typeof tg.setHeaderColor === 'function') tg.setHeaderColor('#090d16');
+    } catch (e) {}
+  }
+
+  function triggerHaptic(type) {
+    if (!tg || !tg.HapticFeedback) return;
+    try {
+      if (type === 'error') tg.HapticFeedback.notificationOccurred('error');
+      else tg.HapticFeedback.impactOccurred(type);
+    } catch (e) {}
+  }
+
+  // ==========================================
+  // WEB AUDIO SYNTHESIZER
+  // ==========================================
+  class SoundSynth {
+    constructor() {
+      this.ctx = null;
+    }
+    init() {
+      if (!this.ctx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) this.ctx = new AC();
+      }
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+    }
+    playWhoosh() {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(680, now + 0.06);
+        gain.gain.setValueAtTime(0.18 * CONFIG.audio.masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.065);
+      } catch (e) {}
+    }
+    playWoodThunk() {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(52, now + 0.08);
+        gain.gain.setValueAtTime(0.42 * CONFIG.audio.masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.085);
+      } catch (e) {}
+    }
+    playMetalClink() {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(1320, now);
+        osc.frequency.exponentialRampToValueAtTime(480, now + 0.22);
+        gain.gain.setValueAtTime(0.35 * CONFIG.audio.masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.24);
+      } catch (e) {}
+    }
+    playFruitSplash() {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(980, now + 0.11);
+        gain.gain.setValueAtTime(0.28 * CONFIG.audio.masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      } catch (e) {}
+    }
+    playTargetBreak() {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        [140, 210, 320].forEach((freq, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, now + i * 0.03);
+          osc.frequency.exponentialRampToValueAtTime(45, now + i * 0.03 + 0.22);
+          gain.gain.setValueAtTime(0.28 * CONFIG.audio.masterVolume, now + i * 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.03 + 0.24);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + i * 0.03);
+          osc.stop(now + i * 0.03 + 0.24);
+        });
+      } catch (e) {}
+    }
+    playGem() {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.exponentialRampToValueAtTime(1560, now + 0.16);
+        gain.gain.setValueAtTime(0.28 * CONFIG.audio.masterVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      } catch (e) {}
+    }
+  }
+
+  const sfx = new SoundSynth();
+
+  // ==========================================
+  // STORAGE & GLOBAL COMPANION PETS / XP
+  // ==========================================
+  let save = {
+    bestScore: 0,
+    bestStage: 1,
+    apples: 0,
+    unlockedSkins: { steel: true },
+    equippedSkin: 'steel'
+  };
+  let globalGems = 10;
+  let activePet = null;
+
+  function loadStorage() {
+    try {
+      const raw = localStorage.getItem(CONFIG.storage.saveKey);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (typeof p.bestScore === 'number') save.bestScore = p.bestScore;
+        if (typeof p.bestStage === 'number') save.bestStage = p.bestStage;
+        if (typeof p.apples === 'number') save.apples = p.apples;
+        if (p.unlockedSkins) save.unlockedSkins = { ...save.unlockedSkins, ...p.unlockedSkins };
+        if (p.equippedSkin) save.equippedSkin = p.equippedSkin;
+      }
+      const gRaw = localStorage.getItem(CONFIG.storage.gemsKey);
+      if (gRaw !== null) {
+        const g = parseInt(gRaw, 10);
+        if (!isNaN(g)) globalGems = g;
+      }
+      const profRaw = localStorage.getItem('arcade_profile_v1');
+      if (profRaw) {
+        const prof = JSON.parse(profRaw);
+        if (prof && prof.equippedPet) activePet = prof.equippedPet;
+      }
+    } catch (e) {}
+    updateUI();
+  }
+
+  function writeStorage() {
+    try {
+      localStorage.setItem(CONFIG.storage.saveKey, JSON.stringify(save));
+      localStorage.setItem(CONFIG.storage.gemsKey, String(globalGems));
+    } catch (e) {}
+    updateUI();
+  }
+
+  function addGlobalXP(xpAmount) {
+    try {
+      const raw = localStorage.getItem('arcade_profile_v1');
+      const prof = raw ? JSON.parse(raw) : { xp: 0, streak: 1, lastLoginDay: '', unlockedPets: {}, equippedPet: null };
+      const mult = prof.equippedPet === 'dragon' ? 1.25 : 1.0;
+      prof.xp = (prof.xp || 0) + Math.round(xpAmount * mult);
+
+      const now = new Date();
+      const dayKey = now.toISOString().slice(0, 10);
+      const weekKey = `${now.getFullYear()}-W${Math.ceil((((now - new Date(now.getFullYear(), 0, 1)) / 86400000) + 1) / 7)}`;
+      if (!prof.daily || prof.daily.dayKey !== dayKey) {
+        prof.daily = { dayKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, games: {}, claims: {} };
+      }
+      if (!prof.weekly || prof.weekly.weekKey !== weekKey) {
+        prof.weekly = { weekKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, runs: 0, claims: {} };
+      }
+      prof.daily.bs = Math.max(prof.daily.bs || 0, score);
+      prof.daily.games.bs = true;
+      prof.weekly.bs = (prof.weekly.bs || 0) + score;
+      prof.weekly.runs = (prof.weekly.runs || 0) + 1;
+
+      localStorage.setItem('arcade_profile_v1', JSON.stringify(prof));
+    } catch (e) {}
+  }
+
+  function updateUI() {
+    document.getElementById('bs-gems-val').textContent = globalGems.toLocaleString();
+    document.getElementById('bs-apples-val').textContent = save.apples.toLocaleString();
+    document.getElementById('bs-start-best').textContent = `BEST SCORE: ${save.bestScore} • STAGE ${save.bestStage}`;
+  }
+
+  // ==========================================
+  // CHALLENGE STATE
+  // ==========================================
+  let activeChallenge = null;
+  let runCounter = 0;
+
+  function loadChallenge() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const cParam = params.get('challenge') || (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param ? tg.initDataUnsafe.start_param : '');
+      if (cParam && cParam.startsWith('bs_')) {
+        const parts = cParam.split('_');
+        const target = parseInt(parts[1], 10) || 0;
+        const seedVal = parseInt(parts[2], 10) || 4096;
+        const fromName = decodeURIComponent(parts.slice(3).join('_') || 'Друг');
+        activeChallenge = { game: 'bs', target, seed: seedVal, from: fromName };
+        localStorage.setItem('arcade_active_challenge_v1', JSON.stringify(activeChallenge));
+      } else {
+        const savedChal = localStorage.getItem('arcade_active_challenge_v1');
+        if (savedChal) {
+          const parsed = JSON.parse(savedChal);
+          if (parsed && parsed.game === 'bs') activeChallenge = parsed;
+        }
+      }
+      const autoSend = localStorage.getItem('arcade_auto_send_runs_v1') === '1';
+      const chk = document.getElementById('bs-auto-send-chk');
+      if (chk) chk.checked = autoSend;
+    } catch (e) {}
+
+    if (activeChallenge) {
+      const bar = document.getElementById('bs-challenge-bar');
+      const txt = document.getElementById('bs-chal-target-txt');
+      if (bar && txt) {
+        bar.classList.remove('bs-hidden');
+        txt.textContent = `От ${activeChallenge.from} — Побей ${activeChallenge.target} 🗡`;
+      }
+    }
+  }
+
+  function shareViaTelegram(text, url) {
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+    if (tg && typeof tg.openTelegramLink === 'function') {
+      try {
+        tg.openTelegramLink(shareUrl);
+        return;
+      } catch (e) {}
+    }
+    window.open(shareUrl, '_blank');
+  }
+
+  // ==========================================
+  // GAME STATE & DETERMINISTIC SIMULATION (1/120)
+  // ==========================================
+  const canvas = document.getElementById('bs-canvas');
+  const ctx = canvas.getContext('2d');
+
+  let state = 'START'; // START | PLAYING | BOSS_INTRO | FAIL_ANIM | GAMEOVER
+  let runSeed = 4096;
+  let rng = mulberry32(runSeed);
+  let simTick = 0;
+  let throwTimes = [];
+
+  let stage = 1;
+  let score = 0;
+  let daggersTotal = 5;
+  let daggersLeft = 5;
+  let stuckAngles = [];
+  let fruits = []; // { angle, type: 'apple' | 'gem', sliced: false }
+  let flyingDagger = null; // { y, prevY }
+  let deflectedDagger = null; // { x, y, vx, vy, angle, vRot }
+  let bufferedTap = false;
+
+  let targetTheta = 0;
+  let patternTime = 0;
+  let currentPattern = { type: 'constant', w: 1.65, f: 1.2, k: 1.8 };
+  let bossType = 0; // 0 = normal wood, 1 = stone wheel, 2 = cheese wheel, 3 = viking shield
+  let targetScale = 1.0;
+  let targetScaleTime = 0.3;
+  let targetFlashMs = 0;
+  let targetRecoilPx = 0;
+  let shakeMag = 0;
+
+  let brokenWedges = [];
+  let fallingStuckDaggers = [];
+  let particles = [];
+  let floatingTexts = [];
+  let runGemsEarned = 0;
+  let runApplesEarned = 0;
+  let petShieldAvailable = false;
+
+  function resizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  function getTargetCenter() {
+    return {
+      cx: window.innerWidth * 0.5,
+      cy: window.innerHeight * CONFIG.target.y - targetRecoilPx
+    };
+  }
+
+  function selectPatternForStage(st) {
+    const eligible = CONFIG.stages.patterns.filter(p => st >= p.from);
+    const chosen = eligible[Math.floor(rng() * eligible.length)] || CONFIG.stages.patterns[0];
+    const speedBoost = 1 + Math.min(0.65, (st - 1) * 0.04);
+    const dir = rng() < 0.5 ? 1 : -1;
+    return {
+      type: chosen.type,
+      w: chosen.w * speedBoost * dir,
+      f: chosen.f || 1.3,
+      k: chosen.k || 1.8
+    };
+  }
+
+  function updateStageDots() {
+    const posInCycle = ((stage - 1) % CONFIG.stages.bossEvery) + 1;
+    let html = '';
+    for (let i = 1; i <= CONFIG.stages.bossEvery; i++) {
+      const isBoss = i === CONFIG.stages.bossEvery;
+      const symbol = isBoss ? '★' : '●';
+      const color = i < posInCycle ? '#4ade80' : i === posInCycle ? '#fde047' : '#475569';
+      html += `<span style="color:${color};font-family:'Fredoka', sans-serif;">${symbol}</span> `;
+    }
+    document.getElementById('bs-dots').innerHTML = html.trim();
+    const isBossNow = stage % CONFIG.stages.bossEvery === 0;
+    document.getElementById('bs-stage-txt').textContent = isBossNow ? `★ BOSS STAGE ${stage} ★` : `STAGE ${stage}`;
+    document.getElementById('bs-stage-txt').style.color = isBossNow ? '#f87171' : '#94a3b8';
+  }
+
+  function setupStage(st) {
+    stage = st;
+    const isBoss = stage % CONFIG.stages.bossEvery === 0;
+    bossType = isBoss ? ((Math.floor(stage / CONFIG.stages.bossEvery) - 1) % 3) + 1 : 0;
+
+    daggersTotal = Math.min(CONFIG.stages.daggersCap, CONFIG.stages.daggersBase + Math.floor(stage / 2));
+    daggersLeft = daggersTotal;
+    stuckAngles = [];
+    fruits = [];
+    flyingDagger = null;
+    deflectedDagger = null;
+    bufferedTap = false;
+    targetTheta = rng() * Math.PI * 2;
+    patternTime = 0;
+    currentPattern = selectPatternForStage(stage);
+    targetScale = 0.01;
+    targetScaleTime = 0;
+
+    // Generate 0..4 pre-stuck daggers at least minGap * 1.5 apart
+    const preCount = stage === 1 ? 0 : Math.floor(rng() * (Math.min(CONFIG.stages.preStuckMax, Math.floor(stage / 2) + 1) + 1));
+    const minPreDist = CONFIG.hit.minGap * 1.65;
+    for (let i = 0; i < preCount; i++) {
+      for (let attempt = 0; attempt < 25; attempt++) {
+        const cand = rng() * Math.PI * 2;
+        if (stuckAngles.every(a => angularDistance(cand, a) >= minPreDist)) {
+          stuckAngles.push(cand);
+          break;
+        }
+      }
+    }
+
+    // Generate 0..2 fruits on rim (never closer than minGap * 1.3 to any pre-stuck dagger or other fruit)
+    const fruitCount = rng() < 0.75 ? (rng() < 0.35 ? 2 : 1) : 0;
+    for (let i = 0; i < fruitCount; i++) {
+      for (let attempt = 0; attempt < 25; attempt++) {
+        const cand = rng() * Math.PI * 2;
+        const okDaggers = stuckAngles.every(a => angularDistance(cand, a) >= CONFIG.hit.minGap * 1.35);
+        const okFruits = fruits.every(f => angularDistance(cand, f.angle) >= 0.45);
+        if (okDaggers && okFruits) {
+          fruits.push({
+            angle: cand,
+            type: rng() < 0.25 ? 'gem' : 'apple',
+            sliced: false
+          });
+          break;
+        }
+      }
+    }
+
+    updateStageDots();
+
+    if (isBoss && state !== 'START') {
+      state = 'BOSS_INTRO';
+      const banner = document.getElementById('bs-boss-banner');
+      banner.classList.remove('bs-hidden');
+      setTimeout(() => {
+        banner.classList.add('bs-hidden');
+        if (state === 'BOSS_INTRO') state = 'PLAYING';
+      }, 950);
+    }
+  }
+
+  function startNewGame() {
+    sfx.init();
+    runSeed = activeChallenge && activeChallenge.seed
+      ? activeChallenge.seed
+      : ((Date.now() ^ Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0);
+    rng = mulberry32(runSeed);
+    simTick = 0;
+    throwTimes = [];
+    score = 0;
+    runGemsEarned = 0;
+    runApplesEarned = 0;
+    brokenWedges = [];
+    fallingStuckDaggers = [];
+    particles = [];
+    floatingTexts = [];
+    petShieldAvailable = activePet === 'dragon';
+
+    document.getElementById('bs-score-txt').textContent = '0';
+    document.getElementById('bs-screen-start').classList.add('bs-hidden');
+    document.getElementById('bs-screen-gameover').classList.add('bs-hidden');
+    state = 'PLAYING';
+    setupStage(1);
+  }
+
+  function computeOmega(t, pat) {
+    switch (pat.type) {
+      case 'constant':
+        return pat.w;
+      case 'wobble':
+        return pat.w * Math.sin(t * pat.f);
+      case 'surge':
+        return pat.w * (1 + 0.8 * Math.sin(t * pat.f));
+      case 'stepReverse': {
+        const cycle = t % (pat.k * 2);
+        const sign = cycle < pat.k ? 1 : -1;
+        const distToFlip = Math.min(cycle, Math.abs(pat.k - cycle), Math.abs(pat.k * 2 - cycle));
+        const ease = Math.min(1, distToFlip / 0.25);
+        return pat.w * sign * ease;
+      }
+      case 'stopGo': {
+        const period = 1.6;
+        const phase = t % period;
+        if (phase > 1.2) return 0; // 0.4s pause feint
+        return pat.w;
+      }
+      default:
+        return pat.w;
+    }
+  }
+
+  function spawnParticles(x, y, color, count = 8) {
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const spd = 80 + Math.random() * 220;
+      particles.push({
+        x,
+        y,
+        vx: Math.cos(a) * spd,
+        vy: Math.sin(a) * spd - 60,
+        color,
+        size: 4 + Math.random() * 5,
+        life: 0.45
+      });
+    }
+  }
+
+  function spawnStageBreak(cx, cy) {
+    sfx.playTargetBreak();
+    triggerHaptic('heavy');
+    const R = CONFIG.target.radius;
+    for (let i = 0; i < 4; i++) {
+      const a = (i * Math.PI) / 2 + 0.3;
+      brokenWedges.push({
+        x: cx,
+        y: cy,
+        vx: Math.cos(a) * (140 + Math.random() * 90),
+        vy: Math.sin(a) * 110 - 150,
+        rot: targetTheta + (i * Math.PI) / 2,
+        vRot: (Math.random() - 0.5) * 8,
+        bossType,
+        life: 0.65
+      });
+    }
+
+    stuckAngles.forEach(a => {
+      const worldA = targetTheta + a;
+      const dist = R - CONFIG.target.embed;
+      fallingStuckDaggers.push({
+        x: cx + Math.cos(worldA) * dist,
+        y: cy + Math.sin(worldA) * dist,
+        vx: Math.cos(worldA) * 160,
+        vy: Math.sin(worldA) * 120 - 80,
+        angle: worldA - Math.PI / 2,
+        vRot: (Math.random() - 0.5) * 10,
+        life: 0.6
+      });
+    });
+  }
+
+  function tryThrowDagger() {
+    if (state === 'START') {
+      startNewGame();
+    }
+    if (state !== 'PLAYING' || daggersLeft <= 0) return;
+    if (flyingDagger) {
+      bufferedTap = true;
+      return;
+    }
+    const startY = window.innerHeight * 0.82;
+    flyingDagger = { y: startY, prevY: startY };
+    throwTimes.push(simTick);
+    sfx.playWhoosh();
+  }
+
+  function onDaggerImpact() {
+    const { cx, cy } = getTargetCenter();
+    const R = CONFIG.target.radius;
+    // Impact always occurs at the bottom of the target (world angle = +PI/2)
+    const localImpactAngle = normalizeAngle(Math.PI / 2 - targetTheta);
+
+    // 1. Check collision against all stuck daggers (pure angle comparison)
+    for (let i = 0; i < stuckAngles.length; i++) {
+      if (angularDistance(localImpactAngle, stuckAngles[i]) < CONFIG.hit.minGap) {
+        // If Golden Dragon Pet shield is available, absorb 1 hit per run!
+        if (petShieldAvailable) {
+          petShieldAvailable = false;
+          sfx.playGem();
+          floatingTexts.push({ x: cx, y: cy + R, text: '🐲 ЩИТ ДРАКОНА СПАС!', color: '#4ade80', life: 1.1 });
+          flyingDagger = null;
+          return;
+        }
+        // FAIL: bounce off
+        flyingDagger = null;
+        state = 'FAIL_ANIM';
+        shakeMag = CONFIG.fx.shakeFail;
+        sfx.playMetalClink();
+        triggerHaptic('error');
+        deflectedDagger = {
+          x: cx,
+          y: cy + R,
+          vx: (Math.random() < 0.5 ? -1 : 1) * 180,
+          vy: 120,
+          angle: 0,
+          vRot: 15
+        };
+        setTimeout(() => {
+          finishRunGameOver();
+        }, 600);
+        return;
+      }
+    }
+
+    // 2. Check fruit slicing on rim
+    fruits.forEach(f => {
+      if (!f.sliced && angularDistance(localImpactAngle, f.angle) <= CONFIG.hit.fruitTolerance) {
+        f.sliced = true;
+        sfx.playFruitSplash();
+        if (f.type === 'gem') {
+          globalGems += 1;
+          runGemsEarned += 1;
+          sfx.playGem();
+          spawnParticles(cx, cy + R, '#38bdf8', 12);
+          floatingTexts.push({ x: cx, y: cy + R - 20, text: '+1 💎', color: '#7dd3fc', life: 0.9 });
+        } else {
+          const bonus = activePet === 'drone' ? 2 : 1;
+          save.apples += bonus;
+          runApplesEarned += bonus;
+          spawnParticles(cx, cy + R, '#f43f5e', 12);
+          floatingTexts.push({ x: cx, y: cy + R - 20, text: `+${bonus} 🍎`, color: '#fda4af', life: 0.9 });
+        }
+        writeStorage();
+      }
+    });
+
+    // 3. Stick dagger into target
+    stuckAngles.push(localImpactAngle);
+    flyingDagger = null;
+    daggersLeft--;
+    score++;
+    document.getElementById('bs-score-txt').textContent = String(score);
+
+    // Every 20 score with Fox pet or every 15 daggers stuck gives +1 Gem
+    if (score % 15 === 0 || (activePet === 'fox' && score % 20 === 0)) {
+      globalGems += 1;
+      runGemsEarned += 1;
+      writeStorage();
+      floatingTexts.push({ x: cx, y: cy - 30, text: '+1 💎 BONUS!', color: '#7dd3fc', life: 0.9 });
+    }
+
+    targetFlashMs = CONFIG.fx.flashMs;
+    targetRecoilPx = CONFIG.fx.recoil;
+    sfx.playWoodThunk();
+    triggerHaptic('light');
+    spawnParticles(cx, cy + R, '#d97706', 7);
+
+    // 4. Check stage clear
+    if (daggersLeft <= 0) {
+      spawnStageBreak(cx, cy);
+      const isBoss = stage % CONFIG.stages.bossEvery === 0;
+      if (isBoss) {
+        globalGems += 2;
+        runGemsEarned += 2;
+        save.apples += 3;
+        runApplesEarned += 3;
+        sfx.playGem();
+        floatingTexts.push({ x: cx, y: cy, text: 'BOSS DEFEATED! +2 💎 +3 🍎', color: '#fde047', life: 1.3 });
+      }
+      if (stage + 1 > save.bestStage) {
+        save.bestStage = stage + 1;
+      }
+      writeStorage();
+      setupStage(stage + 1);
+    } else if (bufferedTap) {
+      bufferedTap = false;
+      tryThrowDagger();
+    }
+  }
+
+  function buildReportText(isChallengeShare) {
+    const playerName = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name)
+      ? tg.initDataUnsafe.user.first_name
+      : 'Игрок';
+    const baseUrl = window.location.origin + window.location.pathname;
+    const link = `${baseUrl}?challenge=bs_${score}_${runSeed}_${encodeURIComponent(playerName)}`;
+    if (isChallengeShare) {
+      return {
+        text: `⚔️ ВЫЗОВ В BLADE SPIN!\n🗡 ${playerName} воткнул ${score} кинжалов (Этап ${stage}, Рекорд: ${save.bestScore})!\nПопробуй побить мой результат:`,
+        url: link
+      };
+    }
+    let line = `🗡 Blade Spin — Забег #${runCounter}: ${score} кинжалов (Этап ${stage})`;
+    if (activeChallenge) {
+      const beat = score > activeChallenge.target;
+      line = beat
+        ? `🏆 ВЫЗОВ ПОБИТ! Забег #${runCounter} в Blade Spin: я набрал ${score} против ${activeChallenge.target} от ${activeChallenge.from}!`
+        : `⚔️ Забег #${runCounter} в Blade Spin: мой результат ${score} (Цель от ${activeChallenge.from}: ${activeChallenge.target}).`;
+    }
+    return { text: `${line}\nОтветь своим забегом:`, url: link };
+  }
+
+  function finishRunGameOver() {
+    state = 'GAMEOVER';
+    runCounter++;
+    addGlobalXP(score * 3 + stage * 5);
+
+    const isNew = score > save.bestScore;
+    if (isNew) {
+      save.bestScore = score;
+      globalGems += 2;
+      runGemsEarned += 2;
+    }
+    writeStorage();
+
+    try {
+      const raw = localStorage.getItem('arcade_runs_history_v1');
+      const list = raw ? JSON.parse(raw) : [];
+      list.unshift({
+        game: 'Blade Spin',
+        icon: '🗡',
+        score: `${score} 🗡`,
+        target: activeChallenge ? `${activeChallenge.target} 🗡` : null,
+        beat: activeChallenge ? score > activeChallenge.target : null,
+        ts: Date.now()
+      });
+      localStorage.setItem('arcade_runs_history_v1', JSON.stringify(list.slice(0, 20)));
+    } catch (e) {}
+
+    // Anti-cheat deterministic replay POST
+    try {
+      fetch(CONFIG.api.submitEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tg ? tg.initData : '', score, seed: runSeed, throwTimes })
+      }).catch(() => {});
+    } catch (e) {}
+
+    document.getElementById('bs-screen-gameover').classList.remove('bs-hidden');
+    document.getElementById('bs-new-record').classList.toggle('bs-hidden', !isNew);
+    document.getElementById('bs-go-score').textContent = String(score);
+    document.getElementById('bs-go-stage').textContent = `STAGE ${stage} • BEST: ${save.bestScore}`;
+    document.getElementById('bs-go-rewards').textContent = `+${runGemsEarned} 💎 • +${runApplesEarned} 🍎`;
+
+    const revBtn = document.getElementById('bs-revive-btn');
+    if (revBtn) {
+      revBtn.disabled = globalGems < 3;
+      revBtn.style.opacity = globalGems < 3 ? '0.5' : '1';
+      revBtn.textContent = `⚡ ПРОДОЛЖИТЬ ЭТАП ЗА 3 💎 (У тебя: ${globalGems} 💎)`;
+    }
+
+    const chalStatus = document.getElementById('bs-chal-status');
+    if (chalStatus) {
+      if (activeChallenge) {
+        const beat = score > activeChallenge.target;
+        chalStatus.textContent = beat
+          ? `🏆 ВЫЗОВ ОТ ${activeChallenge.from.toUpperCase()} ПОБИТ! (${score} vs ${activeChallenge.target})`
+          : `⚔️ Забег #${runCounter}: ${score} из ${activeChallenge.target} (от ${activeChallenge.from})`;
+        chalStatus.style.color = beat ? '#4ade80' : '#fde047';
+      } else {
+        chalStatus.textContent = `⚔️ Забег #${runCounter} завершён • Кинжалов: ${score}`;
+      }
+    }
+
+    const autoChk = document.getElementById('bs-auto-send-chk');
+    if (autoChk && autoChk.checked && score > 0) {
+      const rep = buildReportText(false);
+      shareViaTelegram(rep.text, rep.url);
+    }
+  }
+
+  function stepFixed(dt) {
+    simTick++;
+
+    if (state === 'START' || state === 'PLAYING' || state === 'BOSS_INTRO') {
+      patternTime += dt;
+      const omega = computeOmega(patternTime, currentPattern);
+      targetTheta = normalizeAngle(targetTheta + omega * dt);
+    }
+
+    // Target scale-in ease-out-back (300ms)
+    if (targetScaleTime < 0.3) {
+      targetScaleTime = Math.min(0.3, targetScaleTime + dt);
+      const u = targetScaleTime / 0.3;
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      targetScale = 1 + c3 * Math.pow(u - 1, 3) + c1 * Math.pow(u - 1, 2);
+    } else {
+      targetScale = 1.0;
+    }
+
+    if (targetFlashMs > 0) targetFlashMs = Math.max(0, targetFlashMs - dt * 1000);
+    if (targetRecoilPx > 0) targetRecoilPx = Math.max(0, targetRecoilPx - 45 * dt);
+    if (shakeMag > 0) shakeMag = Math.max(0, shakeMag - 38 * dt);
+
+    // Swept segment check for flying dagger
+    if (state === 'PLAYING' && flyingDagger) {
+      flyingDagger.prevY = flyingDagger.y;
+      flyingDagger.y -= CONFIG.dagger.speed * dt;
+      const { cy } = getTargetCenter();
+      const hitY = cy + CONFIG.target.radius;
+      if (flyingDagger.prevY >= hitY && flyingDagger.y <= hitY) {
+        flyingDagger.y = hitY;
+        onDaggerImpact();
+      } else if (flyingDagger.y <= hitY) {
+        onDaggerImpact();
+      }
+    }
+
+    // Deflected dagger physics
+    if (deflectedDagger) {
+      deflectedDagger.x += deflectedDagger.vx * dt;
+      deflectedDagger.y += deflectedDagger.vy * dt;
+      deflectedDagger.vy += 1400 * dt;
+      deflectedDagger.angle += deflectedDagger.vRot * dt;
+    }
+
+    // Broken wedges
+    for (let i = brokenWedges.length - 1; i >= 0; i--) {
+      const w = brokenWedges[i];
+      w.life -= dt;
+      if (w.life <= 0) {
+        brokenWedges.splice(i, 1);
+        continue;
+      }
+      w.x += w.vx * dt;
+      w.y += w.vy * dt;
+      w.vy += 1100 * dt;
+      w.rot += w.vRot * dt;
+    }
+
+    // Falling daggers on stage clear
+    for (let i = fallingStuckDaggers.length - 1; i >= 0; i--) {
+      const fd = fallingStuckDaggers[i];
+      fd.life -= dt;
+      if (fd.life <= 0) {
+        fallingStuckDaggers.splice(i, 1);
+        continue;
+      }
+      fd.x += fd.vx * dt;
+      fd.y += fd.vy * dt;
+      fd.vy += 1100 * dt;
+      fd.angle += fd.vRot * dt;
+    }
+
+    // Particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.life -= dt;
+      if (p.life <= 0) {
+        particles.splice(i, 1);
+        continue;
+      }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 650 * dt;
+    }
+
+    // Floating texts
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+      const ft = floatingTexts[i];
+      ft.life -= dt;
+      ft.y -= 45 * dt;
+      if (ft.life <= 0) floatingTexts.splice(i, 1);
+    }
+  }
+
+  // ==========================================
+  // RENDERING
+  // ==========================================
+  function getSkinColors() {
+    return CONFIG.skins.find(s => s.id === save.equippedSkin) || CONFIG.skins[0];
+  }
+
+  function drawDagger(c, x, y, angleRad, scale = 1.0) {
+    const skin = getSkinColors();
+    const len = CONFIG.dagger.length;
+    c.save();
+    c.translate(x, y);
+    c.rotate(angleRad);
+    c.scale(scale, scale);
+
+    // Tip is at (0, 0), pointing UP along -Y
+    // Blade
+    c.fillStyle = skin.blade;
+    c.strokeStyle = '#0f172a';
+    c.lineWidth = 2.5;
+    c.beginPath();
+    c.moveTo(0, 0);
+    c.lineTo(10, len * 0.58);
+    c.lineTo(-10, len * 0.58);
+    c.closePath();
+    c.fill();
+    c.stroke();
+
+    // Guard
+    c.fillStyle = '#f59e0b';
+    c.fillRect(-14, len * 0.58, 28, 7);
+
+    // Hilt handle
+    c.fillStyle = skin.hilt;
+    c.fillRect(-5, len * 0.58 + 7, 10, len * 0.34);
+
+    // Pommel ring
+    c.beginPath();
+    c.arc(0, len * 0.96, 6, 0, Math.PI * 2);
+    c.fillStyle = '#f59e0b';
+    c.fill();
+    c.stroke();
+
+    c.restore();
+  }
+
+  function drawTargetBody(c, cx, cy, R, theta, bType, flash) {
+    c.save();
+    c.translate(cx, cy);
+    c.scale(targetScale, targetScale);
+    c.rotate(theta);
+
+    // Outer rim + inner rings based on normal or boss type
+    if (bType === 1) {
+      // Stone Wheel Boss
+      c.fillStyle = '#475569';
+      c.strokeStyle = '#94a3b8';
+    } else if (bType === 2) {
+      // Cheese Wheel Boss
+      c.fillStyle = '#facc15';
+      c.strokeStyle = '#ca8a04';
+    } else if (bType === 3) {
+      // Viking Shield Boss
+      c.fillStyle = '#991b1b';
+      c.strokeStyle = '#fde047';
+    } else {
+      // Classic Wooden Log Target
+      c.fillStyle = '#fde68a';
+      c.strokeStyle = '#78350f';
+    }
+
+    c.lineWidth = 14;
+    c.beginPath();
+    c.arc(0, 0, R, 0, Math.PI * 2);
+    c.fill();
+    c.stroke();
+
+    // Inner concentric rings / notches
+    c.lineWidth = 3;
+    c.strokeStyle = bType === 0 ? 'rgba(180, 83, 9, 0.35)' : 'rgba(15, 23, 42, 0.35)';
+    c.beginPath();
+    c.arc(0, 0, R * 0.68, 0, Math.PI * 2);
+    c.stroke();
+    c.beginPath();
+    c.arc(0, 0, R * 0.34, 0, Math.PI * 2);
+    c.stroke();
+
+    // Center emblem
+    c.fillStyle = bType === 3 ? '#fde047' : '#b45309';
+    c.beginPath();
+    c.arc(0, 0, 14, 0, Math.PI * 2);
+    c.fill();
+
+    if (flash) {
+      c.fillStyle = 'rgba(255, 255, 255, 0.65)';
+      c.beginPath();
+      c.arc(0, 0, R + 6, 0, Math.PI * 2);
+      c.fill();
+    }
+
+    c.restore();
+  }
+
+  function render() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    ctx.clearRect(0, 0, w, h);
+
+    const sx = shakeMag > 0 ? (Math.random() - 0.5) * shakeMag * 2 : 0;
+    const sy = shakeMag > 0 ? (Math.random() - 0.5) * shakeMag * 2 : 0;
+    const { cx, cy } = getTargetCenter();
+    const R = CONFIG.target.radius;
+
+    ctx.save();
+    ctx.translate(sx, sy);
+
+    // Draw Companion Pet if equipped in Hub
+    if (activePet) {
+      const petX = cx + R + 48;
+      const petY = cy - 40 + Math.sin(performance.now() * 0.004) * 10;
+      ctx.save();
+      ctx.font = "28px 'Fredoka', sans-serif";
+      ctx.textAlign = 'center';
+      const icon = activePet === 'drone' ? '🤖' : activePet === 'fox' ? '🦊' : '🐲';
+      ctx.fillText(icon, petX, petY);
+      ctx.restore();
+    }
+
+    // 1. Stuck daggers (drawn behind target rim so tips are embedded)
+    stuckAngles.forEach(a => {
+      const worldA = targetTheta + a;
+      const dist = (R - CONFIG.target.embed) * targetScale;
+      const dx = cx + Math.cos(worldA) * dist;
+      const dy = cy + Math.sin(worldA) * dist;
+      // Rotate dagger so tip points toward center (worldA - PI/2)
+      drawDagger(ctx, dx, dy, worldA - Math.PI / 2, targetScale);
+    });
+
+    // 2. Fruits on rim
+    fruits.forEach(f => {
+      if (f.sliced) return;
+      const worldA = targetTheta + f.angle;
+      const dist = (R + 18) * targetScale;
+      const fx = cx + Math.cos(worldA) * dist;
+      const fy = cy + Math.sin(worldA) * dist;
+      ctx.save();
+      ctx.translate(fx, fy);
+      ctx.rotate(worldA + Math.PI / 2);
+      ctx.fillStyle = f.type === 'gem' ? '#38bdf8' : '#ef4444';
+      ctx.beginPath();
+      ctx.arc(0, 0, 14 * targetScale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#22c55e';
+      ctx.fillRect(-2, -18 * targetScale, 4, 6 * targetScale);
+      ctx.restore();
+    });
+
+    // 3. Target Wheel
+    drawTargetBody(ctx, cx, cy, R, targetTheta, bossType, targetFlashMs > 0);
+
+    // 4. Broken target wedges
+    brokenWedges.forEach(bw => {
+      ctx.save();
+      ctx.translate(bw.x, bw.y);
+      ctx.rotate(bw.rot);
+      ctx.globalAlpha = Math.max(0, bw.life / 0.65);
+      ctx.fillStyle = '#fde68a';
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, R * 0.85, 0, Math.PI / 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    });
+
+    // 5. Falling stuck daggers on stage break
+    fallingStuckDaggers.forEach(fd => {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, fd.life / 0.6);
+      drawDagger(ctx, fd.x, fd.y, fd.angle);
+      ctx.restore();
+    });
+
+    // 6. Active flying or ready dagger at bottom
+    const readyY = h * 0.80;
+    if (flyingDagger) {
+      drawDagger(ctx, cx, flyingDagger.y, 0);
+    } else if (state === 'PLAYING' && daggersLeft > 0) {
+      drawDagger(ctx, cx, readyY, 0);
+    }
+
+    if (deflectedDagger) {
+      drawDagger(ctx, deflectedDagger.x, deflectedDagger.y, deflectedDagger.angle);
+    }
+
+    // 7. Remaining daggers column on bottom-left
+    if (state === 'PLAYING' || state === 'BOSS_INTRO') {
+      const startIconY = h * 0.84;
+      for (let i = 0; i < daggersTotal; i++) {
+        const isAvailable = i < daggersLeft;
+        const iy = startIconY - i * 22;
+        ctx.save();
+        ctx.translate(28, iy);
+        ctx.rotate(Math.PI / 4);
+        ctx.globalAlpha = isAvailable ? 1.0 : 0.22;
+        ctx.fillStyle = isAvailable ? '#f8fafc' : '#64748b';
+        ctx.beginPath();
+        ctx.moveTo(0, -10);
+        ctx.lineTo(5, 6);
+        ctx.lineTo(-5, 6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // 8. Particles & Floating Texts
+    particles.forEach(p => {
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x - p.size * 0.5, p.y - p.size * 0.5, p.size, p.size);
+    });
+
+    floatingTexts.forEach(ft => {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, ft.life);
+      ctx.font = "700 20px 'Fredoka', sans-serif";
+      ctx.fillStyle = ft.color;
+      ctx.textAlign = 'center';
+      ctx.fillText(ft.text, ft.x, ft.y);
+      ctx.restore();
+    });
+
+    ctx.restore();
+  }
+
+  // ==========================================
+  // INPUT & UI LISTENERS
+  // ==========================================
+  canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    tryThrowDagger();
+  });
+
+  document.getElementById('bs-screen-start').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    tryThrowDagger();
+  });
+  document.getElementById('bs-screen-start').style.pointerEvents = 'auto';
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      tryThrowDagger();
+    }
+  });
+
+  document.getElementById('bs-retry-btn').addEventListener('click', () => {
+    startNewGame();
+  });
+
+  document.getElementById('bs-revive-btn').addEventListener('click', () => {
+    if (globalGems < 3) return;
+    globalGems -= 3;
+    writeStorage();
+    sfx.playGem();
+    deflectedDagger = null;
+    flyingDagger = null;
+    document.getElementById('bs-screen-gameover').classList.add('bs-hidden');
+    state = 'PLAYING';
+  });
+
+  document.getElementById('bs-send-run-btn').addEventListener('click', () => {
+    const rep = buildReportText(false);
+    shareViaTelegram(rep.text, rep.url);
+  });
+
+  document.getElementById('bs-auto-send-chk').addEventListener('change', (e) => {
+    try {
+      localStorage.setItem('arcade_auto_send_runs_v1', e.target.checked ? '1' : '0');
+    } catch (err) {}
+  });
+
+  document.getElementById('bs-share-btn').addEventListener('click', () => {
+    const rep = buildReportText(true);
+    shareViaTelegram(rep.text, rep.url);
+  });
+
+  document.getElementById('bs-hub-btn').addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+
+  function renderSkinsModal() {
+    const list = document.getElementById('bs-skins-list');
+    list.innerHTML = '';
+    CONFIG.skins.forEach(s => {
+      const unlocked = !!save.unlockedSkins[s.id] || s.costApples === 0;
+      const equipped = save.equippedSkin === s.id;
+      const row = document.createElement('div');
+      row.style.cssText = "width:100%;display:flex;justify-content:space-between;align-items:center;background:rgba(30,41,59,0.88);padding:10px 12px;border-radius:12px;font-size:14px;font-family:'Fredoka', sans-serif;";
+      row.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;font-family:'Fredoka', sans-serif;">
+          <span style="width:16px;height:16px;border-radius:4px;background:${s.blade};border:2px solid ${s.hilt};display:inline-block;"></span>
+          <span>${s.name}</span>
+        </div>
+      `;
+      const wrap = document.createElement('div');
+      wrap.style.display = 'flex';
+      wrap.style.gap = '6px';
+
+      if (equipped) {
+        const b = document.createElement('button');
+        b.className = 'bs-top-btn';
+        b.textContent = 'НАДЕТО';
+        b.disabled = true;
+        wrap.appendChild(b);
+      } else if (unlocked) {
+        const b = document.createElement('button');
+        b.className = 'bs-top-btn';
+        b.style.background = '#22c55e';
+        b.textContent = 'ВЫБРАТЬ';
+        b.onclick = () => {
+          save.equippedSkin = s.id;
+          writeStorage();
+          renderSkinsModal();
+        };
+        wrap.appendChild(b);
+      } else {
+        const bApp = document.createElement('button');
+        bApp.className = 'bs-top-btn';
+        bApp.textContent = `${s.costApples} 🍎`;
+        bApp.disabled = save.apples < s.costApples;
+        bApp.style.opacity = save.apples < s.costApples ? '0.45' : '1';
+        bApp.onclick = () => {
+          if (save.apples >= s.costApples) {
+            save.apples -= s.costApples;
+            save.unlockedSkins[s.id] = true;
+            save.equippedSkin = s.id;
+            writeStorage();
+            sfx.playGem();
+            renderSkinsModal();
+          }
+        };
+        wrap.appendChild(bApp);
+
+        const bGem = document.createElement('button');
+        bGem.className = 'bs-top-btn';
+        bGem.style.borderColor = '#38bdf8';
+        bGem.style.color = '#7dd3fc';
+        bGem.textContent = `${s.costGems} 💎`;
+        bGem.disabled = globalGems < s.costGems;
+        bGem.style.opacity = globalGems < s.costGems ? '0.45' : '1';
+        bGem.onclick = () => {
+          if (globalGems >= s.costGems) {
+            globalGems -= s.costGems;
+            save.unlockedSkins[s.id] = true;
+            save.equippedSkin = s.id;
+            writeStorage();
+            sfx.playGem();
+            renderSkinsModal();
+          }
+        };
+        wrap.appendChild(bGem);
+      }
+      row.appendChild(wrap);
+      list.appendChild(row);
+    });
+  }
+
+  document.getElementById('bs-skins-btn').addEventListener('click', () => {
+    renderSkinsModal();
+    document.getElementById('bs-screen-skins').classList.remove('bs-hidden');
+  });
+
+  document.getElementById('bs-skins-close').addEventListener('click', () => {
+    document.getElementById('bs-screen-skins').classList.add('bs-hidden');
+  });
+
+  // ==========================================
+  // FIXED TIMESTEP 1/120 LOOP
+  // ==========================================
+  const FIXED_DT = 1 / 120;
+  let lastTime = performance.now();
+  let accumulator = 0;
+
+  function loop(now) {
+    const dt = Math.min(0.1, Math.max(0, (now - lastTime) / 1000));
+    lastTime = now;
+    accumulator += dt;
+    while (accumulator >= FIXED_DT) {
+      stepFixed(FIXED_DT);
+      accumulator -= FIXED_DT;
+    }
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  loadStorage();
+  loadChallenge();
+  setupStage(1);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

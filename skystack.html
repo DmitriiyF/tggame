@@ -660,6 +660,21 @@
         ts: Date.now()
       });
       localStorage.setItem('arcade_runs_history_v1', JSON.stringify(list.slice(0, 20)));
+
+      const pRaw = localStorage.getItem('arcade_profile_v1');
+      const prof = pRaw ? JSON.parse(pRaw) : { xp: 0, streak: 1, lastLoginDay: '', unlockedPets: {}, equippedPet: null };
+      const mult = prof.equippedPet === 'dragon' ? 1.25 : 1.0;
+      prof.xp = (prof.xp || 0) + Math.round(score * 3 * mult);
+      const now = new Date();
+      const dayKey = now.toISOString().slice(0, 10);
+      const weekKey = `${now.getFullYear()}-W${Math.ceil((((now - new Date(now.getFullYear(), 0, 1)) / 86400000) + 1) / 7)}`;
+      if (!prof.daily || prof.daily.dayKey !== dayKey) prof.daily = { dayKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, games: {}, claims: {} };
+      if (!prof.weekly || prof.weekly.weekKey !== weekKey) prof.weekly = { weekKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, runs: 0, claims: {} };
+      prof.daily.ss = Math.max(prof.daily.ss || 0, score);
+      prof.daily.games.ss = true;
+      prof.weekly.ss = (prof.weekly.ss || 0) + score;
+      prof.weekly.runs = (prof.weekly.runs || 0) + 1;
+      localStorage.setItem('arcade_profile_v1', JSON.stringify(prof));
     } catch (e) {}
   }
 
@@ -1128,6 +1143,24 @@
     if (state === 'PLAYING' && activeBlock) {
       drawIsoBox(activeBlock, originX, originY, scale, 1.0);
     }
+
+    // Draw Equipped Companion Pet hovering beside the Tower Top
+    try {
+      const pRaw = localStorage.getItem('arcade_profile_v1');
+      if (pRaw && stack.length > 0) {
+        const prof = JSON.parse(pRaw);
+        if (prof && prof.equippedPet) {
+          const topB = stack[stack.length - 1];
+          const pIso = isoProject(topB.x + 2.4, topB.y + 1.2, topB.z, originX, originY, scale);
+          const petIcon = prof.equippedPet === 'drone' ? '🤖' : prof.equippedPet === 'fox' ? '🦊' : '🐲';
+          ctx.save();
+          ctx.font = "24px 'Fredoka', sans-serif";
+          ctx.textAlign = 'center';
+          ctx.fillText(petIcon, pIso.sx, pIso.sy + Math.sin(performance.now() * 0.005) * 8);
+          ctx.restore();
+        }
+      }
+    } catch (e) {}
 
     // Draw falling cut debris
     for (let i = 0; i < debrisPool.length; i++) {

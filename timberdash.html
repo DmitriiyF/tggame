@@ -914,6 +914,21 @@
         ts: Date.now()
       });
       localStorage.setItem('arcade_runs_history_v1', JSON.stringify(list.slice(0, 20)));
+
+      const pRaw = localStorage.getItem('arcade_profile_v1');
+      const prof = pRaw ? JSON.parse(pRaw) : { xp: 0, streak: 1, lastLoginDay: '', unlockedPets: {}, equippedPet: null };
+      const mult = prof.equippedPet === 'dragon' ? 1.25 : 1.0;
+      prof.xp = (prof.xp || 0) + Math.round(score * 2 * mult);
+      const now = new Date();
+      const dayKey = now.toISOString().slice(0, 10);
+      const weekKey = `${now.getFullYear()}-W${Math.ceil((((now - new Date(now.getFullYear(), 0, 1)) / 86400000) + 1) / 7)}`;
+      if (!prof.daily || prof.daily.dayKey !== dayKey) prof.daily = { dayKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, games: {}, claims: {} };
+      if (!prof.weekly || prof.weekly.weekKey !== weekKey) prof.weekly = { weekKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, runs: 0, claims: {} };
+      prof.daily.td = Math.max(prof.daily.td || 0, score);
+      prof.daily.games.td = true;
+      prof.weekly.td = (prof.weekly.td || 0) + score;
+      prof.weekly.runs = (prof.weekly.runs || 0) + 1;
+      localStorage.setItem('arcade_profile_v1', JSON.stringify(prof));
     } catch (e) {}
   }
 
@@ -1146,6 +1161,22 @@
     const charX = baseX + charSideDir * (tw * 0.5 + 56);
     const charY = baseY;
     drawBeaverLumberjack(ctx, charX, charY, charSideDir, player.alive, chopAnimTimerMs);
+
+    // Draw Equipped Companion Pet floating above Beaver
+    try {
+      const pRaw = localStorage.getItem('arcade_profile_v1');
+      if (pRaw) {
+        const prof = JSON.parse(pRaw);
+        if (prof && prof.equippedPet) {
+          const petIcon = prof.equippedPet === 'drone' ? '🤖' : prof.equippedPet === 'fox' ? '🦊' : '🐲';
+          ctx.save();
+          ctx.font = "24px 'Fredoka', sans-serif";
+          ctx.textAlign = 'center';
+          ctx.fillText(petIcon, charX + charSideDir * 30, charY - 88 + Math.sin(performance.now() * 0.005) * 7);
+          ctx.restore();
+        }
+      }
+    } catch (e) {}
 
     // Subtle bottom arrow hints (fade out after 5 chops)
     if (score < 5 && player.alive) {
