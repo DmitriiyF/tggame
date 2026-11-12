@@ -251,7 +251,10 @@
 
       <button id="ph-revive-btn" class="ph-btn ph-btn-amber">⚡ ПРОДОЛЖИТЬ ЗАПЛЫВ (3 💎)</button>
       <button id="ph-retry-btn" class="ph-btn ph-btn-primary">▶ ИГРАТЬ СНОВА</button>
-      <button id="ph-share-btn" class="ph-btn ph-btn-secondary">⚔️ БРОСИТЬ ВЫЗОВ ДРУГУ</button>
+      <div style="display:flex;gap:8px;width:100%;">
+        <button id="ph-share-btn" class="ph-btn ph-btn-secondary" style="flex:1;min-height:42px;font-size:13px;">⚔️ ВЫЗОВ</button>
+        <button class="ph-btn ph-btn-secondary" style="flex:1;min-height:42px;font-size:13px;" onclick="window.location.href='index.html'">🏠 В МЕНЮ</button>
+      </div>
     </div>
   </div>
 </div>
@@ -671,7 +674,6 @@
     const pearlOffsetY = (rng() - 0.5) * 36;
     const moving = score >= 30 && rng() < 0.45;
 
-    if (pillars.length >= 5) pillars.shift();
     pillars.push({
       x: spawnX,
       baseGapY: gapCenterY,
@@ -690,9 +692,12 @@
     if (state === 'READY') {
       state = 'PLAYING';
       document.getElementById('ph-screen-ready').classList.add('ph-hidden');
-      // First obstacle 1.5 screen widths away
-      spawnPillarPair(window.innerWidth * 1.5);
-      nextSpawnDist = scrollDist + CONFIG.obstacle.spacing;
+      // First obstacle spawns ~480px ahead of the fish, and fills to right edge on wide screens
+      const firstX = window.innerWidth * CONFIG.player.x + 480;
+      spawnPillarPair(firstX);
+      while (pillars[pillars.length - 1].x < window.innerWidth + 80) {
+        spawnPillarPair(pillars[pillars.length - 1].x + CONFIG.obstacle.spacing);
+      }
     }
 
     tapTimes.push(simTick);
@@ -952,10 +957,9 @@
     const stepScroll = spd * dt;
     scrollDist += stepScroll;
 
-    if (scrollDist >= nextSpawnDist && pillars.length > 0) {
+    while (pillars.length > 0 && pillars[pillars.length - 1].x < w + 80) {
       const lastP = pillars[pillars.length - 1];
       spawnPillarPair(lastP.x + CONFIG.obstacle.spacing);
-      nextSpawnDist = scrollDist + CONFIG.obstacle.spacing;
     }
 
     // 3. Update pillars, check pass & collision

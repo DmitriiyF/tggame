@@ -556,7 +556,24 @@
       </label>
     </div>
 
-    <div class="section-label">🏆 Таблица лидеров (Общий рейтинг 5 игр)</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+      <div class="section-label" style="margin:0;">🏆 Таблица лидеров (Google Таблица / Друзья)</div>
+      <div style="display:flex;gap:6px;">
+        <button class="chest-btn" style="padding:5px 9px;font-size:11px;" onclick="syncWithGoogleSheet(true)">🔄 Обновить</button>
+        <button class="chest-btn" style="padding:5px 9px;font-size:11px;background:rgba(51,65,85,0.9);color:#cbd5e1;box-shadow:none;" onclick="configureGoogleSheetUrl()">📊 Таблица</button>
+      </div>
+    </div>
+
+    <div class="sub-tabs" id="lb-filter-tabs">
+      <button class="sub-tab-btn active" onclick="setLbFilter('total', this)">🏆 Общий</button>
+      <button class="sub-tab-btn" onclick="setLbFilter('rr', this)">🚙</button>
+      <button class="sub-tab-btn" onclick="setLbFilter('ss', this)">🧱</button>
+      <button class="sub-tab-btn" onclick="setLbFilter('td', this)">🦫</button>
+      <button class="sub-tab-btn" onclick="setLbFilter('bs', this)">🗡</button>
+      <button class="sub-tab-btn" onclick="setLbFilter('ph', this)">🐡</button>
+    </div>
+
+    <div id="sheet-status-txt" style="font-size:11px;color:#94a3b8;text-align:center;"></div>
     <div class="list-stack" id="leaderboard-list"></div>
 
     <div class="section-label">📜 История твоих последних забегов</div>
@@ -587,7 +604,12 @@
     const GLOBAL_GEMS_KEY = 'arcade_global_gems';
     const PROFILE_KEY = 'arcade_profile_v1';
     const HUB_CLAIMS_KEY = 'arcade_hub_claims_v1';
+    const SHEET_URL_KEY = 'arcade_google_sheet_url_v1';
+    const SHEET_CACHE_KEY = 'arcade_google_sheet_cache_v1';
+    // Сюда можно сразу вставить ссылку на твою Google Таблицу или Apps Script Web App (/exec), чтобы она была у всех друзей по умолчанию:
+    const DEFAULT_GOOGLE_SHEET_URL = '';
     const CHEST_COOLDOWN_MS = 15 * 60 * 1000;
+    let currentLbFilter = 'total';
 
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
     if (tg) {
@@ -1109,6 +1131,127 @@
       });
     }
 
+    function getSheetUrl() {
+      try {
+        return localStorage.getItem(SHEET_URL_KEY) || DEFAULT_GOOGLE_SHEET_URL || '';
+      } catch (e) {
+        return DEFAULT_GOOGLE_SHEET_URL;
+      }
+    }
+
+    function configureGoogleSheetUrl() {
+      const cur = getSheetUrl();
+      const input = prompt(
+        'Вставь ссылку на Google Apps Script Web App (заканчивается на /exec, для авто-записи и чтения) ИЛИ обычную ссылку на открытую Google Таблицу (для чтения цифр):',
+        cur
+      );
+      if (input === null) return;
+      try {
+        localStorage.setItem(SHEET_URL_KEY, input.trim());
+      } catch (e) {}
+      syncWithGoogleSheet(true);
+    }
+
+    function setLbFilter(filterKey, btnEl) {
+      currentLbFilter = filterKey;
+      const parent = document.getElementById('lb-filter-tabs');
+      if (parent) {
+        Array.from(parent.children).forEach(b => b.classList.remove('active'));
+      }
+      if (btnEl) btnEl.classList.add('active');
+      renderLeaderboardAndSocial(getStats());
+    }
+
+    async function syncWithGoogleSheet(showStatus = false) {
+      const sheetUrl = getSheetUrl();
+      const statusEl = document.getElementById('sheet-status-txt');
+      if (!sheetUrl) {
+        if (statusEl) {
+          statusEl.textContent = '💡 Нажми «📊 Таблица», чтобы подключить общую Google Таблицу для друзей';
+        }
+        return;
+      }
+
+      const stats = getStats();
+      const claims = getClaims();
+      const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
+      const userId = tgUser && tgUser.id ? String(tgUser.id) : (localStorage.getItem('arcade_anon_id') || (() => {
+        const id = 'p_' + Math.floor(Math.random() * 900000 + 100000);
+        try { localStorage.setItem('arcade_anon_id', id); } catch (e) {}
+        return id;
+      })());
+      const rawName = tgUser && tgUser.first_name ? tgUser.first_name : 'Игрок';
+      const displayName = (claims.vipUnlocked && claims.vipEnabled) ? `👑 ${rawName}` : rawName;
+
+      if (statusEl && showStatus) statusEl.textContent = '⏳ Синхронизация с Google Таблицей...';
+
+      try {
+        // Case A: Google Apps Script Web App (/exec) -> supports both saving our scores & reading all friends
+        if (sheetUrl.includes('script.google.com')) {
+          const payload = JSON.stringify({
+            userId,
+            name: displayName,
+            rrBest: stats.rrBest,
+            ssBest: stats.ssBest,
+            tdBest: stats.tdBest,
+            bsBest: stats.bsBest,
+            phBest: stats.phBest,
+            gems: getGems()
+          });
+          const sep = sheetUrl.includes('?') ? '&' : '?';
+          const res = await fetch(`${sheetUrl}${sep}action=save&payload=${encodeURIComponent(payload)}`);
+          const data = await res.json();
+          if (data && Array.isArray(data.players)) {
+            localStorage.setItem(SHEET_CACHE_KEY, JSON.stringify(data.players));
+            if (statusEl) statusEl.textContent = `✅ Google Таблица обновлена (${data.players.length} игр.)`;
+            renderLeaderboardAndSocial(stats);
+          }
+          return;
+        }
+
+        // Case B: Direct Google Spreadsheet URL or ID -> pulls live rows via gviz/tq JSON endpoint
+        const match = sheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        const sheetId = match ? match[1] : sheetUrl.trim();
+        const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
+        const res = await fetch(gvizUrl);
+        const txt = await res.text();
+        const jsonStart = txt.indexOf('{');
+        const jsonEnd = txt.lastIndexOf('}');
+        if (jsonStart !== -1 && jsonEnd !== -1) {
+          const gviz = JSON.parse(txt.slice(jsonStart, jsonEnd + 1));
+          const rows = (gviz.table && gviz.table.rows) || [];
+          const players = [];
+          rows.forEach(r => {
+            const c = r.c || [];
+            const val = (idx) => (c[idx] && c[idx].v !== null && c[idx].v !== undefined) ? c[idx].v : '';
+            const nameVal = String(val(1) || val(0) || '').trim();
+            if (!nameVal || nameVal.toLowerCase() === 'name' || nameVal.toLowerCase() === 'имя') return;
+            const rr = Number(val(3)) || 0;
+            const ss = Number(val(4)) || 0;
+            const td = Number(val(5)) || 0;
+            const bs = Number(val(6)) || 0;
+            const ph = Number(val(7)) || 0;
+            const tot = Number(val(2)) || (rr + ss * 10 + td * 5 + bs * 8 + ph * 10);
+            players.push({
+              userId: String(val(0) || nameVal),
+              name: nameVal,
+              totalPts: tot,
+              rrBest: rr,
+              ssBest: ss,
+              tdBest: td,
+              bsBest: bs,
+              phBest: ph
+            });
+          });
+          localStorage.setItem(SHEET_CACHE_KEY, JSON.stringify(players));
+          if (statusEl) statusEl.textContent = `✅ Загружено из Google Таблицы: ${players.length} чел.`;
+          renderLeaderboardAndSocial(stats);
+        }
+      } catch (err) {
+        if (statusEl) statusEl.textContent = '⚠️ Ошибка чтения Google Таблицы (проверь доступ по ссылке)';
+      }
+    }
+
     function renderLeaderboardAndSocial(stats) {
       const prof = getProfile();
       const claims = getClaims();
@@ -1118,36 +1261,79 @@
       const myTitle = (claims.vipUnlocked && claims.vipEnabled) ? `👑 ${rawName}` : rawName;
       const myTotalPts = stats.rrBest + stats.ssBest * 10 + stats.tdBest * 5 + stats.bsBest * 8 + stats.phBest * 10;
 
-      const entries = [
-        { name: '👑 CyberDragon', pts: 4200, isMe: false },
-        { name: '🔥 Alex_Pro', pts: 2850, isMe: false },
-        { name: '⚡ NeoStacker', pts: 1640, isMe: false },
-        { name: '🦫 BeaverKing', pts: 920, isMe: false },
-        { name: myTitle, pts: myTotalPts, isMe: true }
-      ];
+      let sheetPlayers = [];
+      try {
+        const cRaw = localStorage.getItem(SHEET_CACHE_KEY);
+        if (cRaw) sheetPlayers = JSON.parse(cRaw) || [];
+      } catch (e) {}
 
-      // Add any friends from challenges
-      if (Array.isArray(prof.friendsLeaderboard)) {
-        prof.friendsLeaderboard.forEach(f => {
-          entries.push({ name: `⚔️ ${f.name}`, pts: f.pts, isMe: false });
-        });
+      let entries = [];
+      if (sheetPlayers.length > 0) {
+        entries = sheetPlayers.map(p => ({
+          name: p.name,
+          totalPts: p.totalPts || 0,
+          rr: p.rrBest || 0,
+          ss: p.ssBest || 0,
+          td: p.tdBest || 0,
+          bs: p.bsBest || 0,
+          ph: p.phBest || 0,
+          isMe: p.name === myTitle || p.name === rawName
+        }));
+        if (!entries.some(e => e.isMe)) {
+          entries.push({
+            name: myTitle,
+            totalPts: myTotalPts,
+            rr: stats.rrBest,
+            ss: stats.ssBest,
+            td: stats.tdBest,
+            bs: stats.bsBest,
+            ph: stats.phBest,
+            isMe: true
+          });
+        }
+      } else {
+        entries = [
+          { name: '👑 CyberDragon', totalPts: 4200, rr: 1200, ss: 85, td: 190, bs: 60, ph: 72, isMe: false },
+          { name: '🔥 Alex_Pro', totalPts: 2850, rr: 850, ss: 55, td: 130, bs: 45, ph: 44, isMe: false },
+          { name: '⚡ NeoStacker', totalPts: 1640, rr: 490, ss: 42, td: 80, bs: 25, ph: 18, isMe: false },
+          { name: myTitle, totalPts: myTotalPts, rr: stats.rrBest, ss: stats.ssBest, td: stats.tdBest, bs: stats.bsBest, ph: stats.phBest, isMe: true }
+        ];
       }
 
-      entries.sort((a, b) => b.pts - a.pts);
+      const getVal = (e) => {
+        if (currentLbFilter === 'rr') return e.rr || 0;
+        if (currentLbFilter === 'ss') return e.ss || 0;
+        if (currentLbFilter === 'td') return e.td || 0;
+        if (currentLbFilter === 'bs') return e.bs || 0;
+        if (currentLbFilter === 'ph') return e.ph || 0;
+        return e.totalPts || 0;
+      };
+
+      const getUnit = () => {
+        if (currentLbFilter === 'rr') return 'м';
+        if (currentLbFilter === 'ss') return 'эт.';
+        if (currentLbFilter === 'td') return '🪵';
+        if (currentLbFilter === 'bs') return '🗡';
+        if (currentLbFilter === 'ph') return '🐡';
+        return 'pts';
+      };
+
+      entries.sort((a, b) => getVal(b) - getVal(a));
 
       const lbEl = document.getElementById('leaderboard-list');
       lbEl.innerHTML = '';
-      entries.slice(0, 7).forEach((e, idx) => {
+      entries.slice(0, 10).forEach((e, idx) => {
         const row = document.createElement('div');
         row.className = 'item-row';
         if (e.isMe) row.style.borderColor = '#38bdf8';
         const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+        const subDetails = `🚙${e.rr || 0}м • 🧱${e.ss || 0} • 🦫${e.td || 0} • 🗡${e.bs || 0} • 🐡${e.ph || 0}`;
         row.innerHTML = `
           <div class="item-info">
             <div class="item-title">${medal} ${e.name}</div>
-            <div class="item-sub">Суммарный рейтинг 5 игр</div>
+            <div class="item-sub">${subDetails}</div>
           </div>
-          <div style="font-size:15px;font-weight:700;color:#fde047;">${e.pts.toLocaleString()} pts</div>
+          <div style="font-size:15px;font-weight:700;color:#fde047;white-space:nowrap;">${getVal(e).toLocaleString()} ${getUnit()}</div>
         `;
         lbEl.appendChild(row);
       });
@@ -1246,6 +1432,7 @@
 
     checkDailyLoginStreak();
     loadHubData();
+    syncWithGoogleSheet(false);
     setInterval(updateChestButton, 15000);
   </script>
 </body>
