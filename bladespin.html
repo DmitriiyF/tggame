@@ -586,6 +586,12 @@
       prof.weekly.runs = (prof.weekly.runs || 0) + 1;
 
       localStorage.setItem('arcade_profile_v1', JSON.stringify(prof));
+
+      const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
+      const userId = tgUser && tgUser.id ? String(tgUser.id) : (localStorage.getItem('arcade_anon_id') || 'p_local');
+      const rawName = tgUser && tgUser.first_name ? tgUser.first_name : 'Игрок';
+      const payload = JSON.stringify({ userId, name: rawName, bsBest: save.bestScore, gems: globalGems });
+      fetch('https://script.google.com/macros/s/AKfycbzHXu32iW7OpZvBT_lGtOJEYnueaIIMFTa-F4rhaJmNv2T0y4BvtVUFKi8DD5x66PPf/exec?action=save&payload=' + encodeURIComponent(payload)).catch(() => {});
     } catch (e) {}
   }
 

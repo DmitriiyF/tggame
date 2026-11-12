@@ -605,8 +605,8 @@
     const HUB_CLAIMS_KEY = 'arcade_hub_claims_v1';
     const SHEET_URL_KEY = 'arcade_google_sheet_url_v1';
     const SHEET_CACHE_KEY = 'arcade_google_sheet_cache_v1';
-    // Жёстко привязанная Google Таблица лидеров (никто из игроков не может её сменить через интерфейс):
-    const DEFAULT_GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1xABn_ZjjrSBksSRrGMx6_cNu33Vr2A9PALGGEP6L068/edit';
+    // Жёстко привязанный Google Apps Script Web App (/exec) для чтения и авто-записи рекордов всех друзей:
+    const DEFAULT_GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzHXu32iW7OpZvBT_lGtOJEYnueaIIMFTa-F4rhaJmNv2T0y4BvtVUFKi8DD5x66PPf/exec';
     const CHEST_COOLDOWN_MS = 15 * 60 * 1000;
     let currentLbFilter = 'total';
 
