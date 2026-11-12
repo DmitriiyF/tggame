@@ -557,10 +557,9 @@
     </div>
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
-      <div class="section-label" style="margin:0;">🏆 Таблица лидеров (Google Таблица / Друзья)</div>
+      <div class="section-label" style="margin:0;">🏆 Таблица лидеров</div>
       <div style="display:flex;gap:6px;">
-        <button class="chest-btn" style="padding:5px 9px;font-size:11px;" onclick="syncWithGoogleSheet(true)">🔄 Обновить</button>
-        <button class="chest-btn" style="padding:5px 9px;font-size:11px;background:rgba(51,65,85,0.9);color:#cbd5e1;box-shadow:none;" onclick="configureGoogleSheetUrl()">📊 Таблица</button>
+        <button class="chest-btn" style="padding:5px 10px;font-size:11px;" onclick="syncWithGoogleSheet(true)">🔄 Обновить</button>
       </div>
     </div>
 
@@ -606,8 +605,8 @@
     const HUB_CLAIMS_KEY = 'arcade_hub_claims_v1';
     const SHEET_URL_KEY = 'arcade_google_sheet_url_v1';
     const SHEET_CACHE_KEY = 'arcade_google_sheet_cache_v1';
-    // Сюда можно сразу вставить ссылку на твою Google Таблицу или Apps Script Web App (/exec), чтобы она была у всех друзей по умолчанию:
-    const DEFAULT_GOOGLE_SHEET_URL = '';
+    // Жёстко привязанная Google Таблица лидеров (никто из игроков не может её сменить через интерфейс):
+    const DEFAULT_GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1xABn_ZjjrSBksSRrGMx6_cNu33Vr2A9PALGGEP6L068/edit';
     const CHEST_COOLDOWN_MS = 15 * 60 * 1000;
     let currentLbFilter = 'total';
 
@@ -1132,24 +1131,7 @@
     }
 
     function getSheetUrl() {
-      try {
-        return localStorage.getItem(SHEET_URL_KEY) || DEFAULT_GOOGLE_SHEET_URL || '';
-      } catch (e) {
-        return DEFAULT_GOOGLE_SHEET_URL;
-      }
-    }
-
-    function configureGoogleSheetUrl() {
-      const cur = getSheetUrl();
-      const input = prompt(
-        'Вставь ссылку на Google Apps Script Web App (заканчивается на /exec, для авто-записи и чтения) ИЛИ обычную ссылку на открытую Google Таблицу (для чтения цифр):',
-        cur
-      );
-      if (input === null) return;
-      try {
-        localStorage.setItem(SHEET_URL_KEY, input.trim());
-      } catch (e) {}
-      syncWithGoogleSheet(true);
+      return DEFAULT_GOOGLE_SHEET_URL;
     }
 
     function setLbFilter(filterKey, btnEl) {
@@ -1244,11 +1226,11 @@
             });
           });
           localStorage.setItem(SHEET_CACHE_KEY, JSON.stringify(players));
-          if (statusEl) statusEl.textContent = `✅ Загружено из Google Таблицы: ${players.length} чел.`;
+          if (statusEl) statusEl.textContent = showStatus ? `✅ Обновлено (${players.length} чел.)` : '';
           renderLeaderboardAndSocial(stats);
         }
       } catch (err) {
-        if (statusEl) statusEl.textContent = '⚠️ Ошибка чтения Google Таблицы (проверь доступ по ссылке)';
+        if (statusEl) statusEl.textContent = showStatus ? '⚠️ Проверь доступ к таблице («Все, у кого есть ссылка — Читатель»)' : '';
       }
     }
 

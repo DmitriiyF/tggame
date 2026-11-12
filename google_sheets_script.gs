@@ -14,9 +14,10 @@
  */
 
 const SHEET_NAME = 'Leaderboard';
+const SPREADSHEET_ID = '1xABn_ZjjrSBksSRrGMx6_cNu33Vr2A9PALGGEP6L068';
 
 function ensureSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
