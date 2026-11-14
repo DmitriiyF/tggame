@@ -378,7 +378,8 @@ class MochiPalApp {
       });
       tray.appendChild(infoRow);
     } else if (this.activeRoom === 'playroom') {
-      // Interactive Game Cartridge Carousel right in the Playroom tray + hint for throwing the ball & clicking the Arcade Cabinet!
+      // Interactive Game Cartridge Carousel right in the Playroom tray + Energy Multiplier badge!
+      const energyMult = computeMoodMultiplier(this.state.pet.needs);
       const gameStrip = document.createElement('div');
       gameStrip.className = 'mp-food-carousel';
 
@@ -391,7 +392,7 @@ class MochiPalApp {
         card.innerHTML = `
           <span class="mp-food-ico">${g.icon}</span>
           <span class="mp-food-name" style="color:#f8fafc;">${g.title}</span>
-          <span class="mp-food-qty" style="color:#fde047;">🏆${best} • ▶</span>
+          <span class="mp-food-qty" style="color:#fde047;">🪙×${energyMult} • 🏆${best}</span>
         `;
         card.addEventListener('click', () => {
           sfx.playClick();
@@ -491,7 +492,7 @@ class MochiPalApp {
           <div>
             <div style="font-size:16px;font-weight:700;color:#f8fafc;">${g.title}</div>
             <div style="font-size:12px;color:#94a3b8;">${g.subtitle} • 🏆 Рекорд: ${best}</div>
-            <div style="font-size:11px;color:#fde047;margin-top:2px;">⚡ -${g.energy} энергии • 🎾 +${g.funGain} веселья • Множитель настроения ×${moodMult}</div>
+            <div style="font-size:11px;color:#fde047;margin-top:2px;">🪙 Бонус энергии: ×${moodMult} (100%⚡=×1.5 • 50%⚡=×1.25 • 0%⚡=×1.0)</div>
           </div>
         </div>
       `;

@@ -13,12 +13,10 @@ export function xpNeededForLevel(lvl) {
 }
 
 export function computeMoodMultiplier(needs) {
-  const avg = (needs.hunger + needs.energy + needs.hygiene + needs.fun) / 4;
-  if (avg >= 80) return 1.2;
-  if (avg >= 60) return 1.05;
-  if (avg >= 40) return 1.0;
-  if (avg >= 20) return 0.75;
-  return 0.5;
+  const energy = (needs && typeof needs.energy === 'number') ? needs.energy : 100;
+  if (energy >= 80) return 1.5;
+  if (energy >= 40) return 1.25;
+  return 1.0;
 }
 
 class MochiStateEngine {
@@ -237,20 +235,24 @@ class MochiStateEngine {
                 'Blade Spin': 'bladeSpin',
                 'Ridge Rush': 'ridgeRush'
               };
-              const moodMult = computeMoodMultiplier(this.state.pet.needs);
+              const moodMult = this.state.lastLaunchEnergyMult || computeMoodMultiplier(this.state.pet.needs);
               const playroomTier = (this.state.pet.house && this.state.pet.house.rooms && this.state.pet.house.rooms.playroom)
                 ? (this.state.pet.house.rooms.playroom.tier || 1)
                 : 1;
               const roomBonus = 1 + (CONFIG.rooms.playroom.tierBonuses[playroomTier] || 0);
 
-              newRuns.forEach(r => {
+              newRuns.forEach((r, idx) => {
                 const gId = nameMap[r.game] || 'skyStack';
                 const gCfg = CONFIG.games[gId] || CONFIG.games.skyStack;
                 const numScore = Math.max(0, parseInt(String(r.score), 10) || 0);
-                const coins = Math.max(5, Math.floor(numScore * gCfg.coinRate * moodMult * roomBonus));
+                const runMult = idx === 0 ? moodMult : computeMoodMultiplier(this.state.pet.needs);
+                const coins = Math.max(5, Math.floor(numScore * gCfg.coinRate * runMult * roomBonus));
                 const xpRaw = 6 + Math.floor(numScore / 5);
 
                 this.state.wallet.coins += coins;
+                if (idx > 0) {
+                  this.state.pet.needs.energy = Math.max(0, this.state.pet.needs.energy - (gCfg.energy || 10));
+                }
                 this.state.pet.needs.fun = Math.min(100, this.state.pet.needs.fun + 15);
                 const lvlInfo = this._addPetXp(xpRaw);
                 if (lvlInfo.leveledUp) {
@@ -458,12 +460,11 @@ class MochiStateEngine {
       return { error: `Эта игра открывается на ${gCfg.unlockLevel} уровне Мочи!` };
     }
     if (this.state.pet.sleeping) {
-      return { error: 'Мочи спит! Включи свет в спальне, чтобы разбудить его.' };
-    }
-    if (this.state.pet.needs.energy < gCfg.energy) {
-      return { error: `Мочи устал (нужно ${gCfg.energy}⚡ энергии). Уложи его поспать в спальне или дай Бабл-ти!` };
+      this.state.pet.sleeping = false;
     }
 
+    // Snapshot energy multiplier BEFORE spending energy (playing is ALWAYS allowed even at 0% energy!)
+    this.state.lastLaunchEnergyMult = computeMoodMultiplier(this.state.pet.needs);
     this.state.pet.needs.energy = Math.max(0, this.state.pet.needs.energy - gCfg.energy);
     this.state.pet.needs.fun = Math.min(100, this.state.pet.needs.fun + (gCfg.funGain || 15));
     if (!this.state.lastProcessedRunTs) {
