@@ -14,9 +14,11 @@ export const CONFIG = {
   games: {
     skyStack: {
       id: 'skyStack',
+      url: 'skystack.html',
       title: 'Sky Stack',
-      subtitle: 'Строй башню с Мочи',
+      subtitle: 'Идеальная башня и комбо',
       icon: '🧱',
+      color: '#38bdf8',
       energy: 10,
       funGain: 15,
       coinRate: 2.0,
@@ -25,9 +27,11 @@ export const CONFIG = {
     },
     puffHop: {
       id: 'puffHop',
+      url: 'puffhop.html',
       title: 'Puff Hop',
-      subtitle: 'Подводный заплыв Мочи',
+      subtitle: 'Подводный заплыв между рифами',
       icon: '🐡',
+      color: '#0ea5e9',
       energy: 10,
       funGain: 15,
       coinRate: 3.0,
@@ -36,9 +40,11 @@ export const CONFIG = {
     },
     timberDash: {
       id: 'timberDash',
+      url: 'timberdash.html',
       title: 'Timber Dash',
-      subtitle: 'Мочи-дровосек рубит лес',
+      subtitle: 'Руби дерево и уворачивайся',
       icon: '🦫',
+      color: '#4ade80',
       energy: 10,
       funGain: 15,
       coinRate: 1.5,
@@ -47,9 +53,11 @@ export const CONFIG = {
     },
     bladeSpin: {
       id: 'bladeSpin',
+      url: 'bladespin.html',
       title: 'Blade Spin',
-      subtitle: 'Метание лезвий по мишеням',
+      subtitle: 'Метание лезвий и боссы',
       icon: '🗡',
+      color: '#f43f5e',
       energy: 10,
       funGain: 15,
       coinRate: 1.8,
@@ -58,14 +66,16 @@ export const CONFIG = {
     },
     ridgeRush: {
       id: 'ridgeRush',
+      url: 'hillclimb.html',
       title: 'Ridge Rush',
-      subtitle: 'Гонки Мочи по холмам',
+      subtitle: 'Экстремальные гонки по холмам',
       icon: '🚙',
-      energy: 15,
+      color: '#f59e0b',
+      energy: 12,
       funGain: 20,
-      coinRate: 0.18,
+      coinRate: 0.25,
       milestones: [300, 800, 1500],
-      unlockLevel: 5
+      unlockLevel: 1
     }
   },
   economy: {
@@ -97,8 +107,8 @@ export const CONFIG = {
       upgradeCosts: [
         null,
         { coins: 0, crystals: 0 },
-        { coins: 350, crystals: 3, desc: '+10% сытости от всей еды, шеф-интерьер' },
-        { coins: 900, crystals: 8, desc: '+20% сытости от всей еды, золотая кухня' }
+        { coins: 300, crystals: 2, desc: '+10% сытости от еды, двухкамерный холодильник и полки' },
+        { coins: 750, crystals: 6, desc: '+20% сытости от еды, золотой шеф-гарнитур и люстра' }
       ]
     },
     bathroom: {
@@ -109,8 +119,8 @@ export const CONFIG = {
       upgradeCosts: [
         null,
         { coins: 0, crystals: 0 },
-        { coins: 350, crystals: 3, desc: '+10% скорости мытья и джакузи-декор' },
-        { coins: 900, crystals: 8, desc: '+20% чистоты и королевское СПА' }
+        { coins: 300, crystals: 2, desc: '+10% скорости мытья, зеркало с подсветкой и уточка' },
+        { coins: 750, crystals: 6, desc: '+20% чистоты, золотое джакузи-СПА и растения' }
       ]
     },
     bedroom: {
@@ -121,8 +131,8 @@ export const CONFIG = {
       upgradeCosts: [
         null,
         { coins: 0, crystals: 0 },
-        { coins: 400, crystals: 4, desc: '+15% восстановления энергии во сне' },
-        { coins: 1000, crystals: 10, desc: '+30% восстановления энергии и звёздный купол' }
+        { coins: 350, crystals: 3, desc: '+15% скорости сна, картина и дизайнерский торшер' },
+        { coins: 850, crystals: 7, desc: '+30% скорости сна, панорамное звёздное окно и балдахин' }
       ]
     },
     playroom: {
@@ -133,8 +143,8 @@ export const CONFIG = {
       upgradeCosts: [
         null,
         { coins: 0, crystals: 0 },
-        { coins: 450, crystals: 4, desc: '+10% монет во всех мини-играх' },
-        { coins: 1100, crystals: 10, desc: '+20% монет во всех мини-играх и неоновый зал' }
+        { coins: 400, crystals: 3, desc: '+10% монет в мини-играх, полка трофеев и неоновая вывеска' },
+        { coins: 950, crystals: 8, desc: '+20% монет в мини-играх, кибер-автомат и золотые кубки' }
       ]
     }
   },
@@ -146,8 +156,8 @@ export const CONFIG = {
       { id: 'dango', category: 'food', name: 'Сладкий данго', icon: '🍡', hunger: 30, fun: 18, xp: 7, price: { coins: 60 }, rarity: 'rare', levelReq: 1 },
       { id: 'ramen', category: 'food', name: 'Горячий рамен', icon: '🍜', hunger: 52, fun: 12, xp: 10, price: { coins: 90 }, rarity: 'rare', levelReq: 2 },
       { id: 'cake', category: 'food', name: 'Клубничный торт', icon: '🍰', hunger: 65, fun: 25, xp: 14, price: { coins: 120 }, rarity: 'epic', levelReq: 2 },
-      { id: 'boba', category: 'food', name: 'Бабл-ти ( +Бодрость )', icon: '🧋', hunger: 25, energy: 25, fun: 16, xp: 12, price: { coins: 110 }, rarity: 'epic', levelReq: 3 },
-      { id: 'megafeast', category: 'food', name: 'Королевский пир (100%)', icon: '🍱', hunger: 100, energy: 40, fun: 40, xp: 30, price: { crystals: 8 }, rarity: 'legendary', levelReq: 1 }
+      { id: 'boba', category: 'food', name: 'Бабл-ти (+Бодрость)', icon: '🧋', hunger: 25, energy: 25, fun: 16, xp: 12, price: { coins: 110 }, rarity: 'epic', levelReq: 3 },
+      { id: 'megafeast', category: 'food', name: 'Королевский пир', icon: '🍱', hunger: 100, energy: 40, fun: 40, xp: 30, price: { crystals: 8 }, rarity: 'legendary', levelReq: 1 }
     ],
     colors: [
       { id: 'sakura', category: 'color', name: 'Розовая сакура', hex: '#f9a8d4', shade: '#f472b6', price: { coins: 0 }, rarity: 'common', levelReq: 1 },
@@ -177,12 +187,12 @@ export const CONFIG = {
       { id: 'rainbow', category: 'skin', name: 'Радужное сияние', icon: '🌈', price: { crystals: 14 }, rarity: 'legendary', levelReq: 5 }
     ],
     eyes: [
-      { id: 'normal', category: 'eyes', name: 'Классические блестящие', icon: '👀', price: { coins: 0 }, rarity: 'common', levelReq: 1 },
-      { id: 'sparkle', category: 'eyes', name: 'Звёздные аниме-глазки', icon: '✨', price: { coins: 120 }, rarity: 'rare', levelReq: 1 },
+      { id: 'normal', category: 'eyes', name: 'Классические', icon: '👀', price: { coins: 0 }, rarity: 'common', levelReq: 1 },
+      { id: 'sparkle', category: 'eyes', name: 'Звёздные аниме', icon: '✨', price: { coins: 120 }, rarity: 'rare', levelReq: 1 },
       { id: 'cute', category: 'eyes', name: 'Милые реснички', icon: '🥺', price: { coins: 140 }, rarity: 'rare', levelReq: 1 },
-      { id: 'wink', category: 'eyes', name: 'Озорное подмигивание', icon: '😉', price: { coins: 160 }, rarity: 'rare', levelReq: 2 },
+      { id: 'wink', category: 'eyes', name: 'Подмигивание', icon: '😉', price: { coins: 160 }, rarity: 'rare', levelReq: 2 },
       { id: 'happy_arc', category: 'eyes', name: 'Улыбающиеся дуги', icon: '😊', price: { coins: 180 }, rarity: 'rare', levelReq: 2 },
-      { id: 'heart_eyes', category: 'eyes', name: 'Влюблённые сердечки', icon: '😍', price: { crystals: 5 }, rarity: 'epic', levelReq: 2 },
+      { id: 'heart_eyes', category: 'eyes', name: 'Сердечки', icon: '😍', price: { crystals: 5 }, rarity: 'epic', levelReq: 2 },
       { id: 'cyber', category: 'eyes', name: 'Неоновый визор', icon: '🤖', price: { crystals: 7 }, rarity: 'epic', levelReq: 3 },
       { id: 'fire', category: 'eyes', name: 'Огненный взгляд', icon: '🔥', price: { crystals: 9 }, rarity: 'legendary', levelReq: 4 }
     ],
@@ -190,24 +200,38 @@ export const CONFIG = {
       { id: 'none', category: 'hat', name: 'Без шапки', icon: '🚫', price: { coins: 0 }, rarity: 'common', levelReq: 1 },
       { id: 'sprout', category: 'hat', name: 'Росточек клевера', icon: '🌱', price: { coins: 50 }, rarity: 'common', levelReq: 1 },
       { id: 'flower', category: 'hat', name: 'Цветок ромашки', icon: '🌼', price: { coins: 75 }, rarity: 'common', levelReq: 1 },
-      { id: 'cap', category: 'hat', name: 'Скейтерская кепка', icon: '🧢', price: { coins: 110 }, rarity: 'common', levelReq: 1 },
-      { id: 'beanie', category: 'hat', name: 'Тёплая шапочка с помпоном', icon: '🧶', price: { coins: 140 }, rarity: 'rare', levelReq: 1 },
-      { id: 'chef', category: 'hat', name: 'Колпак Шеф-повара', icon: '👨‍🍳', price: { coins: 180 }, rarity: 'rare', levelReq: 2 },
+      { id: 'cap', category: 'hat', name: 'Скейт-кепка', icon: '🧢', price: { coins: 110 }, rarity: 'common', levelReq: 1 },
+      { id: 'beanie', category: 'hat', name: 'Шапочка с помпоном', icon: '🧶', price: { coins: 140 }, rarity: 'rare', levelReq: 1 },
+      { id: 'chef', category: 'hat', name: 'Колпак Шефа', icon: '👨‍🍳', price: { coins: 180 }, rarity: 'rare', levelReq: 2 },
       { id: 'bunny', category: 'hat', name: 'Ушки зайчика', icon: '🐰', price: { coins: 220 }, rarity: 'rare', levelReq: 2 },
-      { id: 'frog', category: 'hat', name: 'Шапочка-лягушка', icon: '🐸', price: { coins: 260 }, rarity: 'epic', levelReq: 2 },
+      { id: 'frog', category: 'hat', name: 'Шапка-лягушка', icon: '🐸', price: { coins: 260 }, rarity: 'epic', levelReq: 2 },
       { id: 'headphones', category: 'hat', name: 'DJ-наушники', icon: '🎧', price: { coins: 320 }, rarity: 'epic', levelReq: 3 },
-      { id: 'pirate', category: 'hat', name: 'Треуголка капитана', icon: '🏴‍☠️', price: { coins: 380 }, rarity: 'epic', levelReq: 3 },
-      { id: 'wizard', category: 'hat', name: 'Шляпа Звёздного Мага', icon: '🧙‍♂️', price: { crystals: 6 }, rarity: 'epic', levelReq: 3 },
+      { id: 'pirate', category: 'hat', name: 'Треуголка пирата', icon: '🏴‍☠️', price: { coins: 380 }, rarity: 'epic', levelReq: 3 },
+      { id: 'wizard', category: 'hat', name: 'Шляпа Мага', icon: '🧙‍♂️', price: { crystals: 6 }, rarity: 'epic', levelReq: 3 },
       { id: 'crown', category: 'hat', name: 'Золотая Корона', icon: '👑', price: { crystals: 10 }, rarity: 'legendary', levelReq: 4 },
       { id: 'halo', category: 'hat', name: 'Ангельский Нимб', icon: '😇', price: { crystals: 14 }, rarity: 'legendary', levelReq: 5 }
     ],
     outfits: [
       { id: 'none', category: 'outfit', name: 'Без аксессуара', icon: '🚫', price: { coins: 0 }, rarity: 'common', levelReq: 1 },
-      { id: 'bowtie', category: 'outfit', name: 'Красный галстук-бабочка', icon: '🎀', price: { coins: 90 }, rarity: 'common', levelReq: 1 },
+      { id: 'bowtie', category: 'outfit', name: 'Галстук-бабочка', icon: '🎀', price: { coins: 90 }, rarity: 'common', levelReq: 1 },
       { id: 'scarf', category: 'outfit', name: 'Уютный шарфик', icon: '🧣', price: { coins: 150 }, rarity: 'rare', levelReq: 1 },
       { id: 'glasses', category: 'outfit', name: 'Крутые очки', icon: '🕶️', price: { coins: 210 }, rarity: 'rare', levelReq: 2 },
-      { id: 'medal', category: 'outfit', name: 'Золотая медаль чемпиона', icon: '🏅', price: { coins: 300 }, rarity: 'epic', levelReq: 3 },
-      { id: 'wings', category: 'outfit', name: 'Крылышки феи (аним.)', icon: '🦋', price: { crystals: 9 }, rarity: 'legendary', levelReq: 3 }
+      { id: 'medal', category: 'outfit', name: 'Золотая медаль', icon: '🏅', price: { coins: 300 }, rarity: 'epic', levelReq: 3 },
+      { id: 'wings', category: 'outfit', name: 'Крылышки феи', icon: '🦋', price: { crystals: 9 }, rarity: 'legendary', levelReq: 3 }
+    ],
+    decor: [
+      { id: 'wall_default', category: 'wallpaper', name: 'Стандартные обои', hex: '#cbd5e1', price: { coins: 0 }, rarity: 'common', levelReq: 1 },
+      { id: 'wall_sakura', category: 'wallpaper', name: 'Обои Сакура', hex: '#fbcfe8', wall1: '#fdf2f8', wall2: '#fbcfe8', stripe: 'rgba(244,114,182,0.18)', price: { coins: 120 }, rarity: 'common', levelReq: 1 },
+      { id: 'wall_mint', category: 'wallpaper', name: 'Мятные обои', hex: '#a7f3d0', wall1: '#ecfdf5', wall2: '#a7f3d0', stripe: 'rgba(16,185,129,0.16)', price: { coins: 140 }, rarity: 'common', levelReq: 1 },
+      { id: 'wall_sky', category: 'wallpaper', name: 'Небесная лазурь', hex: '#bae6fd', wall1: '#f0f9ff', wall2: '#bae6fd', stripe: 'rgba(14,165,233,0.16)', price: { coins: 150 }, rarity: 'rare', levelReq: 1 },
+      { id: 'wall_sunset', category: 'wallpaper', name: 'Персиковый закат', hex: '#fed7aa', wall1: '#fff7ed', wall2: '#fdba74', stripe: 'rgba(249,115,22,0.16)', price: { coins: 180 }, rarity: 'rare', levelReq: 2 },
+      { id: 'wall_galaxy', category: 'wallpaper', name: 'Звёздный космос', hex: '#312e81', wall1: '#1e1b4b', wall2: '#0f172a', stripe: 'rgba(139,92,246,0.18)', price: { crystals: 4 }, rarity: 'epic', levelReq: 2 },
+      { id: 'wall_gold', category: 'wallpaper', name: 'Королевский дворец', hex: '#fde047', wall1: '#fef9c3', wall2: '#fde047', stripe: 'rgba(217,119,6,0.2)', price: { crystals: 7 }, rarity: 'legendary', levelReq: 3 },
+      { id: 'rug_pink', category: 'rug', name: 'Розовый коврик', hex: '#f472b6', price: { coins: 0 }, rarity: 'common', levelReq: 1 },
+      { id: 'rug_sky', category: 'rug', name: 'Голубое облако', hex: '#38bdf8', price: { coins: 90 }, rarity: 'common', levelReq: 1 },
+      { id: 'rug_emerald', category: 'rug', name: 'Изумрудный луг', hex: '#4ade80', price: { coins: 120 }, rarity: 'rare', levelReq: 1 },
+      { id: 'rug_purple', category: 'rug', name: 'Аметистовый ковёр', hex: '#c084fc', price: { coins: 160 }, rarity: 'rare', levelReq: 2 },
+      { id: 'rug_gold', category: 'rug', name: 'Золотой ковёр', hex: '#fde047', price: { crystals: 5 }, rarity: 'legendary', levelReq: 3 }
     ]
   }
 };

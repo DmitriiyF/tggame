@@ -78,6 +78,8 @@ class MochiStateEngine {
           outfit: 'none'
         },
         house: {
+          wallpaper: 'wall_default',
+          rug: 'rug_pink',
           rooms: {
             kitchen: { tier: 1 },
             bathroom: { tier: 1 },
@@ -105,7 +107,9 @@ class MochiStateEngine {
           sakura: true,
           none: true,
           normal: true,
-          sprout: true
+          sprout: true,
+          wall_default: true,
+          rug_pink: true
         }
       },
       bestScores: {
@@ -143,6 +147,13 @@ class MochiStateEngine {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && parsed.pet && parsed.wallet) {
+          if (!parsed.pet.house) parsed.pet.house = { rooms: { kitchen: { tier: 1 }, bathroom: { tier: 1 }, bedroom: { tier: 1 }, playroom: { tier: 1 } } };
+          if (!parsed.pet.house.wallpaper) parsed.pet.house.wallpaper = 'wall_default';
+          if (!parsed.pet.house.rug) parsed.pet.house.rug = 'rug_pink';
+          if (!parsed.inventory) parsed.inventory = { food: {}, ownedCosmetics: {} };
+          if (!parsed.inventory.ownedCosmetics) parsed.inventory.ownedCosmetics = {};
+          parsed.inventory.ownedCosmetics.wall_default = true;
+          parsed.inventory.ownedCosmetics.rug_pink = true;
           return parsed;
         }
       }
@@ -167,8 +178,9 @@ class MochiStateEngine {
     } catch (e) {}
   }
 
-  // Merge records & gems from standalone games (skystack.html, puffhop.html, timberdash.html, bladespin.html, hillclimb.html)
+  // Merge records, runs & gems from standalone games (skystack.html, puffhop.html, timberdash.html, bladespin.html, hillclimb.html)
   _syncStandaloneGamesProgress() {
+    let summary = { runsPlayed: 0, coinsEarned: 0, crystalsEarned: 0, xpEarned: 0, leveledUp: false, newLevel: this.state.pet.level, lastScore: 0, lastGameId: 'skyStack' };
     try {
       const bs = this.state.bestScores;
       const ssBest = parseInt(localStorage.getItem('skystack_best_v1'), 10) || 0;
@@ -199,8 +211,80 @@ class MochiStateEngine {
         if (maxRR > (bs.ridgeRush || 0)) bs.ridgeRush = maxRR;
       }
 
+      // Check if gems were earned inside standalone games
+      const extGems = parseInt(localStorage.getItem('arcade_global_gems'), 10);
+      if (!isNaN(extGems) && extGems > this.state.wallet.crystals) {
+        const diff = extGems - this.state.wallet.crystals;
+        this.state.wallet.crystals = extGems;
+        summary.crystalsEarned += diff;
+      }
+
+      // Process any new runs recorded in arcade_runs_history_v1 by standalone games
+      const runsRaw = localStorage.getItem('arcade_runs_history_v1');
+      if (runsRaw) {
+        const runs = JSON.parse(runsRaw);
+        if (Array.isArray(runs) && runs.length > 0) {
+          if (!this.state.lastProcessedRunTs) {
+            // Initialize to latest existing run timestamp on first load so old runs aren't re-claimed
+            this.state.lastProcessedRunTs = runs[0].ts || Date.now();
+          } else {
+            const newRuns = runs.filter(r => (r.ts || 0) > this.state.lastProcessedRunTs).reverse();
+            if (newRuns.length > 0) {
+              const nameMap = {
+                'Sky Stack': 'skyStack',
+                'Puff Hop': 'puffHop',
+                'Timber Dash': 'timberDash',
+                'Blade Spin': 'bladeSpin',
+                'Ridge Rush': 'ridgeRush'
+              };
+              const moodMult = computeMoodMultiplier(this.state.pet.needs);
+              const playroomTier = (this.state.pet.house && this.state.pet.house.rooms && this.state.pet.house.rooms.playroom)
+                ? (this.state.pet.house.rooms.playroom.tier || 1)
+                : 1;
+              const roomBonus = 1 + (CONFIG.rooms.playroom.tierBonuses[playroomTier] || 0);
+
+              newRuns.forEach(r => {
+                const gId = nameMap[r.game] || 'skyStack';
+                const gCfg = CONFIG.games[gId] || CONFIG.games.skyStack;
+                const numScore = Math.max(0, parseInt(String(r.score), 10) || 0);
+                const coins = Math.max(5, Math.floor(numScore * gCfg.coinRate * moodMult * roomBonus));
+                const xpRaw = 6 + Math.floor(numScore / 5);
+
+                this.state.wallet.coins += coins;
+                this.state.pet.needs.fun = Math.min(100, this.state.pet.needs.fun + 15);
+                const lvlInfo = this._addPetXp(xpRaw);
+                if (lvlInfo.leveledUp) {
+                  summary.leveledUp = true;
+                  summary.newLevel = lvlInfo.newLevel;
+                }
+                this.state.achievements.totalGames = (this.state.achievements.totalGames || 0) + 1;
+                this._incrementTask('play_2', 1);
+                if (numScore > 0) this._setTaskMax('score_25', numScore);
+
+                summary.runsPlayed++;
+                summary.coinsEarned += coins;
+                summary.xpEarned += xpRaw;
+                summary.lastScore = numScore;
+                summary.lastGameId = gId;
+              });
+              this.state.lastProcessedRunTs = Math.max(...newRuns.map(r => r.ts || 0));
+            }
+          }
+        }
+      }
+
       localStorage.setItem('arcade_global_gems', String(this.state.wallet.crystals));
     } catch (e) {}
+    return summary;
+  }
+
+  syncAfterStandaloneGame() {
+    const summary = this._syncStandaloneGamesProgress();
+    this._saveLocalState();
+    if (summary.runsPlayed > 0) {
+      this.syncToGoogleSheets().catch(() => {});
+    }
+    return { ...summary, state: this.state };
   }
 
   _saveLocalState() {
@@ -382,6 +466,9 @@ class MochiStateEngine {
 
     this.state.pet.needs.energy = Math.max(0, this.state.pet.needs.energy - gCfg.energy);
     this.state.pet.needs.fun = Math.min(100, this.state.pet.needs.fun + (gCfg.funGain || 15));
+    if (!this.state.lastProcessedRunTs) {
+      this.state.lastProcessedRunTs = Date.now() - 1;
+    }
 
     const runId = 'run_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
     const seed = (Date.now() ^ Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0;
@@ -462,7 +549,8 @@ class MochiStateEngine {
       ...CONFIG.shop.skins,
       ...CONFIG.shop.eyes,
       ...CONFIG.shop.hats,
-      ...CONFIG.shop.outfits
+      ...CONFIG.shop.outfits,
+      ...(CONFIG.shop.decor || [])
     ];
     const item = allItems.find(i => i.id === itemId);
     if (!item) return { error: 'Предмет не найден' };
@@ -486,6 +574,9 @@ class MochiStateEngine {
 
     if (item.category === 'food') {
       this.state.inventory.food[item.id] = (this.state.inventory.food[item.id] || 0) + 1;
+    } else if (item.category === 'wallpaper' || item.category === 'rug') {
+      this.state.inventory.ownedCosmetics[item.id] = true;
+      this.state.pet.house[item.category] = item.id;
     } else {
       this.state.inventory.ownedCosmetics[item.id] = true;
       this.state.pet.equipped[item.category] = item.id;
@@ -499,7 +590,11 @@ class MochiStateEngine {
     if (!this.state.inventory.ownedCosmetics[itemId] && itemId !== 'none') {
       return { error: 'Этот предмет ещё не куплен!' };
     }
-    this.state.pet.equipped[category] = itemId;
+    if (category === 'wallpaper' || category === 'rug') {
+      this.state.pet.house[category] = itemId;
+    } else {
+      this.state.pet.equipped[category] = itemId;
+    }
     this._saveLocalState();
     return { ok: true, state: this.state };
   }

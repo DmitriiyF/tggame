@@ -15,6 +15,7 @@ export class MochiStage {
 
     // Preview override for live try-on in Shop/Wardrobe!
     this.previewEquipped = null;
+    this.previewHouse = null;
 
     // Spring physics for squash & stretch (k=180, damping=12)
     this.scaleX = 1.0;
@@ -67,15 +68,19 @@ export class MochiStage {
     this.foamBubbles = []; // { ox, oy, r, maxR }
     this.rinsedBubbleAccum = 0;
 
-    // Playroom bouncing ball
+    // Playroom grabbable & throwable bouncing ball
     this.ball = {
       active: false,
+      dragging: false,
       x: 85,
       y: 260,
       vx: 140,
       vy: -220,
-      r: 24,
+      r: 25,
       rot: 0,
+      lastPtrX: 85,
+      lastPtrY: 260,
+      lastPtrTime: 0,
       lastFunAt: 0
     };
 
@@ -85,8 +90,20 @@ export class MochiStage {
 
     // Dragging food item
     this.draggedFood = null; // { item, x, y }
+    this.justClickedObject = false;
 
     this._bindEvents();
+  }
+
+  isInteracting() {
+    return !!(
+      this.isPointerDownOnPet ||
+      this.soapTool.dragging ||
+      this.showerTool.dragging ||
+      this.ball.dragging ||
+      this.draggedFood ||
+      this.justClickedObject
+    );
   }
 
   resize(w, h) {
@@ -253,25 +270,49 @@ export class MochiStage {
         }
       }
 
-      // 2. Check Playroom ball hit
-      if (this.ball.active) {
-        const dxB = pos.x - this.ball.x;
-        const dyB = pos.y - this.ball.y;
-        if (Math.hypot(dxB, dyB) <= this.ball.r + 22) {
-          this.ball.vx = (dxB < 0 ? 1 : -1) * (180 + Math.random() * 140);
-          this.ball.vy = -340 - Math.random() * 120;
-          sfx.playBounce();
-          const now = performance.now();
-          if (now - this.ball.lastFunAt > 2200) {
-            this.ball.lastFunAt = now;
-            this.spawnHearts(cx, cy - radius, 2);
-            if (this.callbacks.onBallPlay) this.callbacks.onBallPlay();
-          }
+      // 2. Check Bedroom Lamp click (no buttons needed — click the lamp directly!)
+      if (this.activeRoom === 'bedroom') {
+        const floorY = this.height * 0.74;
+        const lampX = this.width * 0.74 + 31;
+        const lampY = floorY - 88;
+        if (Math.hypot(pos.x - lampX, pos.y - lampY) <= 54) {
+          this.justClickedObject = true;
+          if (this.callbacks.onLampClick) this.callbacks.onLampClick();
           return;
         }
       }
 
-      // 3. Tap or stroke Mochi
+      // 3. Check Playroom Grabbable Ball OR Arcade Cabinet click!
+      if (this.activeRoom === 'playroom') {
+        if (this.ball.active) {
+          const dxB = pos.x - this.ball.x;
+          const dyB = pos.y - this.ball.y;
+          if (Math.hypot(dxB, dyB) <= this.ball.r + 28) {
+            this.ball.dragging = true;
+            this.ball.x = pos.x;
+            this.ball.y = pos.y;
+            this.ball.vx = 0;
+            this.ball.vy = 0;
+            this.ball.lastPtrX = pos.x;
+            this.ball.lastPtrY = pos.y;
+            this.ball.lastPtrTime = performance.now();
+            sfx.playBounce();
+            return;
+          }
+        }
+
+        // Check click on the Arcade Cabinet on the right
+        const floorY = this.height * 0.74;
+        const cabX = this.width * 0.72;
+        const cabY = floorY - 142;
+        if (pos.x >= cabX - 10 && pos.x <= cabX + 86 && pos.y >= cabY - 10 && pos.y <= floorY + 8) {
+          this.justClickedObject = true;
+          if (this.callbacks.onArcadeClick) this.callbacks.onArcadeClick();
+          return;
+        }
+      }
+
+      // 4. Tap or stroke Mochi
       const distToPet = Math.hypot(pos.x - cx, pos.y - cy);
       if (distToPet <= radius * 1.28) {
         this.isPointerDownOnPet = true;
@@ -295,6 +336,22 @@ export class MochiStage {
       if (this.draggedFood) {
         this.draggedFood.x = pos.x;
         this.draggedFood.y = pos.y;
+        return;
+      }
+
+      // Dragging Playroom Ball in hand (calculate throw velocity!)
+      if (this.ball.dragging) {
+        const now = performance.now();
+        const dtMs = Math.max(8, now - (this.ball.lastPtrTime || now - 16));
+        const instVx = ((pos.x - this.ball.lastPtrX) / dtMs) * 1000;
+        const instVy = ((pos.y - this.ball.lastPtrY) / dtMs) * 1000;
+        this.ball.vx = this.ball.vx * 0.35 + instVx * 0.65;
+        this.ball.vy = this.ball.vy * 0.35 + instVy * 0.65;
+        this.ball.x = Math.max(this.ball.r + 10, Math.min(this.width - this.ball.r - 10, pos.x));
+        this.ball.y = Math.max(this.ball.r + 10, Math.min(this.height * 0.78 - this.ball.r, pos.y));
+        this.ball.lastPtrX = pos.x;
+        this.ball.lastPtrY = pos.y;
+        this.ball.lastPtrTime = now;
         return;
       }
 
@@ -349,7 +406,31 @@ export class MochiStage {
 
     const stopAllDrags = () => {
       this.isPointerDownOnPet = false;
+      this.justClickedObject = false;
       this.soapTool.dragging = false;
+      if (this.ball.dragging) {
+        this.ball.dragging = false;
+        // Clamp throw speed and give a fun bounce if simply tapped & released
+        const spd = Math.hypot(this.ball.vx, this.ball.vy);
+        if (spd < 90) {
+          this.ball.vx = (Math.random() < 0.5 ? -1 : 1) * (180 + Math.random() * 120);
+          this.ball.vy = -340;
+        } else {
+          const maxSpd = 950;
+          if (spd > maxSpd) {
+            this.ball.vx = (this.ball.vx / spd) * maxSpd;
+            this.ball.vy = (this.ball.vy / spd) * maxSpd;
+          }
+        }
+        sfx.playBounce();
+        const now = performance.now();
+        if (now - this.ball.lastFunAt > 2000) {
+          this.ball.lastFunAt = now;
+          const { cx, cy, radius } = this.getPetCenter();
+          this.spawnHearts(cx, cy - radius, 2);
+          if (this.callbacks.onBallPlay) this.callbacks.onBallPlay();
+        }
+      }
       if (this.showerTool.dragging) {
         this.showerTool.dragging = false;
         if (this.rinsedBubbleAccum > 0 && this.callbacks.onWashComplete) {
@@ -528,7 +609,7 @@ export class MochiStage {
     this.curLookY += (this.lookTargetY - this.curLookY) * Math.min(1, dt * 10);
 
     // 4. Playroom Ball physics
-    if (this.ball.active) {
+    if (this.ball.active && !this.ball.dragging) {
       const floorY = this.height * 0.78;
       this.ball.vy += 680 * dt;
       this.ball.x += this.ball.vx * dt;
@@ -538,12 +619,18 @@ export class MochiStage {
       if (this.ball.x < this.ball.r + 14) {
         this.ball.x = this.ball.r + 14;
         this.ball.vx = Math.abs(this.ball.vx) * 0.82;
+        sfx.playBounce();
       } else if (this.ball.x > this.width - this.ball.r - 14) {
         this.ball.x = this.width - this.ball.r - 14;
         this.ball.vx = -Math.abs(this.ball.vx) * 0.82;
+        sfx.playBounce();
       }
 
-      if (this.ball.y > floorY - this.ball.r) {
+      if (this.ball.y < this.ball.r + 14) {
+        this.ball.y = this.ball.r + 14;
+        this.ball.vy = Math.abs(this.ball.vy) * 0.75;
+        sfx.playBounce();
+      } else if (this.ball.y > floorY - this.ball.r) {
         this.ball.y = floorY - this.ball.r;
         if (Math.abs(this.ball.vy) > 95) sfx.playBounce();
         this.ball.vy = -Math.abs(this.ball.vy) * 0.72;
@@ -604,17 +691,22 @@ export class MochiStage {
       house: { rooms: { kitchen: { tier: 1 }, bathroom: { tier: 1 }, bedroom: { tier: 1 }, playroom: { tier: 1 } } }
     };
 
-    // Merge live shop preview cosmetics if active
-    const pet = this.previewEquipped
-      ? { ...basePet, equipped: { ...basePet.equipped, ...this.previewEquipped } }
-      : basePet;
+    // Merge live shop preview cosmetics & house decor if active
+    const mergedHouse = this.previewHouse
+      ? { ...(basePet.house || {}), ...this.previewHouse }
+      : (basePet.house || {});
+    const pet = {
+      ...basePet,
+      equipped: this.previewEquipped ? { ...basePet.equipped, ...this.previewEquipped } : basePet.equipped,
+      house: mergedHouse
+    };
 
     const roomTier = (pet.house && pet.house.rooms && pet.house.rooms[activeRoom])
       ? (pet.house.rooms[activeRoom].tier || 1)
       : 1;
 
-    // 1. Draw Room Background + Furniture
-    this._drawRoomBackground(ctx, w, h, activeRoom, roomTier, pet.sleeping);
+    // 1. Draw Room Background + Furniture + Custom Wallpaper & Rug
+    this._drawRoomBackground(ctx, w, h, activeRoom, roomTier, pet.sleeping, pet.house);
 
     // 2. Draw Mochi Pet (Layered back-to-front)
     const { cx, cy, radius } = this.getPetCenter();
@@ -633,11 +725,27 @@ export class MochiStage {
       this._drawToyBall(ctx, this.ball);
     }
 
-    // 6. Draw Bedroom Dark Sleep Overlay
+    // 6. Draw Bedroom Dark Sleep Overlay + Glowing Interactive Lamp Outline so user can always click it!
     if (pet.sleeping) {
       ctx.save();
-      ctx.fillStyle = 'rgba(8, 12, 28, 0.56)';
+      ctx.fillStyle = 'rgba(8, 12, 28, 0.58)';
       ctx.fillRect(0, 0, w, h);
+
+      if (activeRoom === 'bedroom') {
+        const floorY = h * 0.74;
+        const px = this.roomParallaxX * 14;
+        const lx = w * 0.74 + 31 + px;
+        const ly = floorY - 94;
+        ctx.strokeStyle = '#fde047';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(lx, ly, 28 + Math.sin(this.time * 4) * 3, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = '#fde047';
+        ctx.font = "700 11px 'Fredoka', sans-serif";
+        ctx.textAlign = 'center';
+        ctx.fillText('☀️ Нажми', lx, ly - 34);
+      }
       ctx.restore();
     }
 
@@ -770,7 +878,7 @@ export class MochiStage {
     ctx.restore();
   }
 
-  _drawRoomBackground(ctx, w, h, room, tier, isSleeping) {
+  _drawRoomBackground(ctx, w, h, room, tier, isSleeping, houseCfg = {}) {
     const floorY = h * 0.74;
     const px = this.roomParallaxX * 14;
 
@@ -804,7 +912,18 @@ export class MochiStage {
         stripe: 'rgba(56, 189, 248, 0.10)'
       }
     };
-    const pal = palettes[room] || palettes.kitchen;
+    const pal = { ...(palettes[room] || palettes.kitchen) };
+
+    // Apply custom Wallpaper if equipped (and not default)
+    const wallId = houseCfg.wallpaper || 'wall_default';
+    if (wallId !== 'wall_default' && CONFIG.shop.decor) {
+      const wItem = CONFIG.shop.decor.find(d => d.id === wallId);
+      if (wItem && wItem.wall1) {
+        pal.wall1 = wItem.wall1;
+        pal.wall2 = wItem.wall2;
+        if (wItem.stripe) pal.stripe = wItem.stripe;
+      }
+    }
 
     const wallGrad = ctx.createLinearGradient(0, 0, 0, floorY);
     wallGrad.addColorStop(0, pal.wall1);
@@ -826,15 +945,17 @@ export class MochiStage {
     ctx.fillStyle = 'rgba(255,255,255,0.35)';
     ctx.fillRect(0, floorY - 6, w, 8);
 
-    // Cozy rug under Mochi
+    // Cozy custom Rug under Mochi
+    const rugId = houseCfg.rug || 'rug_pink';
+    const rugItem = (CONFIG.shop.decor && CONFIG.shop.decor.find(d => d.id === rugId)) || { hex: '#f472b6', border: '#ffffff' };
     ctx.save();
     ctx.translate(w * 0.5 + px * 0.4, floorY + 24);
-    ctx.fillStyle = tier >= 3 ? '#fde047' : tier === 2 ? '#38bdf8' : '#f472b6';
+    ctx.fillStyle = rugItem.hex || (tier >= 3 ? '#fde047' : tier === 2 ? '#38bdf8' : '#f472b6');
     ctx.beginPath();
     ctx.ellipse(0, 0, w * 0.32, 22, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = rugItem.border || '#ffffff';
+    ctx.lineWidth = 3.5;
     ctx.stroke();
     ctx.restore();
 
@@ -843,14 +964,27 @@ export class MochiStage {
 
     if (room === 'kitchen') {
       this._drawWindow(ctx, w * 0.2, h * 0.24, 70, 80, false);
-      ctx.fillStyle = tier >= 3 ? '#fde047' : '#f8fafc';
-      ctx.strokeStyle = '#64748b';
+      // Tier 2+: Wall shelf with jars
+      if (tier >= 2) {
+        ctx.fillStyle = '#b45309';
+        this._roundRect(ctx, w * 0.42, h * 0.20, 72, 8, 4, true, false);
+        ctx.font = "20px 'Fredoka', sans-serif";
+        ctx.fillText('🍯', w * 0.46, h * 0.19);
+        ctx.fillText('🍵', w * 0.55, h * 0.19);
+      }
+      // Fridge (upgraded on Tier 2 and Tier 3)
+      ctx.fillStyle = tier >= 3 ? '#fde047' : tier === 2 ? '#bae6fd' : '#f8fafc';
+      ctx.strokeStyle = tier >= 3 ? '#b45309' : '#64748b';
       ctx.lineWidth = 3;
       this._roundRect(ctx, w * 0.73, floorY - 140, 72, 140, 14, true, true);
       ctx.beginPath();
       ctx.moveTo(w * 0.73, floorY - 78);
       ctx.lineTo(w * 0.73 + 72, floorY - 78);
       ctx.stroke();
+      if (tier >= 3) {
+        ctx.font = "22px 'Fredoka', sans-serif";
+        ctx.fillText('👑', w * 0.73 + 26, floorY - 146);
+      }
     } else if (room === 'bathroom') {
       ctx.strokeStyle = 'rgba(14, 165, 233, 0.18)';
       ctx.lineWidth = 1.5;
@@ -861,39 +995,109 @@ export class MochiStage {
         ctx.stroke();
       }
       ctx.fillStyle = '#e0f2fe';
-      ctx.strokeStyle = tier >= 2 ? '#fde047' : '#38bdf8';
+      ctx.strokeStyle = tier >= 3 ? '#f59e0b' : tier >= 2 ? '#fde047' : '#38bdf8';
       ctx.lineWidth = 5;
       ctx.beginPath();
       ctx.arc(w * 0.22, h * 0.26, 36, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+      if (tier >= 2) {
+        ctx.font = "24px 'Fredoka', sans-serif";
+        ctx.fillText('🦆', w * 0.22 - 12, floorY - 8);
+      }
+      if (tier >= 3) {
+        ctx.font = "26px 'Fredoka', sans-serif";
+        ctx.fillText('🪴', w * 0.78, floorY - 6);
+      }
     } else if (room === 'bedroom') {
-      this._drawWindow(ctx, w * 0.22, h * 0.24, 76, 84, true);
-      ctx.fillStyle = '#78350f';
+      this._drawWindow(ctx, w * 0.22, h * 0.24, tier >= 3 ? 90 : 76, tier >= 3 ? 92 : 84, true);
+      if (tier >= 2) {
+        // Framed star picture
+        ctx.fillStyle = '#1e1b4b';
+        ctx.strokeStyle = '#fde047';
+        ctx.lineWidth = 2.5;
+        this._roundRect(ctx, w * 0.45, h * 0.17, 50, 40, 6, true, true);
+        ctx.font = "18px 'Fredoka', sans-serif";
+        ctx.fillText('🌙', w * 0.45 + 16, h * 0.17 + 26);
+      }
+      // Nightstand + Clickable Lamp!
+      ctx.fillStyle = tier >= 3 ? '#b45309' : '#78350f';
       this._roundRect(ctx, w * 0.74, floorY - 56, 62, 56, 8, true, false);
       ctx.fillStyle = '#cbd5e1';
       ctx.fillRect(w * 0.74 + 27, floorY - 84, 8, 28);
+
+      // Warm lamp glow when awake
+      if (!isSleeping) {
+        const g = ctx.createRadialGradient(w * 0.74 + 31, floorY - 94, 5, w * 0.74 + 31, floorY - 94, 65);
+        g.addColorStop(0, 'rgba(253, 224, 71, 0.55)');
+        g.addColorStop(1, 'rgba(253, 224, 71, 0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(w * 0.74 + 31, floorY - 94, 65, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
       ctx.fillStyle = isSleeping ? '#475569' : '#fde047';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(w * 0.74 + 12, floorY - 82);
-      ctx.lineTo(w * 0.74 + 50, floorY - 82);
-      ctx.lineTo(w * 0.74 + 42, floorY - 110);
-      ctx.lineTo(w * 0.74 + 20, floorY - 110);
+      ctx.moveTo(w * 0.74 + 10, floorY - 80);
+      ctx.lineTo(w * 0.74 + 52, floorY - 80);
+      ctx.lineTo(w * 0.74 + 42, floorY - 112);
+      ctx.lineTo(w * 0.74 + 20, floorY - 112);
       ctx.closePath();
       ctx.fill();
+      ctx.stroke();
+
+      // Pull-cord & interactive hint on Lamp
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.74 + 42, floorY - 80);
+      ctx.lineTo(w * 0.74 + 42, floorY - 66);
+      ctx.stroke();
+      ctx.fillStyle = '#fde047';
+      ctx.beginPath();
+      ctx.arc(w * 0.74 + 42, floorY - 65, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#fef08a';
+      ctx.font = "700 10px 'Fredoka', sans-serif";
+      ctx.textAlign = 'center';
+      ctx.fillText(isSleeping ? '☀️ ВКЛ' : '🌙 ВЫКЛ', w * 0.74 + 31, floorY - 118);
     } else if (room === 'playroom') {
-      ctx.fillStyle = '#4f46e5';
-      ctx.strokeStyle = '#38bdf8';
+      if (tier >= 2) {
+        // Trophy shelf on the left wall
+        ctx.fillStyle = '#334155';
+        this._roundRect(ctx, w * 0.12, h * 0.20, 82, 8, 4, true, false);
+        ctx.font = "20px 'Fredoka', sans-serif";
+        ctx.fillText('🏆', w * 0.16, h * 0.19);
+        ctx.fillText('🎮', w * 0.25, h * 0.19);
+        if (tier >= 3) ctx.fillText('💎', w * 0.31, h * 0.19);
+      }
+
+      // Interactive Glowing Arcade Cabinet on the right!
+      const cabX = w * 0.72;
+      ctx.save();
+      ctx.shadowColor = tier >= 3 ? '#f59e0b' : '#38bdf8';
+      ctx.shadowBlur = 14 + Math.sin(this.time * 5) * 5;
+      ctx.fillStyle = tier >= 3 ? '#7c2d12' : '#4f46e5';
+      ctx.strokeStyle = tier >= 3 ? '#fde047' : '#38bdf8';
       ctx.lineWidth = 3;
-      this._roundRect(ctx, w * 0.72, floorY - 138, 74, 138, 12, true, true);
+      this._roundRect(ctx, cabX, floorY - 142, 76, 142, 12, true, true);
+      ctx.restore();
+
       ctx.fillStyle = '#0ea5e9';
-      this._roundRect(ctx, w * 0.72 + 9, floorY - 118, 56, 44, 6, true, false);
+      this._roundRect(ctx, cabX + 9, floorY - 120, 58, 46, 6, true, false);
       ctx.fillStyle = '#fde047';
       ctx.font = "700 10px 'Fredoka', sans-serif";
       ctx.textAlign = 'center';
-      ctx.fillText('ARCADE', w * 0.72 + 37, floorY - 124);
-      ctx.font = "20px 'Fredoka', sans-serif";
-      ctx.fillText('🕹️', w * 0.72 + 37, floorY - 90);
+      ctx.fillText('5 ИГР', cabX + 38, floorY - 126);
+      ctx.font = "22px 'Fredoka', sans-serif";
+      ctx.fillText('🕹️', cabX + 38, floorY - 90);
+      ctx.fillStyle = '#4ade80';
+      ctx.font = "700 9px 'Fredoka', sans-serif";
+      ctx.fillText('▶ ЖМИ!', cabX + 38, floorY - 58);
     }
 
     ctx.restore();

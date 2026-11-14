@@ -4,20 +4,6 @@ import { sfx } from './audio.js';
 import { api, xpNeededForLevel, computeMoodMultiplier } from './api.js';
 import { MochiStage } from './mochi-renderer.js';
 
-import SkyStackGame from './games/sky-stack.js';
-import PuffHopGame from './games/puff-hop.js';
-import TimberDashGame from './games/timber-dash.js';
-import BladeSpinGame from './games/blade-spin.js';
-import RidgeRushGame from './games/ridge-rush.js';
-
-const MINI_GAMES = {
-  skyStack: SkyStackGame,
-  puffHop: PuffHopGame,
-  timberDash: TimberDashGame,
-  bladeSpin: BladeSpinGame,
-  ridgeRush: RidgeRushGame
-};
-
 const ROOM_ORDER = ['kitchen', 'bathroom', 'bedroom', 'playroom'];
 
 class MochiPalApp {
@@ -28,9 +14,16 @@ class MochiPalApp {
     this.currentGameInstance = null;
     this.lastPlayedGameId = 'skyStack';
     this.toastTimeout = null;
+    window.__mochiCloseEmbeddedGame = () => this.closeEmbeddedGame();
   }
 
   async init() {
+    // If loaded inside an embedded game iframe when the user clicked "🏠 В меню" inside skystack/puffhop/etc., close the iframe in parent!
+    if (window.parent && window.parent !== window && typeof window.parent.__mochiCloseEmbeddedGame === 'function') {
+      window.parent.__mochiCloseEmbeddedGame();
+      return;
+    }
+
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
     if (tg) {
       try {
@@ -51,7 +44,13 @@ class MochiPalApp {
       onPetStroke: () => this._handlePetStroke(),
       onBallPlay: () => this._handleBallPlay(),
       onWashComplete: (cov) => this._handleWashComplete(cov),
-      onDropFoodOnMouth: (item) => this.feedPet(item.id)
+      onDropFoodOnMouth: (item) => this.feedPet(item.id),
+      onLampClick: () => this._handleLampClick(),
+      onArcadeClick: () => {
+        sfx.playClick();
+        this.renderGamesHubModal();
+        this.openModal('mp-modal-games');
+      }
     });
 
     const resizeStage = () => {
@@ -100,14 +99,23 @@ class MochiPalApp {
     let isSwiping = false;
 
     wrap.addEventListener('pointerdown', (e) => {
-      if (this.stage.draggedFood || this.stage.soapMode) return;
+      if (this.stage.isInteracting()) {
+        isSwiping = false;
+        this.stage.roomParallaxX = 0;
+        return;
+      }
       startX = e.clientX;
       startY = e.clientY;
       isSwiping = true;
     });
 
     wrap.addEventListener('pointermove', (e) => {
-      if (!isSwiping || this.stage.draggedFood || this.stage.soapMode) return;
+      if (!isSwiping) return;
+      if (this.stage.isInteracting()) {
+        isSwiping = false;
+        this.stage.roomParallaxX = 0;
+        return;
+      }
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
       if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 15) {
@@ -119,10 +127,10 @@ class MochiPalApp {
       if (!isSwiping) return;
       isSwiping = false;
       this.stage.roomParallaxX = 0;
-      if (this.stage.draggedFood || this.stage.soapMode) return;
+      if (this.stage.isInteracting()) return;
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
-      if (Math.abs(dx) > 68 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      if (Math.abs(dx) > 72 && Math.abs(dx) > Math.abs(dy) * 1.5) {
         const idx = ROOM_ORDER.indexOf(this.activeRoom);
         if (dx < 0 && idx < ROOM_ORDER.length - 1) {
           this.switchRoom(ROOM_ORDER[idx + 1]);
@@ -354,54 +362,55 @@ class MochiPalApp {
       `;
       tray.appendChild(infoRow);
     } else if (this.activeRoom === 'bedroom') {
-      const row = document.createElement('div');
-      row.className = 'mp-action-row';
       const isSleeping = this.state.pet.sleeping;
-
-      const lampBtn = document.createElement('button');
-      lampBtn.className = 'mp-room-action-btn ' + (isSleeping ? 'mp-btn-amber' : 'mp-btn-purple');
-      lampBtn.innerHTML = isSleeping
-        ? '☀️ Включить лампу (Разбудить Мочи)'
-        : '🌙 Выключить лампу (Уложить спать +⚡)';
-      lampBtn.addEventListener('click', async () => {
-        const res = await api.petAction('sleepToggle');
-        this.state = res.state;
-        sfx.playSleepToggle(this.state.pet.sleeping);
-        if (res.leveledUp) this.stage.triggerLevelUp(res.newLevel);
-        this.renderAllUI();
-        this.showToast(this.state.pet.sleeping ? 'Мочи сладко уснул... Энергия восстанавливается! 💤' : 'Доброе утро, Мочи! ☀️');
+      const infoRow = document.createElement('div');
+      infoRow.style.cssText = 'width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(30,27,75,0.85);border:1px solid rgba(167,139,250,0.35);padding:10px 14px;border-radius:16px;';
+      infoRow.innerHTML = `
+        <div style="font-size:12px;color:#e2e8f0;line-height:1.35;">
+          ${isSleeping
+            ? '💤 <b>Мочи сладко спит!</b><br>Нажми на лампу на тумбочке справа, чтобы включить свет ☀️'
+            : '💡 <b>Нажми прямо на лампу</b> на тумбочке справа, чтобы выключить свет и уложить Мочи спать!'}
+        </div>
+        <button id="mp-bedroom-decor-btn" class="mp-small-btn mp-btn-purple" style="flex-shrink:0;">🏠 Ремонт</button>
+      `;
+      infoRow.querySelector('#mp-bedroom-decor-btn').addEventListener('click', () => {
+        this.openShop('decor');
       });
-
-      row.appendChild(lampBtn);
-      tray.appendChild(row);
+      tray.appendChild(infoRow);
     } else if (this.activeRoom === 'playroom') {
-      const row = document.createElement('div');
-      row.className = 'mp-action-row';
+      // Interactive Game Cartridge Carousel right in the Playroom tray + hint for throwing the ball & clicking the Arcade Cabinet!
+      const gameStrip = document.createElement('div');
+      gameStrip.className = 'mp-food-carousel';
 
-      const arcadeBtn = document.createElement('button');
-      arcadeBtn.className = 'mp-room-action-btn mp-btn-green';
-      arcadeBtn.innerHTML = '🕹️ Игровой Автомат (5 Мини-Игр • Заработать 🪙)';
-      arcadeBtn.addEventListener('click', () => {
-        sfx.playClick();
-        this.renderGamesHubModal();
-        this.openModal('mp-modal-games');
+      Object.values(CONFIG.games).forEach(g => {
+        const best = this.state.bestScores[g.id] || 0;
+        const card = document.createElement('button');
+        card.className = 'mp-food-card';
+        card.style.minWidth = '84px';
+        card.style.borderColor = g.color || 'rgba(56,189,248,0.45)';
+        card.innerHTML = `
+          <span class="mp-food-ico">${g.icon}</span>
+          <span class="mp-food-name" style="color:#f8fafc;">${g.title}</span>
+          <span class="mp-food-qty" style="color:#fde047;">🏆${best} • ▶</span>
+        `;
+        card.addEventListener('click', () => {
+          sfx.playClick();
+          this.launchMiniGame(g.id);
+        });
+        gameStrip.appendChild(card);
       });
 
-      const ballBtn = document.createElement('button');
-      ballBtn.className = 'mp-room-action-btn';
-      ballBtn.style.flex = '0 0 auto';
-      ballBtn.innerHTML = '⚽ Кинуть мяч';
-      ballBtn.addEventListener('click', () => {
-        this.stage.ball.vy = -420;
-        this.stage.ball.vx = (Math.random() < 0.5 ? -1 : 1) * 260;
-        sfx.playBounce();
-        this._handleBallPlay();
-      });
-
-      row.appendChild(arcadeBtn);
-      row.appendChild(ballBtn);
-      tray.appendChild(row);
+      tray.appendChild(gameStrip);
     }
+  }
+
+  async _handleLampClick() {
+    const res = await api.petAction('sleepToggle');
+    this.state = res.state;
+    sfx.playSleepToggle(this.state.pet.sleeping);
+    if (res.leveledUp) this.stage.triggerLevelUp(res.newLevel);
+    this.renderAllUI();
+    this.showToast(this.state.pet.sleeping ? 'Мочи сладко уснул... Энергия восстанавливается! 💤' : 'Доброе утро, Мочи! ☀️');
   }
 
   async feedPet(itemId) {
@@ -506,6 +515,9 @@ class MochiPalApp {
   }
 
   async launchMiniGame(gameId) {
+    const gCfg = CONFIG.games[gameId];
+    if (!gCfg) return;
+
     const startRes = await api.startGame(gameId);
     if (startRes.error) {
       this.showToast(startRes.error);
@@ -515,40 +527,58 @@ class MochiPalApp {
     this.lastPlayedGameId = gameId;
     this.renderTopBar();
 
-    const GameModule = MINI_GAMES[gameId];
-    if (!GameModule) return;
-
     const host = document.getElementById('mp-minigame-host');
+    host.innerHTML = '';
     host.classList.remove('mp-hidden');
+    this.currentGameInstance = { id: gameId };
 
-    if (this.currentGameInstance) {
-      this.currentGameInstance.destroy();
-    }
-    this.currentGameInstance = GameModule;
+    // Mount the ORIGINAL standalone HTML game (skystack.html, puffhop.html, timberdash.html, bladespin.html, hillclimb.html)
+    const iframe = document.createElement('iframe');
+    iframe.src = gCfg.url;
+    iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;background:#0f172a;';
+    iframe.setAttribute('allow', 'autoplay; fullscreen');
 
-    GameModule.mount(host, {
-      seed: startRes.seed,
-      skin: this.state.pet.equipped,
-      onEnd: async ({ score, stats, inputs }) => {
-        if (this.currentGameInstance) {
-          this.currentGameInstance.destroy();
-          this.currentGameInstance = null;
-        }
-        host.classList.add('mp-hidden');
-
-        const endRes = await api.endGame({
-          runId: startRes.runId,
-          gameId,
-          score,
-          inputs
-        });
-        this.state = endRes.state;
-        this.renderAllUI();
-        this.showRewardModal(gameId, endRes);
-      }
+    // Floating quick-return pill to Mochi Pal (in addition to the game's own "В меню" / "HUB" buttons)
+    const backBtn = document.createElement('button');
+    backBtn.innerHTML = '🐾 К Мочи';
+    backBtn.style.cssText = "position:fixed;bottom:14px;left:14px;z-index:9999;background:rgba(15,23,42,0.88);color:#fde047;border:1.5px solid rgba(253,224,71,0.5);border-radius:999px;padding:7px 14px;font-family:'Fredoka', sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.45);backdrop-filter:blur(8px);";
+    backBtn.addEventListener('click', () => {
+      this.closeEmbeddedGame();
     });
 
-    GameModule.start();
+    host.appendChild(iframe);
+    host.appendChild(backBtn);
+  }
+
+  closeEmbeddedGame() {
+    const host = document.getElementById('mp-minigame-host');
+    if (!host || host.classList.contains('mp-hidden')) return;
+    host.innerHTML = '';
+    host.classList.add('mp-hidden');
+    this.currentGameInstance = null;
+
+    // Sync all runs, coins, crystals, and XP earned in the standalone game!
+    const syncRes = api.syncAfterStandaloneGame();
+    this.state = syncRes.state;
+    this.renderAllUI();
+
+    if (syncRes.runsPlayed > 0) {
+      const gId = syncRes.lastGameId || this.lastPlayedGameId || 'skyStack';
+      this.showRewardModal(gId, {
+        reward: {
+          score: syncRes.lastScore,
+          isNewBest: false,
+          bestScore: this.state.bestScores[gId] || syncRes.lastScore,
+          coins: syncRes.coinsEarned,
+          crystals: syncRes.crystalsEarned,
+          xp: syncRes.xpEarned
+        },
+        leveledUp: syncRes.leveledUp,
+        newLevel: syncRes.newLevel
+      });
+    } else {
+      this.showToast('С возвращением к Мочи! 💖');
+    }
   }
 
   showRewardModal(gameId, endRes) {
@@ -578,6 +608,7 @@ class MochiPalApp {
     sfx.playClick();
     this.activeShopTab = tab;
     this.stage.previewEquipped = null;
+    this.stage.previewHouse = null;
     this.renderShopModal();
     this.openModal('mp-modal-shop');
   }
@@ -591,7 +622,8 @@ class MochiPalApp {
       { id: 'skins', label: '✨ Узоры' },
       { id: 'eyes', label: '👀 Глаза' },
       { id: 'outfits', label: '🎀 Одежда' },
-      { id: 'house', label: '🏠 Дом' }
+      { id: 'decor', label: '🖼️ Обои' },
+      { id: 'house', label: '🏠 Комнаты' }
     ];
     tabsWrap.innerHTML = '';
     tabs.forEach(t => {
@@ -637,6 +669,7 @@ class MochiPalApp {
             } else {
               this.state = res.state;
               sfx.playCrystal();
+              this.switchRoom(rCfg.id);
               this.renderAllUI();
               this.renderShopModal();
               this.showToast(`Улучшена комната: ${rCfg.name}! 🎉`);
@@ -653,12 +686,17 @@ class MochiPalApp {
     const items = CONFIG.shop[this.activeShopTab] || [];
 
     items.forEach(item => {
+      const isDecor = item.category === 'wallpaper' || item.category === 'rug';
       const ownedQty = item.category === 'food'
         ? ((this.state.inventory.food && this.state.inventory.food[item.id]) || 0)
         : 0;
       const isOwned = item.category !== 'food' && !!(this.state.inventory.ownedCosmetics && this.state.inventory.ownedCosmetics[item.id]);
-      const isEquipped = item.category !== 'food' && this.state.pet.equipped[item.category] === item.id;
-      const isPreviewing = this.stage.previewEquipped && this.stage.previewEquipped[item.category] === item.id;
+      const isEquipped = isDecor
+        ? (this.state.pet.house && this.state.pet.house[item.category] === item.id)
+        : (item.category !== 'food' && this.state.pet.equipped[item.category] === item.id);
+      const isPreviewing = isDecor
+        ? (this.stage.previewHouse && this.stage.previewHouse[item.category] === item.id)
+        : (this.stage.previewEquipped && this.stage.previewEquipped[item.category] === item.id);
       const locked = this.state.pet.level < (item.levelReq || 1);
 
       const card = document.createElement('div');
@@ -678,7 +716,9 @@ class MochiPalApp {
 
       const visualHtml = item.hex
         ? `<div style="width:40px;height:40px;border-radius:50%;background:${item.gradient ? `linear-gradient(135deg,${item.gradient.join(',')})` : item.hex};border:2.5px solid #fff;margin-top:4px;box-shadow:0 3px 8px rgba(0,0,0,0.3);"></div>`
-        : `<div style="font-size:32px;line-height:1.1;margin-top:2px;">${item.icon || '✨'}</div>`;
+        : item.wall1
+          ? `<div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(180deg,${item.wall1},${item.wall2});border:2.5px solid #fff;margin-top:4px;display:flex;align-items:center;justify-content:center;font-size:20px;">${item.icon || '🖼️'}</div>`
+          : `<div style="font-size:32px;line-height:1.1;margin-top:2px;">${item.icon || '✨'}</div>`;
 
       const subInfo = item.category === 'food'
         ? `<div style="font-size:10px;color:#94a3b8;">+${item.hunger}% 🍎</div>`
@@ -703,22 +743,29 @@ class MochiPalApp {
         actionBtn.textContent = `Ур. ${item.levelReq}`;
       } else if (item.category !== 'food' && isOwned) {
         actionBtn.className = 'mp-small-btn ' + (isEquipped ? 'mp-btn-green' : '');
-        actionBtn.textContent = isEquipped ? '✓ Надето' : 'Надеть';
+        actionBtn.textContent = isEquipped ? '✓ Выбрано' : 'Выбрать';
       } else {
         const priceStr = item.price.crystals ? `${item.price.crystals} 💎` : `${item.price.coins} 🪙`;
         actionBtn.className = 'mp-small-btn mp-btn-amber';
         actionBtn.textContent = priceStr;
       }
 
-      // Clicking the card previews cosmetics on Mochi live!
+      // Clicking the card previews cosmetics or room decor live!
       card.addEventListener('click', async (e) => {
         if (item.category !== 'food' && !isOwned && e.target !== actionBtn) {
           sfx.playClick();
-          this.stage.previewEquipped = {
-            ...(this.stage.previewEquipped || {}),
-            [item.category]: item.id
-          };
-          this.stage.triggerSquash(-1.2, -70);
+          if (isDecor) {
+            this.stage.previewHouse = {
+              ...(this.stage.previewHouse || {}),
+              [item.category]: item.id
+            };
+          } else {
+            this.stage.previewEquipped = {
+              ...(this.stage.previewEquipped || {}),
+              [item.category]: item.id
+            };
+            this.stage.triggerSquash(-1.2, -70);
+          }
           this.renderShopModal();
           return;
         }
@@ -729,11 +776,12 @@ class MochiPalApp {
         }
 
         if (item.category !== 'food' && isOwned) {
-          const nextId = (isEquipped && item.id !== 'sakura' && item.id !== 'normal') ? 'none' : item.id;
+          const nextId = (!isDecor && isEquipped && item.id !== 'sakura' && item.id !== 'normal') ? 'none' : item.id;
           const res = await api.equipItem(item.category, nextId);
           if (res.state) {
             this.state = res.state;
             this.stage.previewEquipped = null;
+            this.stage.previewHouse = null;
             this.stage.triggerSquash(-1.1, -60);
             sfx.playClick();
             this.renderShopModal();
@@ -741,20 +789,21 @@ class MochiPalApp {
           return;
         }
 
-        // Buy item (Food or Cosmetic)
+        // Buy item (Food, Cosmetic, or House Decor)
         const res = await api.buyItem(item.id);
         if (res.error) {
           this.showToast(res.error);
         } else {
           this.state = res.state;
           this.stage.previewEquipped = null;
+          this.stage.previewHouse = null;
           this.stage.triggerSquash(1.3, -90);
           sfx.playCoin();
           this.renderAllUI();
           this.renderShopModal();
           this.showToast(item.category === 'food'
             ? `+1 ${item.icon} ${item.name} в холодильник!`
-            : `Куплено и надето: ${item.name}!`);
+            : `Куплено и установлено: ${item.name}!`);
         }
       });
 
@@ -872,6 +921,7 @@ class MochiPalApp {
   closeModal(id) {
     if (id === 'mp-modal-shop' && this.stage) {
       this.stage.previewEquipped = null;
+      this.stage.previewHouse = null;
     }
     const el = document.getElementById(id);
     if (el) el.classList.add('mp-hidden');
