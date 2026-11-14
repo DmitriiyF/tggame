@@ -163,6 +163,9 @@ class MochiPalApp {
     // Top bar pills -> shop / modals
     document.getElementById('mp-coins-pill').addEventListener('click', () => this.openShop('food'));
     document.getElementById('mp-crystals-pill').addEventListener('click', () => this.openShop('colors'));
+    document.getElementById('mp-room-badge').addEventListener('click', () => this.openShop('house'));
+    const houseBtn = document.getElementById('mp-btn-house');
+    if (houseBtn) houseBtn.addEventListener('click', () => this.openShop('house'));
     document.getElementById('mp-btn-wardrobe').addEventListener('click', () => this.openShop('hats'));
     document.getElementById('mp-btn-tasks').addEventListener('click', () => {
       sfx.playClick();
@@ -238,7 +241,7 @@ class MochiPalApp {
 
     const roomCfg = CONFIG.rooms[roomId];
     const tier = this.state.pet.house.rooms[roomId]?.tier || 1;
-    document.getElementById('mp-room-badge').textContent = `${roomCfg.icon} ${roomCfg.name} • Ур. ${tier}`;
+    document.getElementById('mp-room-badge').textContent = `${roomCfg.icon} ${roomCfg.name} • Ур. ${tier} ⬆️`;
 
     this.renderRoomTray();
   }
@@ -618,13 +621,13 @@ class MochiPalApp {
     const tabsWrap = document.getElementById('mp-shop-tabs');
     const tabs = [
       { id: 'food', label: '🍎 Еда' },
+      { id: 'house', label: '🏠 Дом (Ур. 1→3)' },
+      { id: 'decor', label: '🖼️ Обои и Ковры' },
       { id: 'hats', label: '👒 Шапки' },
       { id: 'colors', label: '🎨 Цвета' },
       { id: 'skins', label: '✨ Узоры' },
       { id: 'eyes', label: '👀 Глаза' },
-      { id: 'outfits', label: '🎀 Одежда' },
-      { id: 'decor', label: '🖼️ Обои' },
-      { id: 'house', label: '🏠 Комнаты' }
+      { id: 'outfits', label: '🎀 Одежда' }
     ];
     tabsWrap.innerHTML = '';
     tabs.forEach(t => {
@@ -644,6 +647,26 @@ class MochiPalApp {
 
     if (this.activeShopTab === 'house') {
       listEl.style.gridTemplateColumns = '1fr';
+
+      // Quick banner to switch to Wallpapers & Rugs
+      const decorBanner = document.createElement('div');
+      decorBanner.className = 'mp-item-row';
+      decorBanner.style.background = 'linear-gradient(90deg, rgba(99,102,241,0.28), rgba(236,72,153,0.28))';
+      decorBanner.style.borderColor = 'rgba(244,114,182,0.45)';
+      decorBanner.innerHTML = `
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#fde047;">🖼️ Сменить обои и коврик в комнате</div>
+          <div style="font-size:11px;color:#e2e8f0;">7 видов обоев и 5 ковриков с живой примеркой!</div>
+        </div>
+        <button class="mp-small-btn mp-btn-purple">Открыть 🎨</button>
+      `;
+      decorBanner.querySelector('button').addEventListener('click', () => {
+        sfx.playClick();
+        this.activeShopTab = 'decor';
+        this.renderShopModal();
+      });
+      listEl.appendChild(decorBanner);
+
       Object.values(CONFIG.rooms).forEach(rCfg => {
         const curTier = this.state.pet.house.rooms[rCfg.id]?.tier || 1;
         const nextCost = rCfg.upgradeCosts[curTier + 1];

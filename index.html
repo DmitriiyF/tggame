@@ -200,14 +200,16 @@
 
     #mp-app-root .mp-room-pill {
       pointer-events: auto;
-      background: rgba(15, 23, 42, 0.76);
+      background: rgba(15, 23, 42, 0.85);
       backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.18);
+      border: 1.5px solid rgba(253, 224, 71, 0.45);
       padding: 6px 12px;
       border-radius: 99px;
       font-size: 13px;
       font-weight: 700;
       color: #fde047;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
 
     #mp-app-root .mp-side-btns {
@@ -674,8 +676,9 @@
       <canvas id="mp-pet-canvas"></canvas>
 
       <div class="mp-stage-top-overlay">
-        <div class="mp-room-pill" id="mp-room-badge">🍎 Кухня • Ур. 1</div>
+        <div class="mp-room-pill" id="mp-room-badge" title="Нажми, чтобы прокачать комнату и сменить обои">🍎 Кухня • Ур. 1 ⬆️</div>
         <div class="mp-side-btns">
+          <button class="mp-float-btn" id="mp-btn-house" style="border-color:rgba(253,224,71,0.5);color:#fde047;">🏠 Дом / Ремонт</button>
           <button class="mp-float-btn" id="mp-btn-wardrobe">👒 Гардероб</button>
           <button class="mp-float-btn" id="mp-btn-tasks">
             🎯 Задания
