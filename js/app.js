@@ -685,16 +685,24 @@ class MochiPalApp {
       gemBar.style.width = `${pct}%`;
     }
 
-    // Fallback check: if a new run was written to arcade_runs_history_v1, immediately open the Mochi reward modal!
-    try {
-      const runsRaw = localStorage.getItem('arcade_runs_history_v1');
-      if (runsRaw) {
-        const runs = JSON.parse(runsRaw);
-        if (Array.isArray(runs) && runs.length > 0 && (runs[0].ts || 0) > (this.state.lastProcessedRunTs || 0)) {
-          this.handleEmbeddedRunFinished({ gameId, score: rawScore });
+    // Fallback check: only if the game didn't call __mochiOnRunFinished after 800ms and the reward modal is still closed
+    const rewModal = document.getElementById('mp-modal-reward');
+    if (rewModal && rewModal.classList.contains('mp-hidden')) {
+      try {
+        const runsRaw = localStorage.getItem('arcade_runs_history_v1');
+        if (runsRaw) {
+          const runs = JSON.parse(runsRaw);
+          if (
+            Array.isArray(runs) &&
+            runs.length > 0 &&
+            (runs[0].ts || 0) > (this.state.lastProcessedRunTs || 0) &&
+            Date.now() - (runs[0].ts || 0) > 800
+          ) {
+            this.handleEmbeddedRunFinished({ gameId, score: rawScore });
+          }
         }
-      }
-    } catch (e) {}
+      } catch (e) {}
+    }
   }
 
   handleEmbeddedRunFinished(info = {}) {
@@ -702,9 +710,22 @@ class MochiPalApp {
     this.state = syncRes.state;
     this.renderAllUI();
 
+    const rewModal = document.getElementById('mp-modal-reward');
+    // If this run was already synced moments ago and the reward modal is already open, do NOT overwrite it with +0!
+    if (syncRes.runsPlayed === 0 && !info.directCoins && rewModal && !rewModal.classList.contains('mp-hidden')) {
+      return;
+    }
+
     const gId = info.gameId || syncRes.lastGameId || this.lastPlayedGameId || 'skyStack';
     const score = typeof info.score === 'number' ? info.score : syncRes.lastScore;
-    const totalCoinsEarned = (syncRes.coinsEarned || 0) + (info.directCoins || 0);
+    const gCfg = CONFIG.games[gId] || CONFIG.games.skyStack;
+    const mult = this.state.lastLaunchEnergyMult || computeMoodMultiplier(this.state.pet.needs);
+    const playroomTier = (this.state.pet.house && this.state.pet.house.rooms && this.state.pet.house.rooms.playroom)
+      ? (this.state.pet.house.rooms.playroom.tier || 1)
+      : 1;
+    const roomBonus = 1 + (CONFIG.rooms.playroom.tierBonuses[playroomTier] || 0);
+    const fallbackCoins = score > 0 ? Math.max(5, Math.floor(score * gCfg.coinRate * mult * roomBonus)) : 0;
+    const totalCoinsEarned = (syncRes.coinsEarned || 0) + (info.directCoins || 0) || fallbackCoins;
 
     this.showRewardModal(gId, {
       reward: {
