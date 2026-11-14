@@ -486,6 +486,74 @@
       border-color: #f9a8d4;
     }
 
+    /* LIVE TRY-ON SHOP BOTTOM SHEET & 3-COLUMN GRID */
+    #mp-app-root #mp-modal-shop {
+      background: linear-gradient(180deg, rgba(9, 13, 22, 0.05) 0%, rgba(9, 13, 22, 0.55) 45%, rgba(9, 13, 22, 0.95) 100%);
+      backdrop-filter: none;
+      align-items: flex-end;
+      padding: 0;
+    }
+
+    #mp-app-root #mp-modal-shop .mp-modal-card {
+      max-height: 54vh;
+      border-radius: 26px 26px 0 0;
+      border-bottom: none;
+      padding: 14px 14px max(14px, env(safe-area-inset-bottom, 14px)) 14px;
+      background: rgba(15, 23, 42, 0.97);
+      box-shadow: 0 -12px 35px rgba(0, 0, 0, 0.65);
+    }
+
+    #mp-app-root .mp-shop-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      overflow-y: auto;
+      max-height: 36vh;
+      padding: 2px 2px 8px 2px;
+    }
+
+    #mp-app-root .mp-shop-card {
+      background: rgba(30, 41, 59, 0.92);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.12s ease, border-color 0.15s ease;
+    }
+
+    #mp-app-root .mp-shop-card:active {
+      transform: scale(0.96);
+    }
+
+    #mp-app-root .mp-shop-card.mp-card-equipped {
+      border-color: #4ade80;
+      background: rgba(20, 83, 45, 0.35);
+    }
+
+    #mp-app-root .mp-shop-card.mp-card-preview {
+      border-color: #f472b6;
+      background: rgba(131, 24, 67, 0.32);
+    }
+
+    #mp-app-root .mp-card-badge {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 99px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #fde047;
+    }
+
     /* EMBEDDED MINI-GAME FULLSCREEN HOST */
     #mp-app-root #mp-minigame-host {
       position: absolute;
@@ -663,15 +731,18 @@
       </div>
     </div>
 
-    <!-- MODAL 2: SHOP & WARDROBE -->
+    <!-- MODAL 2: SHOP & WARDROBE (BOTTOM SHEET WITH LIVE MOCHI TRY-ON) -->
     <div id="mp-modal-shop" class="mp-modal-overlay mp-hidden">
       <div class="mp-modal-card">
         <div class="mp-modal-hdr">
-          <div style="font-size:18px;font-weight:700;color:#f472b6;">🛍️ Магазин и Гардероб Мочи</div>
+          <div>
+            <div style="font-size:17px;font-weight:700;color:#f472b6;">🛍️ Магазин и Примерочная</div>
+            <div style="font-size:11px;color:#94a3b8;">Нажми на любой предмет, чтобы примерить на Мочи!</div>
+          </div>
           <button class="mp-close-x" data-close-modal="mp-modal-shop">✕</button>
         </div>
         <div class="mp-tabs-row" id="mp-shop-tabs"></div>
-        <div class="mp-scroll-list" id="mp-shop-list"></div>
+        <div id="mp-shop-list" class="mp-shop-grid"></div>
       </div>
     </div>
 

@@ -179,6 +179,17 @@ class MochiPalApp {
       });
     });
 
+    // Clicking on the top transparent area of the Shop bottom-sheet closes it
+    const shopOverlay = document.getElementById('mp-modal-shop');
+    if (shopOverlay) {
+      shopOverlay.addEventListener('click', (e) => {
+        if (e.target === shopOverlay) {
+          sfx.playClick();
+          this.closeModal('mp-modal-shop');
+        }
+      });
+    }
+
     // Tutorial save pet name
     document.getElementById('mp-save-name-btn').addEventListener('click', async () => {
       const inp = document.getElementById('mp-pet-name-input');
@@ -329,38 +340,19 @@ class MochiPalApp {
 
       tray.appendChild(foodWrap);
     } else if (this.activeRoom === 'bathroom') {
-      const row = document.createElement('div');
-      row.className = 'mp-action-row';
-
-      const soapBtn = document.createElement('button');
-      soapBtn.className = 'mp-room-action-btn' + (this.stage.soapMode ? ' mp-btn-active' : '');
-      soapBtn.innerHTML = `🧽 ${this.stage.soapMode ? 'Води по Мочи пальцем!' : 'Взять мыло (Намылить)'}`;
-      soapBtn.addEventListener('click', () => {
-        sfx.playBubble();
-        this.stage.soapMode = !this.stage.soapMode;
-        if (this.stage.soapMode) {
-          // Spawn initial bubbles so even a quick click feels responsive
-          const { radius } = this.stage.getPetCenter();
-          for (let i = 0; i < 6; i++) {
-            this.stage._addSoapBubble((Math.random() - 0.5) * radius, (Math.random() - 0.5) * radius, radius);
-          }
-          this.showToast('Потри Мочи пальцем/мышкой, а потом нажми «Смыть душем»! 🫧');
-        }
-        this.renderRoomTray();
-      });
-
-      const showerBtn = document.createElement('button');
-      showerBtn.className = 'mp-room-action-btn mp-btn-blue';
-      showerBtn.innerHTML = '🚿 Смыть пену душем (+Чистота)';
-      showerBtn.addEventListener('click', () => {
-        this.stage.soapMode = false;
-        this.stage.triggerShowerRinse();
-        this.renderRoomTray();
-      });
-
-      row.appendChild(soapBtn);
-      row.appendChild(showerBtn);
-      tray.appendChild(row);
+      const hyg = Math.round(this.state.pet.needs.hygiene);
+      const infoRow = document.createElement('div');
+      infoRow.style.cssText = 'width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(30,41,59,0.85);border:1px solid rgba(56,189,248,0.3);padding:10px 14px;border-radius:16px;';
+      infoRow.innerHTML = `
+        <div style="font-size:12px;color:#e2e8f0;line-height:1.35;">
+          🧽 <b>Возьми мыло</b> слева и потри Мочи,<br>затем <b>возьми душ</b> справа и смой пену! 🚿
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:11px;color:#7dd3fc;font-weight:700;">Чистота</div>
+          <div style="font-size:18px;font-weight:700;color:#38bdf8;" id="mp-bath-hyg-txt">${hyg}%</div>
+        </div>
+      `;
+      tray.appendChild(infoRow);
     } else if (this.activeRoom === 'bedroom') {
       const row = document.createElement('div');
       row.className = 'mp-action-row';
@@ -580,11 +572,12 @@ class MochiPalApp {
   }
 
   // ==========================================
-  // SHOP & WARDROBE MODAL
+  // SHOP & WARDROBE MODAL (BOTTOM SHEET + 3-COL GRID + LIVE TRY-ON)
   // ==========================================
   openShop(tab = 'food') {
     sfx.playClick();
     this.activeShopTab = tab;
+    this.stage.previewEquipped = null;
     this.renderShopModal();
     this.openModal('mp-modal-shop');
   }
@@ -617,6 +610,7 @@ class MochiPalApp {
     listEl.innerHTML = '';
 
     if (this.activeShopTab === 'house') {
+      listEl.style.gridTemplateColumns = '1fr';
       Object.values(CONFIG.rooms).forEach(rCfg => {
         const curTier = this.state.pet.house.rooms[rCfg.id]?.tier || 1;
         const nextCost = rCfg.upgradeCosts[curTier + 1];
@@ -655,80 +649,117 @@ class MochiPalApp {
       return;
     }
 
+    listEl.style.gridTemplateColumns = 'repeat(3, 1fr)';
     const items = CONFIG.shop[this.activeShopTab] || [];
+
     items.forEach(item => {
-      const owned = item.category === 'food'
+      const ownedQty = item.category === 'food'
         ? ((this.state.inventory.food && this.state.inventory.food[item.id]) || 0)
-        : !!(this.state.inventory.ownedCosmetics && this.state.inventory.ownedCosmetics[item.id]);
+        : 0;
+      const isOwned = item.category !== 'food' && !!(this.state.inventory.ownedCosmetics && this.state.inventory.ownedCosmetics[item.id]);
       const isEquipped = item.category !== 'food' && this.state.pet.equipped[item.category] === item.id;
+      const isPreviewing = this.stage.previewEquipped && this.stage.previewEquipped[item.category] === item.id;
       const locked = this.state.pet.level < (item.levelReq || 1);
 
-      const rarityColors = {
-        common: '#94a3b8',
-        rare: '#38bdf8',
-        epic: '#c084fc',
-        legendary: '#fde047'
-      };
+      const card = document.createElement('div');
+      card.className = 'mp-shop-card' +
+        (isEquipped ? ' mp-card-equipped' : '') +
+        (!isEquipped && isPreviewing ? ' mp-card-preview' : '');
 
-      const row = document.createElement('div');
-      row.className = 'mp-item-row';
-      row.style.borderColor = isEquipped ? '#4ade80' : 'rgba(255,255,255,0.1)';
+      // Top-right badge (owned count or equipped check)
+      let badgeHtml = '';
+      if (item.category === 'food' && ownedQty > 0) {
+        badgeHtml = `<span class="mp-card-badge">×${ownedQty}</span>`;
+      } else if (isEquipped) {
+        badgeHtml = `<span class="mp-card-badge" style="background:#22c55e;color:#052e16;">✓</span>`;
+      } else if (locked) {
+        badgeHtml = `<span class="mp-card-badge">🔒Ур.${item.levelReq}</span>`;
+      }
 
-      const swatchHtml = item.hex
-        ? `<div style="width:36px;height:36px;border-radius:50%;background:${item.hex};border:2px solid #fff;flex-shrink:0;"></div>`
-        : `<div style="font-size:26px;width:36px;text-align:center;">${item.icon || '✨'}</div>`;
+      const visualHtml = item.hex
+        ? `<div style="width:40px;height:40px;border-radius:50%;background:${item.gradient ? `linear-gradient(135deg,${item.gradient.join(',')})` : item.hex};border:2.5px solid #fff;margin-top:4px;box-shadow:0 3px 8px rgba(0,0,0,0.3);"></div>`
+        : `<div style="font-size:32px;line-height:1.1;margin-top:2px;">${item.icon || '✨'}</div>`;
 
-      const subDesc = item.category === 'food'
-        ? `+${item.hunger}% сытости • +${item.fun || 5}% веселья ${owned ? `(В холодильнике: ×${owned})` : ''}`
-        : `<span style="color:${rarityColors[item.rarity] || '#94a3b8'};text-transform:uppercase;font-weight:700;font-size:10px;">${item.rarity}</span>`;
+      const subInfo = item.category === 'food'
+        ? `<div style="font-size:10px;color:#94a3b8;">+${item.hunger}% 🍎</div>`
+        : `<div style="font-size:10px;color:#94a3b8;">${isOwned ? 'Куплено' : 'Примерить 👆'}</div>`;
 
-      row.innerHTML = `
-        <div style="display:flex;align-items:center;gap:10px;">
-          ${swatchHtml}
-          <div>
-            <div style="font-size:14px;font-weight:700;color:#f8fafc;">${item.name}</div>
-            <div style="font-size:11px;color:#94a3b8;">${subDesc}</div>
-          </div>
-        </div>
+      card.innerHTML = `
+        ${badgeHtml}
+        ${visualHtml}
+        <div style="font-size:11px;font-weight:700;color:#f8fafc;line-height:1.15;">${item.name}</div>
+        ${subInfo}
       `;
 
-      const btn = document.createElement('button');
+      const actionBtn = document.createElement('button');
+      actionBtn.style.width = '100%';
+      actionBtn.style.padding = '5px 4px';
+      actionBtn.style.fontSize = '11px';
+      actionBtn.style.borderRadius = '10px';
+
       if (locked) {
-        btn.className = 'mp-small-btn mp-disabled';
-        btn.disabled = true;
-        btn.textContent = `🔒 Ур. ${item.levelReq}`;
-      } else if (item.category !== 'food' && owned) {
-        btn.className = 'mp-small-btn ' + (isEquipped ? 'mp-btn-green' : '');
-        btn.textContent = isEquipped ? '✓ Надето' : 'Надеть';
-        btn.addEventListener('click', async () => {
+        actionBtn.className = 'mp-small-btn mp-disabled';
+        actionBtn.disabled = true;
+        actionBtn.textContent = `Ур. ${item.levelReq}`;
+      } else if (item.category !== 'food' && isOwned) {
+        actionBtn.className = 'mp-small-btn ' + (isEquipped ? 'mp-btn-green' : '');
+        actionBtn.textContent = isEquipped ? '✓ Надето' : 'Надеть';
+      } else {
+        const priceStr = item.price.crystals ? `${item.price.crystals} 💎` : `${item.price.coins} 🪙`;
+        actionBtn.className = 'mp-small-btn mp-btn-amber';
+        actionBtn.textContent = priceStr;
+      }
+
+      // Clicking the card previews cosmetics on Mochi live!
+      card.addEventListener('click', async (e) => {
+        if (item.category !== 'food' && !isOwned && e.target !== actionBtn) {
+          sfx.playClick();
+          this.stage.previewEquipped = {
+            ...(this.stage.previewEquipped || {}),
+            [item.category]: item.id
+          };
+          this.stage.triggerSquash(-1.2, -70);
+          this.renderShopModal();
+          return;
+        }
+
+        if (locked) {
+          this.showToast(`Откроется на ${item.levelReq} уровне Мочи!`);
+          return;
+        }
+
+        if (item.category !== 'food' && isOwned) {
           const nextId = (isEquipped && item.id !== 'sakura' && item.id !== 'normal') ? 'none' : item.id;
           const res = await api.equipItem(item.category, nextId);
           if (res.state) {
             this.state = res.state;
+            this.stage.previewEquipped = null;
+            this.stage.triggerSquash(-1.1, -60);
             sfx.playClick();
             this.renderShopModal();
           }
-        });
-      } else {
-        const priceStr = item.price.crystals ? `${item.price.crystals} 💎` : `${item.price.coins} 🪙`;
-        btn.className = 'mp-small-btn mp-btn-amber';
-        btn.textContent = `Купить (${priceStr})`;
-        btn.addEventListener('click', async () => {
-          const res = await api.buyItem(item.id);
-          if (res.error) {
-            this.showToast(res.error);
-          } else {
-            this.state = res.state;
-            sfx.playCoin();
-            this.renderAllUI();
-            this.renderShopModal();
-            this.showToast(`Куплено: ${item.name}!`);
-          }
-        });
-      }
+          return;
+        }
 
-      row.appendChild(btn);
-      listEl.appendChild(row);
+        // Buy item (Food or Cosmetic)
+        const res = await api.buyItem(item.id);
+        if (res.error) {
+          this.showToast(res.error);
+        } else {
+          this.state = res.state;
+          this.stage.previewEquipped = null;
+          this.stage.triggerSquash(1.3, -90);
+          sfx.playCoin();
+          this.renderAllUI();
+          this.renderShopModal();
+          this.showToast(item.category === 'food'
+            ? `+1 ${item.icon} ${item.name} в холодильник!`
+            : `Куплено и надето: ${item.name}!`);
+        }
+      });
+
+      card.appendChild(actionBtn);
+      listEl.appendChild(card);
     });
   }
 
@@ -839,6 +870,9 @@ class MochiPalApp {
   }
 
   closeModal(id) {
+    if (id === 'mp-modal-shop' && this.stage) {
+      this.stage.previewEquipped = null;
+    }
     const el = document.getElementById(id);
     if (el) el.classList.add('mp-hidden');
   }

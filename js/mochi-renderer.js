@@ -1,4 +1,4 @@
-// Mochi Pal — Layered Canvas 2D Pet Renderer & Spring Physics
+// Mochi Pal — Layered Canvas 2D Pet Renderer, Interactive Bath Tools (Soap & Shower) & Spring Physics
 import { CONFIG } from './config.js';
 import { sfx } from './audio.js';
 
@@ -11,6 +11,10 @@ export class MochiStage {
     this.width = 360;
     this.height = 420;
     this.time = 0;
+    this.activeRoom = 'kitchen';
+
+    // Preview override for live try-on in Shop/Wardrobe!
+    this.previewEquipped = null;
 
     // Spring physics for squash & stretch (k=180, damping=12)
     this.scaleX = 1.0;
@@ -40,10 +44,28 @@ export class MochiStage {
     this.strokeDistance = 0;
     this.isPointerDownOnPet = false;
 
-    // Bathroom soap & shower state
-    this.soapMode = false;
-    this.showerTimer = 0;
-    this.foamBubbles = []; // { ox, oy, r, alpha }
+    // Interactive Bathroom Draggable Tools: Soap & Shower Head!
+    this.soapTool = {
+      homeX: 68,
+      homeY: 310,
+      x: 68,
+      y: 310,
+      r: 32,
+      dragging: false,
+      lastRubX: 0,
+      lastRubY: 0
+    };
+    this.showerTool = {
+      homeX: 292,
+      homeY: 115,
+      x: 292,
+      y: 115,
+      r: 34,
+      dragging: false,
+      waterSoundCooldown: 0
+    };
+    this.foamBubbles = []; // { ox, oy, r, maxR }
+    this.rinsedBubbleAccum = 0;
 
     // Playroom bouncing ball
     this.ball = {
@@ -57,7 +79,7 @@ export class MochiStage {
       lastFunAt: 0
     };
 
-    // Particles (hearts, crumbs, zzz, confetti, water, floating text)
+    // Particles (hearts, crumbs, zzz, confetti, water, sparkles, floating text)
     this.particles = [];
     this.roomParallaxX = 0;
 
@@ -70,10 +92,26 @@ export class MochiStage {
   resize(w, h) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.width = Math.max(280, w);
-    this.height = Math.max(280, h);
+    this.height = Math.max(260, h);
     this.canvas.width = Math.floor(this.width * dpr);
     this.canvas.height = Math.floor(this.height * dpr);
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Update Bathroom tool home positions
+    this.soapTool.homeX = Math.max(54, this.width * 0.16);
+    this.soapTool.homeY = this.height * 0.74;
+    if (!this.soapTool.dragging) {
+      this.soapTool.x = this.soapTool.homeX;
+      this.soapTool.y = this.soapTool.homeY;
+    }
+
+    this.showerTool.homeX = Math.min(this.width - 54, this.width * 0.84);
+    this.showerTool.homeY = Math.max(88, this.height * 0.24);
+    if (!this.showerTool.dragging) {
+      this.showerTool.x = this.showerTool.homeX;
+      this.showerTool.y = this.showerTool.homeY;
+    }
+
     if (this.ball.x > this.width - 30) this.ball.x = this.width - 40;
     if (this.ball.y > this.height - 40) this.ball.y = this.height - 60;
   }
@@ -81,8 +119,8 @@ export class MochiStage {
   getPetCenter() {
     return {
       cx: this.width * 0.5,
-      cy: this.height * 0.60 + this.jumpY,
-      radius: Math.min(this.width, this.height) * 0.23
+      cy: this.height * 0.58 + this.jumpY,
+      radius: Math.min(this.width, this.height) * 0.22
     };
   }
 
@@ -146,25 +184,6 @@ export class MochiStage {
     }
   }
 
-  triggerShowerRinse() {
-    if (this.foamBubbles.length === 0 && this.showerTimer <= 0) {
-      // Even without soap, allow a quick splash and +small hygiene or hint
-      for (let i = 0; i < 6; i++) {
-        this.foamBubbles.push({
-          ox: (Math.random() - 0.5) * 70,
-          oy: (Math.random() - 0.5) * 60,
-          r: 12 + Math.random() * 8
-        });
-      }
-    }
-    const coverage = Math.min(1, this.foamBubbles.length / 14);
-    this.showerTimer = 1.25;
-    sfx.playShower();
-    if (this.callbacks.onWashComplete) {
-      this.callbacks.onWashComplete(Math.max(0.35, coverage));
-    }
-  }
-
   spawnHearts(x, y, count = 2) {
     for (let i = 0; i < count; i++) {
       this.particles.push({
@@ -211,7 +230,30 @@ export class MochiStage {
       this.lookTargetX = (pos.x - cx) / Math.max(1, this.width * 0.5);
       this.lookTargetY = (pos.y - cy) / Math.max(1, this.height * 0.5);
 
-      // Check Playroom ball hit first
+      // 1. Check Bathroom Draggable Soap & Shower Head first!
+      if (this.activeRoom === 'bathroom') {
+        const dSoap = Math.hypot(pos.x - this.soapTool.x, pos.y - this.soapTool.y);
+        if (dSoap <= this.soapTool.r + 22) {
+          this.soapTool.dragging = true;
+          this.soapTool.x = pos.x;
+          this.soapTool.y = pos.y;
+          this.soapTool.lastRubX = pos.x;
+          this.soapTool.lastRubY = pos.y;
+          sfx.playBubble();
+          return;
+        }
+
+        const dShower = Math.hypot(pos.x - this.showerTool.x, pos.y - this.showerTool.y);
+        if (dShower <= this.showerTool.r + 24) {
+          this.showerTool.dragging = true;
+          this.showerTool.x = pos.x;
+          this.showerTool.y = pos.y;
+          sfx.playShower();
+          return;
+        }
+      }
+
+      // 2. Check Playroom ball hit
       if (this.ball.active) {
         const dxB = pos.x - this.ball.x;
         const dyB = pos.y - this.ball.y;
@@ -229,18 +271,13 @@ export class MochiStage {
         }
       }
 
+      // 3. Tap or stroke Mochi
       const distToPet = Math.hypot(pos.x - cx, pos.y - cy);
       if (distToPet <= radius * 1.28) {
         this.isPointerDownOnPet = true;
         this.strokeDistance = 0;
         this.lastPointerPos = pos;
 
-        if (this.soapMode) {
-          this._addSoapBubble(pos.x - cx, pos.y - cy, radius);
-          return;
-        }
-
-        // Squash & stretch jelly reaction on tap!
         this.triggerSquash(-1.75, -110);
         sfx.playGiggle();
         this.spawnHearts(pos.x, pos.y - 16, 2);
@@ -254,39 +291,73 @@ export class MochiStage {
       this.lookTargetX = Math.max(-1, Math.min(1, (pos.x - cx) / (this.width * 0.45)));
       this.lookTargetY = Math.max(-1, Math.min(1, (pos.y - cy) / (this.height * 0.45)));
 
+      // Dragging Food from Kitchen Tray
       if (this.draggedFood) {
         this.draggedFood.x = pos.x;
         this.draggedFood.y = pos.y;
         return;
       }
 
+      // Dragging Soap in Bathroom: rub across Mochi to spawn foam bubbles!
+      if (this.soapTool.dragging) {
+        this.soapTool.x = Math.max(24, Math.min(this.width - 24, pos.x));
+        this.soapTool.y = Math.max(40, Math.min(this.height - 24, pos.y));
+
+        const ox = this.soapTool.x - cx;
+        const oy = this.soapTool.y - cy;
+        const distToMochi = Math.hypot(ox, oy);
+        const rubDist = Math.hypot(this.soapTool.x - this.soapTool.lastRubX, this.soapTool.y - this.soapTool.lastRubY);
+
+        if (distToMochi <= radius * 1.15 && rubDist >= 16) {
+          this.soapTool.lastRubX = this.soapTool.x;
+          this.soapTool.lastRubY = this.soapTool.y;
+          this._spawnSoapFoamAt(ox, oy, radius);
+          this.petStrokeTimer = 0.35;
+          this.velScaleX += (Math.random() - 0.5) * 0.55;
+        }
+        return;
+      }
+
+      // Dragging Shower Head in Bathroom: aim water stream over Mochi!
+      if (this.showerTool.dragging) {
+        this.showerTool.x = Math.max(36, Math.min(this.width - 36, pos.x));
+        this.showerTool.y = Math.max(48, Math.min(this.height * 0.65, pos.y));
+        return;
+      }
+
+      // Stroking Mochi with finger
       if (!this.isPointerDownOnPet) return;
       const distToPet = Math.hypot(pos.x - cx, pos.y - cy);
-      if (distToPet <= radius * 1.35) {
-        if (this.soapMode) {
-          this._addSoapBubble(pos.x - cx, pos.y - cy, radius);
-        } else if (this.lastPointerPos) {
-          const step = Math.hypot(pos.x - this.lastPointerPos.x, pos.y - this.lastPointerPos.y);
-          this.strokeDistance += step;
-          this.lastPointerPos = pos;
-          if (this.strokeDistance > 42) {
-            this.strokeDistance = 0;
-            this.petStrokeTimer = 0.65;
-            this.triggerSquash(0.65, 0);
-            this.spawnHearts(pos.x, pos.y - 18, 1);
-            const now = performance.now();
-            if (now - this.lastPetRewardAt > 3000) {
-              this.lastPetRewardAt = now;
-              sfx.playPurr();
-              if (this.callbacks.onPetStroke) this.callbacks.onPetStroke();
-            }
+      if (distToPet <= radius * 1.35 && this.lastPointerPos) {
+        const step = Math.hypot(pos.x - this.lastPointerPos.x, pos.y - this.lastPointerPos.y);
+        this.strokeDistance += step;
+        this.lastPointerPos = pos;
+        if (this.strokeDistance > 42) {
+          this.strokeDistance = 0;
+          this.petStrokeTimer = 0.65;
+          this.triggerSquash(0.65, 0);
+          this.spawnHearts(pos.x, pos.y - 18, 1);
+          const now = performance.now();
+          if (now - this.lastPetRewardAt > 3000) {
+            this.lastPetRewardAt = now;
+            sfx.playPurr();
+            if (this.callbacks.onPetStroke) this.callbacks.onPetStroke();
           }
         }
       }
     });
 
-    window.addEventListener('pointerup', () => {
+    const stopAllDrags = () => {
       this.isPointerDownOnPet = false;
+      this.soapTool.dragging = false;
+      if (this.showerTool.dragging) {
+        this.showerTool.dragging = false;
+        if (this.rinsedBubbleAccum > 0 && this.callbacks.onWashComplete) {
+          const cov = Math.min(1, this.rinsedBubbleAccum / 10);
+          this.rinsedBubbleAccum = 0;
+          this.callbacks.onWashComplete(cov);
+        }
+      }
       if (this.draggedFood) {
         const { cx, cy, radius } = this.getPetCenter();
         const d = Math.hypot(this.draggedFood.x - cx, this.draggedFood.y - cy);
@@ -296,20 +367,37 @@ export class MochiStage {
           this.callbacks.onDropFoodOnMouth(foodItem);
         }
       }
-    });
+    };
+
+    window.addEventListener('pointerup', stopAllDrags);
+    window.addEventListener('pointercancel', stopAllDrags);
   }
 
-  _addSoapBubble(ox, oy, radius) {
-    if (this.foamBubbles.length < 28) {
-      const clampedDist = Math.hypot(ox, oy);
-      if (clampedDist <= radius * 0.98) {
-        this.foamBubbles.push({
-          ox: ox + (Math.random() - 0.5) * 14,
-          oy: oy + (Math.random() - 0.5) * 14,
-          r: 11 + Math.random() * 11
-        });
+  _spawnSoapFoamAt(ox, oy, radius) {
+    // Clamp bubble offset inside Mochi's silhouette
+    const d = Math.hypot(ox, oy);
+    const maxD = radius * 0.88;
+    const clampedOx = d > maxD ? (ox / d) * maxD : ox;
+    const clampedOy = d > maxD ? (oy / d) * maxD : oy;
+
+    // Check if there's already a bubble very close; if so, grow it, else add new
+    for (const b of this.foamBubbles) {
+      if (Math.hypot(b.ox - clampedOx, b.oy - clampedOy) < 15) {
+        b.r = Math.min(b.maxR, b.r + 3.5);
         sfx.playBubble();
+        return;
       }
+    }
+
+    if (this.foamBubbles.length < 38) {
+      const maxR = 14 + Math.random() * 12;
+      this.foamBubbles.push({
+        ox: clampedOx + (Math.random() - 0.5) * 10,
+        oy: clampedOy + (Math.random() - 0.5) * 10,
+        r: 8 + Math.random() * 6,
+        maxR
+      });
+      sfx.playBubble();
     }
   }
 
@@ -361,26 +449,62 @@ export class MochiStage {
     if (this.fullBellyTimer > 0) this.fullBellyTimer = Math.max(0, this.fullBellyTimer - dt);
     if (this.petStrokeTimer > 0) this.petStrokeTimer = Math.max(0, this.petStrokeTimer - dt);
 
-    // Shower rinse animation
-    if (this.showerTimer > 0) {
-      this.showerTimer = Math.max(0, this.showerTimer - dt);
-      const { cx, cy, radius } = this.getPetCenter();
-      for (let i = 0; i < 3; i++) {
+    // 3. Bathroom Soap & Shower Head return springs + Live Water Stream Rinsing!
+    if (!this.soapTool.dragging) {
+      this.soapTool.x += (this.soapTool.homeX - this.soapTool.x) * Math.min(1, dt * 12);
+      this.soapTool.y += (this.soapTool.homeY - this.soapTool.y) * Math.min(1, dt * 12);
+    }
+
+    if (!this.showerTool.dragging) {
+      this.showerTool.x += (this.showerTool.homeX - this.showerTool.x) * Math.min(1, dt * 12);
+      this.showerTool.y += (this.showerTool.homeY - this.showerTool.y) * Math.min(1, dt * 12);
+    } else {
+      // Shower is actively spraying water downward from (showerTool.x, showerTool.y + 18)!
+      const { cx, cy } = this.getPetCenter();
+      this.showerTool.waterSoundCooldown -= dt;
+      if (this.showerTool.waterSoundCooldown <= 0) {
+        this.showerTool.waterSoundCooldown = 0.42;
+        sfx.playShower();
+      }
+
+      for (let i = 0; i < 4; i++) {
         this.particles.push({
           type: 'water',
-          x: cx + (Math.random() - 0.5) * radius * 1.9,
-          y: cy - radius * 1.55,
-          vx: (Math.random() - 0.5) * 20,
-          vy: 240 + Math.random() * 120,
+          x: this.showerTool.x + (Math.random() - 0.5) * 48,
+          y: this.showerTool.y + 22,
+          vx: (Math.random() - 0.5) * 26,
+          vy: 290 + Math.random() * 110,
           life: 0.55,
           maxLife: 0.55
         });
       }
-      if (this.foamBubbles.length > 0 && Math.random() < 0.45) {
-        this.foamBubbles.pop();
-      }
-      if (this.showerTimer === 0) {
-        this.foamBubbles = [];
+
+      // Wash away foam bubbles that fall under the shower stream!
+      for (let i = this.foamBubbles.length - 1; i >= 0; i--) {
+        const b = this.foamBubbles[i];
+        const bx = cx + b.ox;
+        const by = cy + b.oy;
+        if (Math.abs(bx - this.showerTool.x) < 48 && by >= this.showerTool.y - 10) {
+          b.r -= 32 * dt;
+          if (b.r <= 3) {
+            this.foamBubbles.splice(i, 1);
+            this.rinsedBubbleAccum += 1;
+            this.particles.push({
+              type: 'sparkle',
+              x: bx,
+              y: by,
+              vx: (Math.random() - 0.5) * 50,
+              vy: -40 - Math.random() * 40,
+              life: 0.5,
+              maxLife: 0.5
+            });
+            if (this.rinsedBubbleAccum >= 3 && this.callbacks.onWashComplete) {
+              const batch = this.rinsedBubbleAccum;
+              this.rinsedBubbleAccum = 0;
+              this.callbacks.onWashComplete(batch / 10);
+            }
+          }
+        }
       }
     }
 
@@ -403,7 +527,7 @@ export class MochiStage {
     this.curLookX += (this.lookTargetX - this.curLookX) * Math.min(1, dt * 10);
     this.curLookY += (this.lookTargetY - this.curLookY) * Math.min(1, dt * 10);
 
-    // 3. Playroom Ball physics
+    // 4. Playroom Ball physics
     if (this.ball.active) {
       const floorY = this.height * 0.78;
       this.ball.vy += 680 * dt;
@@ -427,7 +551,6 @@ export class MochiStage {
         if (Math.abs(this.ball.vy) < 45) this.ball.vy = 0;
       }
 
-      // Bounce off Mochi!
       const { cx, cy, radius } = this.getPetCenter();
       const dx = this.ball.x - cx;
       const dy = this.ball.y - cy;
@@ -444,12 +567,11 @@ export class MochiStage {
         sfx.playBounce();
       }
 
-      // Look at ball in playroom
       this.lookTargetX = Math.max(-1, Math.min(1, (this.ball.x - cx) / (this.width * 0.45)));
       this.lookTargetY = Math.max(-1, Math.min(1, (this.ball.y - cy) / (this.height * 0.45)));
     }
 
-    // 4. Update particles
+    // 5. Update particles
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
       p.life -= dt;
@@ -467,12 +589,13 @@ export class MochiStage {
   }
 
   render(state, activeRoom) {
+    this.activeRoom = activeRoom;
     const ctx = this.ctx;
     const w = this.width;
     const h = this.height;
     ctx.clearRect(0, 0, w, h);
 
-    const pet = (state && state.pet) ? state.pet : {
+    const basePet = (state && state.pet) ? state.pet : {
       name: 'Мочи',
       level: 1,
       needs: { hunger: 80, energy: 85, hygiene: 90, fun: 80 },
@@ -481,28 +604,36 @@ export class MochiStage {
       house: { rooms: { kitchen: { tier: 1 }, bathroom: { tier: 1 }, bedroom: { tier: 1 }, playroom: { tier: 1 } } }
     };
 
+    // Merge live shop preview cosmetics if active
+    const pet = this.previewEquipped
+      ? { ...basePet, equipped: { ...basePet.equipped, ...this.previewEquipped } }
+      : basePet;
+
     const roomTier = (pet.house && pet.house.rooms && pet.house.rooms[activeRoom])
       ? (pet.house.rooms[activeRoom].tier || 1)
       : 1;
 
-    // 1. Draw Room Background + Furniture based on room & tier
+    // 1. Draw Room Background + Furniture
     this._drawRoomBackground(ctx, w, h, activeRoom, roomTier, pet.sleeping);
 
     // 2. Draw Mochi Pet (Layered back-to-front)
     const { cx, cy, radius } = this.getPetCenter();
     this._drawMochiCharacter(ctx, cx, cy, radius, pet);
 
-    // 3. Draw Bathroom Shower Head & Soap Foam
+    // 3. DrawParticles before/after tools
+    this._drawParticles(ctx);
+
+    // 4. Draw Interactive Bathroom Soap & Shower Head (with hose & foam bubbles!)
     if (activeRoom === 'bathroom') {
-      this._drawBathroomExtras(ctx, cx, cy, radius);
+      this._drawBathroomInteractiveTools(ctx, cx, cy, radius);
     }
 
-    // 4. Draw Playroom Bouncing Toy Ball
+    // 5. Draw Playroom Bouncing Toy Ball
     if (this.ball.active) {
       this._drawToyBall(ctx, this.ball);
     }
 
-    // 5. Draw Bedroom Dark Sleep Overlay
+    // 6. Draw Bedroom Dark Sleep Overlay
     if (pet.sleeping) {
       ctx.save();
       ctx.fillStyle = 'rgba(8, 12, 28, 0.56)';
@@ -510,13 +641,10 @@ export class MochiStage {
       ctx.restore();
     }
 
-    // 6. Draw Particles (hearts, crumbs, zzz, water, confetti, floating text)
-    this._drawParticles(ctx);
-
     // 7. Draw Dragged Food Item (if dragging to mouth)
     if (this.draggedFood && this.draggedFood.item) {
       ctx.save();
-      ctx.font = "42px 'Fredoka', sans-serif";
+      ctx.font = "44px 'Fredoka', sans-serif";
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.shadowColor = 'rgba(0,0,0,0.35)';
@@ -526,11 +654,126 @@ export class MochiStage {
     }
   }
 
+  _drawBathroomInteractiveTools(ctx, cx, cy, r) {
+    // A) Draw Foam Bubbles on Mochi's body
+    if (this.foamBubbles.length > 0) {
+      ctx.save();
+      this.foamBubbles.forEach(b => {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+        ctx.strokeStyle = '#7dd3fc';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(cx + b.ox, cy + b.oy, Math.max(2, b.r), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Glossy bubble highlight
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(cx + b.ox - b.r * 0.3, cy + b.oy - b.r * 0.3, Math.max(1, b.r * 0.26), 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+    }
+
+    // B) Draw Soap Dish on left floor
+    ctx.save();
+    ctx.fillStyle = '#e0f2fe';
+    ctx.strokeStyle = '#0284c7';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(this.soapTool.homeX, this.soapTool.homeY + 12, 36, 13, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    // C) Draw Draggable Pink Bar of Soap
+    ctx.save();
+    ctx.translate(this.soapTool.x, this.soapTool.y);
+    if (this.soapTool.dragging) {
+      ctx.scale(1.12, 1.12);
+      ctx.rotate(-0.15);
+    }
+    ctx.shadowColor = 'rgba(0,0,0,0.28)';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = '#f472b6';
+    ctx.strokeStyle = '#be185d';
+    ctx.lineWidth = 3;
+    this._roundRect(ctx, -26, -17, 52, 34, 14, true, true);
+    ctx.fillStyle = '#fbcfe8';
+    this._roundRect(ctx, -18, -10, 36, 18, 8, true, false);
+    ctx.fillStyle = '#be185d';
+    ctx.font = "700 10px 'Fredoka', sans-serif";
+    ctx.textAlign = 'center';
+    ctx.fillText('МЫЛО', 0, 3);
+    ctx.restore();
+
+    // D) Draw Shower Wall Bracket & Flexible Hose connected to Draggable Shower Head!
+    const anchorX = this.showerTool.homeX + 18;
+    const anchorY = this.showerTool.homeY - 24;
+
+    ctx.save();
+    // Flexible metallic hose curve
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(anchorX, anchorY);
+    const ctrlX = (anchorX + this.showerTool.x) * 0.5 + 24;
+    const ctrlY = Math.max(anchorY, this.showerTool.y) + 45;
+    ctx.quadraticCurveTo(ctrlX, ctrlY, this.showerTool.x, this.showerTool.y - 10);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Wall mount bracket
+    ctx.fillStyle = '#cbd5e1';
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(anchorX, anchorY, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Draggable Shower Head Nozzle
+    ctx.translate(this.showerTool.x, this.showerTool.y);
+    if (this.showerTool.dragging) {
+      ctx.scale(1.1, 1.1);
+    }
+    ctx.shadowColor = 'rgba(0,0,0,0.3)';
+    ctx.shadowBlur = 10;
+
+    // Handle
+    ctx.fillStyle = '#38bdf8';
+    ctx.strokeStyle = '#0369a1';
+    ctx.lineWidth = 3;
+    this._roundRect(ctx, -10, -24, 20, 26, 8, true, true);
+
+    // Wide Shower Head Bell
+    ctx.fillStyle = '#f8fafc';
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-16, -4);
+    ctx.lineTo(16, -4);
+    ctx.lineTo(28, 16);
+    ctx.lineTo(-28, 16);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Nozzle holes plate
+    ctx.fillStyle = '#0ea5e9';
+    this._roundRect(ctx, -24, 14, 48, 7, 3, true, false);
+    ctx.restore();
+  }
+
   _drawRoomBackground(ctx, w, h, room, tier, isSleeping) {
-    const floorY = h * 0.76;
+    const floorY = h * 0.74;
     const px = this.roomParallaxX * 14;
 
-    // Wall colors per room & tier
     const palettes = {
       kitchen: {
         wall1: tier >= 3 ? '#fef3c7' : tier === 2 ? '#ffedd5' : '#fff1f2',
@@ -563,64 +806,52 @@ export class MochiStage {
     };
     const pal = palettes[room] || palettes.kitchen;
 
-    // Wall gradient
     const wallGrad = ctx.createLinearGradient(0, 0, 0, floorY);
     wallGrad.addColorStop(0, pal.wall1);
     wallGrad.addColorStop(1, pal.wall2);
     ctx.fillStyle = wallGrad;
     ctx.fillRect(0, 0, w, floorY);
 
-    // Wallpaper stripes
     ctx.fillStyle = pal.stripe;
     for (let x = -20 + (px % 36); x < w + 20; x += 36) {
       ctx.fillRect(x, 0, 14, floorY);
     }
 
-    // Floor gradient
     const floorGrad = ctx.createLinearGradient(0, floorY, 0, h);
     floorGrad.addColorStop(0, pal.floor1);
     floorGrad.addColorStop(1, pal.floor2);
     ctx.fillStyle = floorGrad;
     ctx.fillRect(0, floorY, w, h - floorY);
 
-    // Baseboard trim
     ctx.fillStyle = 'rgba(255,255,255,0.35)';
     ctx.fillRect(0, floorY - 6, w, 8);
 
     // Cozy rug under Mochi
     ctx.save();
-    ctx.translate(w * 0.5 + px * 0.4, floorY + 28);
+    ctx.translate(w * 0.5 + px * 0.4, floorY + 24);
     ctx.fillStyle = tier >= 3 ? '#fde047' : tier === 2 ? '#38bdf8' : '#f472b6';
     ctx.beginPath();
-    ctx.ellipse(0, 0, w * 0.34, 24, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, w * 0.32, 22, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 3;
     ctx.stroke();
     ctx.restore();
 
-    // Room-specific furniture & window props
     ctx.save();
     ctx.translate(px, 0);
 
     if (room === 'kitchen') {
-      // Cozy Window on left
-      this._drawWindow(ctx, w * 0.2, h * 0.24, 72, 82, false);
-      // Fridge on right
+      this._drawWindow(ctx, w * 0.2, h * 0.24, 70, 80, false);
       ctx.fillStyle = tier >= 3 ? '#fde047' : '#f8fafc';
       ctx.strokeStyle = '#64748b';
       ctx.lineWidth = 3;
-      this._roundRect(ctx, w * 0.72, floorY - 145, 76, 145, 14, true, true);
+      this._roundRect(ctx, w * 0.73, floorY - 140, 72, 140, 14, true, true);
       ctx.beginPath();
-      ctx.moveTo(w * 0.72, floorY - 82);
-      ctx.lineTo(w * 0.72 + 76, floorY - 82);
+      ctx.moveTo(w * 0.73, floorY - 78);
+      ctx.lineTo(w * 0.73 + 72, floorY - 78);
       ctx.stroke();
-      // Handles
-      ctx.fillStyle = '#94a3b8';
-      ctx.fillRect(w * 0.72 + 10, floorY - 115, 6, 22);
-      ctx.fillRect(w * 0.72 + 10, floorY - 68, 6, 28);
     } else if (room === 'bathroom') {
-      // Tile grid on wall
       ctx.strokeStyle = 'rgba(14, 165, 233, 0.18)';
       ctx.lineWidth = 1.5;
       for (let y = 40; y < floorY; y += 32) {
@@ -629,57 +860,40 @@ export class MochiStage {
         ctx.lineTo(w + 20, y);
         ctx.stroke();
       }
-      // Mirror behind Mochi
       ctx.fillStyle = '#e0f2fe';
       ctx.strokeStyle = tier >= 2 ? '#fde047' : '#38bdf8';
       ctx.lineWidth = 5;
       ctx.beginPath();
-      ctx.arc(w * 0.22, h * 0.28, 38, 0, Math.PI * 2);
+      ctx.arc(w * 0.22, h * 0.26, 36, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-      // Bathtub rim on right
-      ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#94a3b8';
-      ctx.lineWidth = 3;
-      this._roundRect(ctx, w * 0.70, floorY - 65, 86, 65, 18, true, true);
     } else if (room === 'bedroom') {
-      // Night starry window
-      this._drawWindow(ctx, w * 0.22, h * 0.24, 78, 88, true);
-      // Nightstand + Lamp on right
+      this._drawWindow(ctx, w * 0.22, h * 0.24, 76, 84, true);
       ctx.fillStyle = '#78350f';
-      this._roundRect(ctx, w * 0.74, floorY - 58, 64, 58, 8, true, false);
-      // Lamp stand
+      this._roundRect(ctx, w * 0.74, floorY - 56, 62, 56, 8, true, false);
       ctx.fillStyle = '#cbd5e1';
-      ctx.fillRect(w * 0.74 + 28, floorY - 86, 8, 28);
-      // Lamp shade
+      ctx.fillRect(w * 0.74 + 27, floorY - 84, 8, 28);
       ctx.fillStyle = isSleeping ? '#475569' : '#fde047';
       ctx.beginPath();
-      ctx.moveTo(w * 0.74 + 12, floorY - 84);
-      ctx.lineTo(w * 0.74 + 52, floorY - 84);
-      ctx.lineTo(w * 0.74 + 44, floorY - 114);
-      ctx.lineTo(w * 0.74 + 20, floorY - 114);
+      ctx.moveTo(w * 0.74 + 12, floorY - 82);
+      ctx.lineTo(w * 0.74 + 50, floorY - 82);
+      ctx.lineTo(w * 0.74 + 42, floorY - 110);
+      ctx.lineTo(w * 0.74 + 20, floorY - 110);
       ctx.closePath();
       ctx.fill();
     } else if (room === 'playroom') {
-      // Neon Arcade Cabinet on right
       ctx.fillStyle = '#4f46e5';
       ctx.strokeStyle = '#38bdf8';
       ctx.lineWidth = 3;
-      this._roundRect(ctx, w * 0.71, floorY - 142, 78, 142, 12, true, true);
-      // Arcade Screen
+      this._roundRect(ctx, w * 0.72, floorY - 138, 74, 138, 12, true, true);
       ctx.fillStyle = '#0ea5e9';
-      this._roundRect(ctx, w * 0.71 + 10, floorY - 122, 58, 46, 6, true, false);
+      this._roundRect(ctx, w * 0.72 + 9, floorY - 118, 56, 44, 6, true, false);
       ctx.fillStyle = '#fde047';
-      ctx.font = "700 11px 'Fredoka', sans-serif";
+      ctx.font = "700 10px 'Fredoka', sans-serif";
       ctx.textAlign = 'center';
-      ctx.fillText('ARCADE', w * 0.71 + 39, floorY - 128);
-      ctx.font = "22px 'Fredoka', sans-serif";
-      ctx.fillText('🕹️', w * 0.71 + 39, floorY - 92);
-      // Trophy shelf on left
-      ctx.fillStyle = '#334155';
-      this._roundRect(ctx, w * 0.10, h * 0.25, 76, 12, 4, true, false);
-      ctx.font = "22px 'Fredoka', sans-serif";
-      ctx.fillText(tier >= 2 ? '🏆 ⭐ 👑' : '🏆 🎮', w * 0.10 + 38, h * 0.25 - 6);
+      ctx.fillText('ARCADE', w * 0.72 + 37, floorY - 124);
+      ctx.font = "20px 'Fredoka', sans-serif";
+      ctx.fillText('🕹️', w * 0.72 + 37, floorY - 90);
     }
 
     ctx.restore();
@@ -706,7 +920,6 @@ export class MochiStage {
       ctx.arc(x + 14, y - 16, 12, 0, Math.PI * 2);
       ctx.fill();
     }
-    // Window crossbars
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 4;
     ctx.beginPath();
@@ -723,12 +936,11 @@ export class MochiStage {
     const needs = pet.needs || { hunger: 80, energy: 80, hygiene: 80, fun: 80 };
     const colorObj = CONFIG.shop.colors.find(c => c.id === eq.color) || CONFIG.shop.colors[0];
 
-    // 1. Floor Shadow
     const shadowScale = Math.max(0.55, 1 + this.jumpY / 350) * this.scaleX;
     ctx.save();
     ctx.fillStyle = 'rgba(15, 23, 42, 0.25)';
     ctx.beginPath();
-    ctx.ellipse(cx, this.height * 0.60 + r * 0.96, r * 0.88 * shadowScale, r * 0.22 * shadowScale, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, this.height * 0.58 + r * 0.96, r * 0.88 * shadowScale, r * 0.22 * shadowScale, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
@@ -737,7 +949,7 @@ export class MochiStage {
     ctx.scale(this.scaleX, this.scaleY);
     ctx.translate(0, -r * 0.9);
 
-    // 2. Tail (back layer)
+    // Tail
     const tailWag = Math.sin(this.time * 4.5) * 0.22;
     ctx.save();
     ctx.translate(r * 0.82, r * 0.38);
@@ -748,7 +960,7 @@ export class MochiStage {
     ctx.fill();
     ctx.restore();
 
-    // 3. Fairy Wings (if equipped outfit === 'wings')
+    // Wings
     if (eq.outfit === 'wings') {
       const flap = Math.sin(this.time * 8) * 0.18;
       [-1, 1].forEach(dir => {
@@ -771,7 +983,7 @@ export class MochiStage {
       });
     }
 
-    // 4. Rounded Ears (with occasional ear wiggle)
+    // Ears
     const earWig = this.earWigglePhase > 0 ? Math.sin(this.time * 32) * 0.22 : Math.sin(this.time * 2.2) * 0.04;
     [-1, 1].forEach(dir => {
       ctx.save();
@@ -784,7 +996,6 @@ export class MochiStage {
       ctx.ellipse(0, 0, r * 0.26, r * 0.32, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-      // Inner ear pink
       ctx.fillStyle = 'rgba(244, 114, 182, 0.45)';
       ctx.beginPath();
       ctx.ellipse(0, 2, r * 0.13, r * 0.17, 0, 0, Math.PI * 2);
@@ -792,7 +1003,7 @@ export class MochiStage {
       ctx.restore();
     });
 
-    // 5. Squishy Mochi Body Silhouette
+    // Body
     ctx.save();
     this._traceMochiBodyPath(ctx, r);
 
@@ -817,24 +1028,20 @@ export class MochiStage {
     }
     ctx.fill();
 
-    // 6. Clipped Skin Pattern + Belly Patch
     ctx.clip();
     this._drawSkinPattern(ctx, r, eq.skin);
 
-    // Belly Patch
     ctx.fillStyle = 'rgba(255, 255, 255, 0.42)';
     ctx.beginPath();
     ctx.ellipse(0, r * 0.34, r * 0.56, r * 0.42, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Top-left glossy jelly shine
     ctx.fillStyle = 'rgba(255, 255, 255, 0.48)';
     ctx.beginPath();
     ctx.ellipse(-r * 0.42, -r * 0.48, r * 0.22, r * 0.11, -0.55, 0, Math.PI * 2);
     ctx.fill();
 
-    // Dirty smudges when hygiene < 35
-    if (needs.hygiene < 35) {
+    if (needs.hygiene < 45 && this.foamBubbles.length < 10) {
       ctx.fillStyle = 'rgba(120, 53, 15, 0.38)';
       ctx.beginPath();
       ctx.arc(-r * 0.45, r * 0.25, r * 0.18, 0, Math.PI * 2);
@@ -844,7 +1051,6 @@ export class MochiStage {
     }
     ctx.restore();
 
-    // Body outline
     ctx.save();
     this._traceMochiBodyPath(ctx, r);
     ctx.strokeStyle = 'rgba(15, 23, 42, 0.28)';
@@ -852,27 +1058,19 @@ export class MochiStage {
     ctx.stroke();
     ctx.restore();
 
-    // 7. Rosy Cheeks
+    // Cheeks
     ctx.fillStyle = 'rgba(244, 63, 94, 0.38)';
     ctx.beginPath();
     ctx.ellipse(-r * 0.46, r * 0.04, r * 0.15, r * 0.09, 0, 0, Math.PI * 2);
     ctx.ellipse(r * 0.46, r * 0.04, r * 0.15, r * 0.09, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // 8. Expressive Eyes (tracking cursor/finger)
     this._drawEyes(ctx, r, pet);
-
-    // 9. Expressive Mouth (mood / chewing / sleeping / overfed)
     this._drawMouth(ctx, r, pet);
-
-    // 10. Neck / Face Outfits (bowtie, scarf, medal, glasses)
     this._drawOutfit(ctx, r, eq.outfit);
-
-    // 11. Hat on top of head
     this._drawHat(ctx, r, eq.hat);
 
-    // 12. Stink lines if dirty
-    if (needs.hygiene < 35) {
+    if (needs.hygiene < 35 && this.foamBubbles.length === 0) {
       ctx.save();
       ctx.strokeStyle = '#84cc16';
       ctx.lineWidth = 3;
@@ -891,7 +1089,6 @@ export class MochiStage {
   }
 
   _traceMochiBodyPath(ctx, r) {
-    // Soft pear/mochi bun silhouette (wider & flatter at bottom, round on top)
     ctx.beginPath();
     ctx.moveTo(0, -r * 0.88);
     ctx.bezierCurveTo(r * 0.72, -r * 0.88, r * 1.06, -r * 0.32, r * 1.04, r * 0.25);
@@ -968,8 +1165,7 @@ export class MochiStage {
     const lookOx = this.curLookX * r * 0.08;
     const lookOy = this.curLookY * r * 0.07;
 
-    // Closed eyes if sleeping or blinking or being stroked happily
-    if (pet.sleeping || this.blinkDuration > 0 || this.petStrokeTimer > 0 || style === 'happy_arc') {
+    if (pet.sleeping || this.blinkDuration > 0 || this.petStrokeTimer > 0 || this.showerTool.dragging || style === 'happy_arc') {
       ctx.save();
       ctx.strokeStyle = '#1e293b';
       ctx.lineWidth = 4;
@@ -977,7 +1173,7 @@ export class MochiStage {
       [-1, 1].forEach(dir => {
         const ex = dir * eyeSep + lookOx * 0.4;
         ctx.beginPath();
-        if (this.petStrokeTimer > 0 || style === 'happy_arc') {
+        if (this.petStrokeTimer > 0 || this.showerTool.dragging || style === 'happy_arc') {
           ctx.arc(ex, eyeY + 4, r * 0.13, Math.PI * 1.1, Math.PI * 1.9);
         } else {
           ctx.arc(ex, eyeY - 2, r * 0.13, Math.PI * 0.15, Math.PI * 0.85);
@@ -1022,13 +1218,11 @@ export class MochiStage {
         return;
       }
 
-      // Base dark pupil oval
       ctx.fillStyle = style === 'fire' ? '#7c2d12' : '#0f172a';
       ctx.beginPath();
       ctx.ellipse(ex, ey, r * 0.145, r * 0.17, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Eye shine highlights
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.arc(ex - r * 0.045, ey - r * 0.055, r * 0.055, 0, Math.PI * 2);
@@ -1054,7 +1248,6 @@ export class MochiStage {
         ctx.fill();
       }
 
-      // Tired / Sleepy half-lids when energy < 30
       if (needs.energy < 30) {
         ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
         ctx.beginPath();
@@ -1078,38 +1271,32 @@ export class MochiStage {
     ctx.lineCap = 'round';
 
     if (this.chewTimer > 0) {
-      // Chewing open/close mouth animation
       const openAmt = Math.abs(Math.sin(this.time * 18)) * r * 0.14 + r * 0.04;
       ctx.beginPath();
       ctx.ellipse(0, 4, r * 0.14, openAmt, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
     } else if (this.fullBellyTimer > 0) {
-      // Funny wavy full-belly mouth
       ctx.beginPath();
       ctx.moveTo(-r * 0.16, 4);
       ctx.quadraticCurveTo(-r * 0.08, -4, 0, 4);
       ctx.quadraticCurveTo(r * 0.08, 12, r * 0.16, 4);
       ctx.stroke();
     } else if (pet.sleeping) {
-      // Cute tiny sleeping 'o' mouth
       ctx.beginPath();
       ctx.arc(0, 5, r * 0.055, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
     } else if (avgMood < 32 || needs.hunger < 25) {
-      // Sad frown
       ctx.beginPath();
       ctx.arc(0, r * 0.14, r * 0.13, Math.PI * 1.18, Math.PI * 1.82);
       ctx.stroke();
-    } else if (avgMood >= 70 || this.petStrokeTimer > 0) {
-      // Big happy cat/mochi smile :3
+    } else if (avgMood >= 70 || this.petStrokeTimer > 0 || this.showerTool.dragging) {
       ctx.beginPath();
       ctx.arc(-r * 0.075, 0, r * 0.075, 0.15, Math.PI - 0.15);
       ctx.arc(r * 0.075, 0, r * 0.075, 0.15, Math.PI - 0.15);
       ctx.stroke();
     } else {
-      // Gentle smile
       ctx.beginPath();
       ctx.arc(0, -2, r * 0.12, 0.2, Math.PI - 0.2);
       ctx.stroke();
@@ -1348,37 +1535,6 @@ export class MochiStage {
     ctx.restore();
   }
 
-  _drawBathroomExtras(ctx, cx, cy, r) {
-    // Draw accumulated soap foam bubbles on Mochi
-    if (this.foamBubbles.length > 0) {
-      ctx.save();
-      this.foamBubbles.forEach(b => {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
-        ctx.strokeStyle = '#bae6fd';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(cx + b.ox, cy + b.oy, b.r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(cx + b.ox - b.r * 0.3, cy + b.oy - b.r * 0.3, b.r * 0.25, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.restore();
-    }
-
-    // Draw Overhead Shower Nozzle when rinsing
-    if (this.showerTimer > 0) {
-      ctx.save();
-      ctx.fillStyle = '#cbd5e1';
-      ctx.strokeStyle = '#475569';
-      ctx.lineWidth = 3;
-      this._roundRect(ctx, cx - 34, cy - r * 1.85, 68, 16, 8, true, true);
-      ctx.restore();
-    }
-  }
-
   _drawToyBall(ctx, b) {
     ctx.save();
     ctx.translate(b.x, b.y);
@@ -1412,6 +1568,10 @@ export class MochiStage {
         ctx.font = `${Math.round(p.size)}px 'Fredoka', sans-serif`;
         ctx.textAlign = 'center';
         ctx.fillText('💖', p.x, p.y);
+      } else if (p.type === 'sparkle') {
+        ctx.font = "18px 'Fredoka', sans-serif";
+        ctx.textAlign = 'center';
+        ctx.fillText('✨', p.x, p.y);
       } else if (p.type === 'zzz') {
         ctx.font = `700 ${Math.round(p.size)}px 'Fredoka', sans-serif`;
         ctx.fillStyle = '#93c5fd';
@@ -1425,7 +1585,7 @@ export class MochiStage {
       } else if (p.type === 'water') {
         ctx.fillStyle = '#38bdf8';
         ctx.beginPath();
-        ctx.ellipse(p.x, p.y, 3, 7, 0, 0, Math.PI * 2);
+        ctx.ellipse(p.x, p.y, 3.5, 8, 0, 0, Math.PI * 2);
         ctx.fill();
       } else if (p.type === 'confetti') {
         ctx.translate(p.x, p.y);
@@ -1452,13 +1612,11 @@ export class MochiStage {
   }
 }
 
-// Standalone helper so mini-games and wardrobe preview can draw Mochi's head/body with equipped cosmetics!
 export function drawMiniMochi(ctx, x, y, radius, equipped = {}, time = 0) {
   const colorObj = CONFIG.shop.colors.find(c => c.id === equipped.color) || CONFIG.shop.colors[0];
   ctx.save();
   ctx.translate(x, y);
 
-  // Ears
   [-1, 1].forEach(dir => {
     ctx.save();
     ctx.translate(dir * radius * 0.56, -radius * 0.72);
@@ -1470,7 +1628,6 @@ export function drawMiniMochi(ctx, x, y, radius, equipped = {}, time = 0) {
     ctx.restore();
   });
 
-  // Body
   ctx.fillStyle = colorObj.hex;
   ctx.strokeStyle = colorObj.shade || '#db2777';
   ctx.lineWidth = 2.5;
@@ -1479,13 +1636,11 @@ export function drawMiniMochi(ctx, x, y, radius, equipped = {}, time = 0) {
   ctx.fill();
   ctx.stroke();
 
-  // Belly
   ctx.fillStyle = 'rgba(255,255,255,0.4)';
   ctx.beginPath();
   ctx.ellipse(0, radius * 0.3, radius * 0.52, radius * 0.36, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Eyes
   ctx.fillStyle = '#0f172a';
   ctx.beginPath();
   ctx.arc(-radius * 0.32, -radius * 0.1, radius * 0.13, 0, Math.PI * 2);
@@ -1497,14 +1652,12 @@ export function drawMiniMochi(ctx, x, y, radius, equipped = {}, time = 0) {
   ctx.arc(radius * 0.28, -radius * 0.14, radius * 0.045, 0, Math.PI * 2);
   ctx.fill();
 
-  // Smile
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 2.2;
   ctx.beginPath();
   ctx.arc(0, 2, radius * 0.14, 0.2, Math.PI - 0.2);
   ctx.stroke();
 
-  // Hat indicator
   if (equipped.hat === 'crown') {
     ctx.fillStyle = '#fde047';
     ctx.beginPath();
