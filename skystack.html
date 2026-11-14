@@ -903,6 +903,11 @@
     }
     recordRunInHubLog();
 
+    if (window.parent && window.parent !== window && typeof window.parent.__mochiOnRunFinished === 'function') {
+      window.parent.__mochiOnRunFinished({ gameId: 'skyStack', score });
+      return;
+    }
+
     // Anti-cheat deterministic replay submission payload
     const payload = {
       initData: tg ? tg.initData : '',
@@ -1152,24 +1157,6 @@
     if (state === 'PLAYING' && activeBlock) {
       drawIsoBox(activeBlock, originX, originY, scale, 1.0);
     }
-
-    // Draw Equipped Companion Pet hovering beside the Tower Top
-    try {
-      const pRaw = localStorage.getItem('arcade_profile_v1');
-      if (pRaw && stack.length > 0) {
-        const prof = JSON.parse(pRaw);
-        if (prof && prof.equippedPet) {
-          const topB = stack[stack.length - 1];
-          const pIso = isoProject(topB.x + 2.4, topB.y + 1.2, topB.z, originX, originY, scale);
-          const petIcon = prof.equippedPet === 'drone' ? '🤖' : prof.equippedPet === 'fox' ? '🦊' : '🐲';
-          ctx.save();
-          ctx.font = "24px 'Fredoka', sans-serif";
-          ctx.textAlign = 'center';
-          ctx.fillText(petIcon, pIso.sx, pIso.sy + Math.sin(performance.now() * 0.005) * 8);
-          ctx.restore();
-        }
-      }
-    } catch (e) {}
 
     // Draw falling cut debris
     for (let i = 0; i < debrisPool.length; i++) {

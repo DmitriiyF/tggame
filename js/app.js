@@ -12,9 +12,12 @@ class MochiPalApp {
     this.activeRoom = 'kitchen';
     this.activeShopTab = 'food';
     this.currentGameInstance = null;
+    this.activeGameIframe = null;
+    this.liveHudInterval = null;
     this.lastPlayedGameId = 'skyStack';
     this.toastTimeout = null;
     window.__mochiCloseEmbeddedGame = () => this.closeEmbeddedGame();
+    window.__mochiOnRunFinished = (info) => this.handleEmbeddedRunFinished(info);
   }
 
   async init() {
@@ -213,13 +216,24 @@ class MochiPalApp {
       this.showToast(`Привет, ${this.state.pet.name}! Покорми или погладь своего питомца 💖`);
     });
 
-    // Reward modal buttons
+    // Reward modal buttons (shown right over the active mini-game when a run ends!)
     document.getElementById('mp-reward-again-btn').addEventListener('click', () => {
+      sfx.playClick();
       this.closeModal('mp-modal-reward');
-      this.launchMiniGame(this.lastPlayedGameId);
+      this.restartEmbeddedGameRun();
     });
+    const skinsBtn = document.getElementById('mp-reward-skins-btn');
+    if (skinsBtn) {
+      skinsBtn.addEventListener('click', () => {
+        sfx.playClick();
+        this.closeModal('mp-modal-reward');
+        this.openEmbeddedGameSkinsOrGarage();
+      });
+    }
     document.getElementById('mp-reward-back-btn').addEventListener('click', () => {
+      sfx.playClick();
       this.closeModal('mp-modal-reward');
+      this.closeEmbeddedGame(true);
     });
 
     // Leaderboard refresh
@@ -541,20 +555,163 @@ class MochiPalApp {
     iframe.src = gCfg.url;
     iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;background:#0f172a;';
     iframe.setAttribute('allow', 'autoplay; fullscreen');
+    this.activeGameIframe = iframe;
 
-    // Floating quick-return pill to Mochi Pal (in addition to the game's own "В меню" / "HUB" buttons)
+    // Live Mochi Coin & Crystal Earning Progress Bar at bottom of screen
+    const liveBar = document.createElement('div');
+    liveBar.id = 'mp-live-game-hud';
+    liveBar.style.cssText = "position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(15,23,42,0.92);border:1.5px solid rgba(253,224,71,0.45);border-radius:16px;padding:6px 10px;font-family:'Fredoka', sans-serif;box-shadow:0 8px 24px rgba(0,0,0,0.55);backdrop-filter:blur(8px);pointer-events:auto;";
+
     const backBtn = document.createElement('button');
     backBtn.innerHTML = '🐾 К Мочи';
-    backBtn.style.cssText = "position:fixed;bottom:14px;left:14px;z-index:9999;background:rgba(15,23,42,0.88);color:#fde047;border:1.5px solid rgba(253,224,71,0.5);border-radius:999px;padding:7px 14px;font-family:'Fredoka', sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.45);backdrop-filter:blur(8px);";
+    backBtn.style.cssText = "background:linear-gradient(180deg,#ec4899,#be185d);color:#fff;border:none;border-radius:11px;padding:6px 11px;font-family:'Fredoka', sans-serif;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;";
     backBtn.addEventListener('click', () => {
       this.closeEmbeddedGame();
     });
 
+    const statsBox = document.createElement('div');
+    statsBox.style.cssText = 'flex:1;display:flex;flex-direction:column;gap:3px;min-width:0;';
+    statsBox.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;">
+        <span style="color:#fde047;" id="mp-live-coins-txt">🪙 ${Math.floor(this.state.wallet.coins)} (+0 🪙 • ⚡×${computeMoodMultiplier(this.state.pet.needs)})</span>
+        <span style="color:#38bdf8;" id="mp-live-gems-txt">💎 ${Math.floor(this.state.wallet.crystals)}</span>
+      </div>
+      <div style="width:100%;height:6px;background:rgba(51,65,85,0.9);border-radius:99px;overflow:hidden;">
+        <div id="mp-live-gem-bar" style="width:0%;height:100%;background:linear-gradient(90deg,#fde047,#38bdf8);transition:width 0.15s ease;"></div>
+      </div>
+    `;
+
+    liveBar.appendChild(backBtn);
+    liveBar.appendChild(statsBox);
+
     host.appendChild(iframe);
-    host.appendChild(backBtn);
+    host.appendChild(liveBar);
+
+    if (this.liveHudInterval) clearInterval(this.liveHudInterval);
+    this.liveHudInterval = setInterval(() => this._updateLiveGameHud(gameId), 180);
   }
 
-  closeEmbeddedGame() {
+  _updateLiveGameHud(gameId) {
+    if (!this.activeGameIframe || !this.activeGameIframe.contentDocument) return;
+    const doc = this.activeGameIframe.contentDocument;
+    const gCfg = CONFIG.games[gameId] || CONFIG.games.skyStack;
+
+    const scoreIds = {
+      skyStack: 'ss-score-txt',
+      puffHop: 'ph-score-txt',
+      timberDash: 'td-score-txt',
+      bladeSpin: 'bs-score-txt',
+      ridgeRush: 'rr-dist-txt'
+    };
+    const scoreEl = doc.getElementById(scoreIds[gameId]);
+    const rawScore = scoreEl ? (parseInt(scoreEl.textContent, 10) || 0) : 0;
+
+    const mult = this.state.lastLaunchEnergyMult || computeMoodMultiplier(this.state.pet.needs);
+    const playroomTier = (this.state.pet.house && this.state.pet.house.rooms && this.state.pet.house.rooms.playroom)
+      ? (this.state.pet.house.rooms.playroom.tier || 1)
+      : 1;
+    const roomBonus = 1 + (CONFIG.rooms.playroom.tierBonuses[playroomTier] || 0);
+    const estCoins = rawScore > 0 ? Math.max(5, Math.floor(rawScore * gCfg.coinRate * mult * roomBonus)) : 0;
+
+    // Sync wallet display if modified inside Ridge Rush garage
+    let baseCoins = Math.floor(this.state.wallet.coins);
+    let baseGems = Math.floor(this.state.wallet.crystals);
+    try {
+      const mRaw = localStorage.getItem('mochipal_state_v1');
+      if (mRaw) {
+        const ms = JSON.parse(mRaw);
+        if (ms && ms.wallet) {
+          baseCoins = Math.floor(ms.wallet.coins || 0);
+          baseGems = Math.floor(ms.wallet.crystals || 0);
+        }
+      }
+    } catch (e) {}
+
+    const coinsTxt = document.getElementById('mp-live-coins-txt');
+    const gemsTxt = document.getElementById('mp-live-gems-txt');
+    const gemBar = document.getElementById('mp-live-gem-bar');
+
+    if (coinsTxt) {
+      coinsTxt.textContent = `🪙 ${baseCoins} (+${estCoins} 🪙 за забег • ⚡×${mult})`;
+    }
+
+    const milestones = gCfg.milestones || [25, 50, 100];
+    const nextMs = milestones.find(m => rawScore < m) || milestones[milestones.length - 1];
+    const pct = Math.min(100, Math.round((rawScore / Math.max(1, nextMs)) * 100));
+
+    if (gemsTxt) {
+      gemsTxt.textContent = `💎 ${baseGems} (до +💎: ${rawScore}/${nextMs})`;
+    }
+    if (gemBar) {
+      gemBar.style.width = `${pct}%`;
+    }
+  }
+
+  handleEmbeddedRunFinished(info = {}) {
+    const syncRes = api.syncAfterStandaloneGame();
+    this.state = syncRes.state;
+    this.renderAllUI();
+
+    const gId = info.gameId || syncRes.lastGameId || this.lastPlayedGameId || 'skyStack';
+    const score = typeof info.score === 'number' ? info.score : syncRes.lastScore;
+    const totalCoinsEarned = (syncRes.coinsEarned || 0) + (info.directCoins || 0);
+
+    this.showRewardModal(gId, {
+      reward: {
+        score,
+        isNewBest: score >= (this.state.bestScores[gId] || 0) && score > 0,
+        bestScore: this.state.bestScores[gId] || score,
+        coins: totalCoinsEarned,
+        crystals: syncRes.crystalsEarned || 0,
+        xp: syncRes.xpEarned || (6 + Math.floor(score / 5))
+      },
+      leveledUp: syncRes.leveledUp,
+      newLevel: syncRes.newLevel
+    });
+  }
+
+  restartEmbeddedGameRun() {
+    if (!this.activeGameIframe || !this.activeGameIframe.contentDocument) {
+      this.launchMiniGame(this.lastPlayedGameId);
+      return;
+    }
+    const doc = this.activeGameIframe.contentDocument;
+    const retryIds = ['ss-retry-btn', 'ph-retry-btn', 'td-retry-btn', 'bs-retry-btn', 'rr-go-retry-btn', 'rr-drive-btn'];
+    for (const id of retryIds) {
+      const btn = doc.getElementById(id);
+      if (btn) {
+        btn.click();
+        return;
+      }
+    }
+    this.activeGameIframe.contentWindow.location.reload();
+  }
+
+  openEmbeddedGameSkinsOrGarage() {
+    if (!this.activeGameIframe || !this.activeGameIframe.contentDocument) return;
+    const doc = this.activeGameIframe.contentDocument;
+    if (this.lastPlayedGameId === 'ridgeRush') {
+      // Return to Ridge Rush Garage/Upgrades screen
+      this.activeGameIframe.contentWindow.location.reload();
+      return;
+    }
+    const skinBtnIds = ['ss-themes-btn', 'ph-skins-btn', 'td-skins-btn', 'bs-skins-btn'];
+    for (const id of skinBtnIds) {
+      const btn = doc.getElementById(id);
+      if (btn) {
+        btn.click();
+        return;
+      }
+    }
+  }
+
+  closeEmbeddedGame(skipModal = false) {
+    if (this.liveHudInterval) {
+      clearInterval(this.liveHudInterval);
+      this.liveHudInterval = null;
+    }
+    this.activeGameIframe = null;
+
     const host = document.getElementById('mp-minigame-host');
     if (!host || host.classList.contains('mp-hidden')) return;
     host.innerHTML = '';
@@ -566,7 +723,7 @@ class MochiPalApp {
     this.state = syncRes.state;
     this.renderAllUI();
 
-    if (syncRes.runsPlayed > 0) {
+    if (!skipModal && syncRes.runsPlayed > 0) {
       const gId = syncRes.lastGameId || this.lastPlayedGameId || 'skyStack';
       this.showRewardModal(gId, {
         reward: {
@@ -580,7 +737,7 @@ class MochiPalApp {
         leveledUp: syncRes.leveledUp,
         newLevel: syncRes.newLevel
       });
-    } else {
+    } else if (!skipModal) {
       this.showToast('С возвращением к Мочи! 💖');
     }
   }

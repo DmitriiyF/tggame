@@ -209,12 +209,36 @@ class MochiStateEngine {
         if (maxRR > (bs.ridgeRush || 0)) bs.ridgeRush = maxRR;
       }
 
-      // Check if gems were earned inside standalone games
+      // Clear legacy companion pet (fox/drone) in arcade_profile_v1
+      try {
+        const pRaw = localStorage.getItem('arcade_profile_v1');
+        if (pRaw) {
+          const prof = JSON.parse(pRaw);
+          if (prof && prof.equippedPet) {
+            prof.equippedPet = null;
+            localStorage.setItem('arcade_profile_v1', JSON.stringify(prof));
+          }
+        }
+      } catch (e) {}
+
+      // Sync any direct wallet changes from hillclimb.html (car/upgrade purchases or track coins)
+      try {
+        const rawLatest = localStorage.getItem(STORAGE_KEY);
+        if (rawLatest) {
+          const parsedLatest = JSON.parse(rawLatest);
+          if (parsedLatest && parsedLatest.wallet && typeof parsedLatest.wallet.coins === 'number') {
+            this.state.wallet.coins = parsedLatest.wallet.coins;
+          }
+        }
+      } catch (e) {}
+
+      // Sync gems earned OR spent on skins/revives inside standalone games
       const extGems = parseInt(localStorage.getItem('arcade_global_gems'), 10);
-      if (!isNaN(extGems) && extGems > this.state.wallet.crystals) {
-        const diff = extGems - this.state.wallet.crystals;
-        this.state.wallet.crystals = extGems;
-        summary.crystalsEarned += diff;
+      if (!isNaN(extGems)) {
+        if (extGems > this.state.wallet.crystals) {
+          summary.crystalsEarned += (extGems - this.state.wallet.crystals);
+        }
+        this.state.wallet.crystals = Math.max(0, extGems);
       }
 
       // Process any new runs recorded in arcade_runs_history_v1 by standalone games
@@ -293,6 +317,14 @@ class MochiStateEngine {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
       localStorage.setItem('arcade_global_gems', String(this.state.wallet.crystals));
+      localStorage.setItem('arcade_global_coins', String(Math.floor(this.state.wallet.coins)));
+      // Keep ridge_rush_save_v1 coins synced with Mochi Pal coins!
+      const rrRaw = localStorage.getItem('ridge_rush_save_v1');
+      if (rrRaw) {
+        const rr = JSON.parse(rrRaw);
+        rr.coins = Math.floor(this.state.wallet.coins);
+        localStorage.setItem('ridge_rush_save_v1', JSON.stringify(rr));
+      }
       if (tg && tg.CloudStorage && tg.isVersionAtLeast && tg.isVersionAtLeast('6.9')) {
         tg.CloudStorage.setItem(STORAGE_KEY, JSON.stringify(this.state), () => {});
       }

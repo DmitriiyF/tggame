@@ -776,32 +776,35 @@
       </div>
     </div>
 
-    <!-- MODAL 5: MINI-GAME REWARD SCREEN -->
-    <div id="mp-modal-reward" class="mp-modal-overlay mp-hidden">
+    <!-- MODAL 5: MINI-GAME REWARD SCREEN (SHOWN DIRECTLY OVER MINI-GAMES) -->
+    <div id="mp-modal-reward" class="mp-modal-overlay mp-hidden" style="z-index:150;">
       <div class="mp-modal-card" style="text-align:center;align-items:center;">
         <div id="mp-rew-game-title" style="font-size:16px;font-weight:700;color:#38bdf8;">🧱 Sky Stack</div>
-        <div style="font-size:22px;font-weight:700;color:#f8fafc;">ЗАБЕГ ЗАВЕРШЁН!</div>
-        <div id="mp-rew-score" style="font-size:48px;font-weight:700;color:#fde047;line-height:1;">0</div>
+        <div style="font-size:20px;font-weight:700;color:#f8fafc;">🐾 МОЧИ ДОВОЛЕН ЗАБЕГОМ!</div>
+        <div id="mp-rew-score" style="font-size:46px;font-weight:700;color:#fde047;line-height:1;">0</div>
         <div id="mp-rew-best" style="font-size:13px;color:#4ade80;font-weight:700;">Лучший результат: 0</div>
 
-        <div style="display:flex;gap:10px;justify-content:center;width:100%;margin:6px 0;">
-          <div style="flex:1;background:rgba(30,41,59,0.9);padding:10px;border-radius:14px;border:1px solid rgba(250,204,21,0.3);">
-            <div style="font-size:11px;color:#94a3b8;">Монеты</div>
-            <div id="mp-rew-coins" style="font-size:18px;font-weight:700;color:#fde047;">+0 🪙</div>
+        <div style="display:flex;gap:8px;justify-content:center;width:100%;margin:4px 0;">
+          <div style="flex:1;background:rgba(30,41,59,0.9);padding:10px 6px;border-radius:14px;border:1px solid rgba(250,204,21,0.35);">
+            <div style="font-size:11px;color:#94a3b8;">Монеты Мочи</div>
+            <div id="mp-rew-coins" style="font-size:17px;font-weight:700;color:#fde047;">+0 🪙</div>
           </div>
-          <div style="flex:1;background:rgba(30,41,59,0.9);padding:10px;border-radius:14px;border:1px solid rgba(56,189,248,0.3);">
+          <div style="flex:1;background:rgba(30,41,59,0.9);padding:10px 6px;border-radius:14px;border:1px solid rgba(56,189,248,0.35);">
             <div style="font-size:11px;color:#94a3b8;">Кристаллы</div>
-            <div id="mp-rew-crystals" style="font-size:18px;font-weight:700;color:#38bdf8;">+0 💎</div>
+            <div id="mp-rew-crystals" style="font-size:17px;font-weight:700;color:#38bdf8;">+0 💎</div>
           </div>
-          <div style="flex:1;background:rgba(30,41,59,0.9);padding:10px;border-radius:14px;border:1px solid rgba(74,222,128,0.3);">
+          <div style="flex:1;background:rgba(30,41,59,0.9);padding:10px 6px;border-radius:14px;border:1px solid rgba(74,222,128,0.35);">
             <div style="font-size:11px;color:#94a3b8;">Опыт Мочи</div>
-            <div id="mp-rew-xp" style="font-size:18px;font-weight:700;color:#4ade80;">+0 XP</div>
+            <div id="mp-rew-xp" style="font-size:17px;font-weight:700;color:#4ade80;">+0 XP</div>
           </div>
         </div>
 
-        <div style="display:flex;gap:10px;width:100%;">
-          <button id="mp-reward-again-btn" class="mp-room-action-btn mp-btn-green">▶ Играть ещё</button>
-          <button id="mp-reward-back-btn" class="mp-room-action-btn">🏠 К Мочи</button>
+        <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
+          <button id="mp-reward-again-btn" class="mp-room-action-btn mp-btn-green" style="width:100%;">▶ Играть снова</button>
+          <div style="display:flex;gap:8px;width:100%;">
+            <button id="mp-reward-skins-btn" class="mp-room-action-btn mp-btn-purple" style="flex:1;font-size:13px;">🎨 Скины / Гараж</button>
+            <button id="mp-reward-back-btn" class="mp-room-action-btn" style="flex:1;font-size:13px;">🏠 К Мочи</button>
+          </div>
         </div>
       </div>
     </div>

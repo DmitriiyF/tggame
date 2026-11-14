@@ -854,6 +854,11 @@
       localStorage.setItem('arcade_runs_history_v1', JSON.stringify(list.slice(0, 20)));
     } catch (e) {}
 
+    if (window.parent && window.parent !== window && typeof window.parent.__mochiOnRunFinished === 'function') {
+      window.parent.__mochiOnRunFinished({ gameId: 'puffHop', score });
+      return;
+    }
+
     try {
       fetch(CONFIG.api.submitEndpoint, {
         method: 'POST',
@@ -1241,20 +1246,8 @@
       ctx.fill();
     }
 
-    // 6. Companion Pet swimming behind Puffer Fish
-    const fx = w * CONFIG.player.x;
-    if (activePet) {
-      const petX = fx - 44;
-      const petY = fish.y - 18 + Math.sin(performance.now() * 0.006) * 7;
-      ctx.save();
-      ctx.font = "24px 'Fredoka', sans-serif";
-      ctx.textAlign = 'center';
-      const icon = activePet === 'drone' ? '🤖' : activePet === 'fox' ? '🦊' : '🐲';
-      ctx.fillText(icon, petX, petY);
-      ctx.restore();
-    }
-
     // 7. Puffer Fish character
+    const fx = w * CONFIG.player.x;
     drawPufferFish(ctx, fx, fish.y, fish.angle, fish.inflateMs, fish.invulnSec);
 
     // 8. Floating texts

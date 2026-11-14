@@ -1064,6 +1064,11 @@
       localStorage.setItem('arcade_runs_history_v1', JSON.stringify(list.slice(0, 20)));
     } catch (e) {}
 
+    if (window.parent && window.parent !== window && typeof window.parent.__mochiOnRunFinished === 'function') {
+      window.parent.__mochiOnRunFinished({ gameId: 'bladeSpin', score });
+      return;
+    }
+
     // Anti-cheat deterministic replay POST
     try {
       fetch(CONFIG.api.submitEndpoint, {
@@ -1317,18 +1322,6 @@
 
     ctx.save();
     ctx.translate(sx, sy);
-
-    // Draw Companion Pet if equipped in Hub
-    if (activePet) {
-      const petX = cx + R + 48;
-      const petY = cy - 40 + Math.sin(performance.now() * 0.004) * 10;
-      ctx.save();
-      ctx.font = "28px 'Fredoka', sans-serif";
-      ctx.textAlign = 'center';
-      const icon = activePet === 'drone' ? '🤖' : activePet === 'fox' ? '🦊' : '🐲';
-      ctx.fillText(icon, petX, petY);
-      ctx.restore();
-    }
 
     // 1. Stuck daggers (drawn behind target rim so tips are embedded)
     stuckAngles.forEach(a => {

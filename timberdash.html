@@ -957,6 +957,13 @@
     writeStorage();
     recordRunInHubLog();
 
+    if (window.parent && window.parent !== window && typeof window.parent.__mochiOnRunFinished === 'function') {
+      setTimeout(() => {
+        window.parent.__mochiOnRunFinished({ gameId: 'timberDash', score });
+      }, 320);
+      return;
+    }
+
     // Anti-cheat deterministic replay POST
     const payload = {
       initData: tg ? tg.initData : '',
@@ -1170,22 +1177,6 @@
     const charX = baseX + charSideDir * (tw * 0.5 + 56);
     const charY = baseY;
     drawBeaverLumberjack(ctx, charX, charY, charSideDir, player.alive, chopAnimTimerMs);
-
-    // Draw Equipped Companion Pet floating above Beaver
-    try {
-      const pRaw = localStorage.getItem('arcade_profile_v1');
-      if (pRaw) {
-        const prof = JSON.parse(pRaw);
-        if (prof && prof.equippedPet) {
-          const petIcon = prof.equippedPet === 'drone' ? '🤖' : prof.equippedPet === 'fox' ? '🦊' : '🐲';
-          ctx.save();
-          ctx.font = "24px 'Fredoka', sans-serif";
-          ctx.textAlign = 'center';
-          ctx.fillText(petIcon, charX + charSideDir * 30, charY - 88 + Math.sin(performance.now() * 0.005) * 7);
-          ctx.restore();
-        }
-      }
-    } catch (e) {}
 
     // Subtle bottom arrow hints (fade out after 5 chops)
     if (score < 5 && player.alive) {

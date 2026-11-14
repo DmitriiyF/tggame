@@ -605,10 +605,10 @@
       <div id="rr-upg-list" class="rr-upg-list"></div>
       <div class="rr-upg-row" style="border-color:rgba(56,189,248,0.4);background:rgba(14,165,233,0.12);font-family:'Fredoka', sans-serif;">
         <div class="rr-upg-info">
-          <div class="rr-upg-title" style="color:#7dd3fc;font-family:'Fredoka', sans-serif;">💎 Gem Exchange</div>
-          <div class="rr-upg-desc">Trade 5 shared Hub Gems for +1,000 Coins</div>
+          <div class="rr-upg-title" style="color:#7dd3fc;font-family:'Fredoka', sans-serif;">💎 Обмен кристаллов</div>
+          <div class="rr-upg-desc">Обменяй 5 общих кристаллов Мочи на +200 монеток</div>
         </div>
-        <button id="rr-exchange-gems-btn" class="rr-upg-buy" style="background:linear-gradient(180deg,#0ea5e9,#0284c7);font-family:'Fredoka', sans-serif;">5 💎 → 1000 🪙</button>
+        <button id="rr-exchange-gems-btn" class="rr-upg-buy" style="background:linear-gradient(180deg,#0ea5e9,#0284c7);font-family:'Fredoka', sans-serif;">5 💎 → 200 🪙</button>
       </div>
     </div>
 
@@ -746,16 +746,16 @@
       lowWarning: 0.2
     },
     coins: {
-      values: [5, 25, 100],
+      values: [2, 5, 15],
       colors: ['#facc15', '#38bdf8', '#f43f5e'],
       radii: [0.38, 0.46, 0.56],
-      airTimePerSec: 10,
-      flipBonus: 50
+      airTimePerSec: 3,
+      flipBonus: 12
     },
     upgrades: {
       maxLevel: 5,
-      costMultiplier: 1.6,
-      baseCost: 300,
+      costMultiplier: 1.5,
+      baseCost: 50,
       types: [
         { key: 'engine', name: 'Engine', desc: '+12% motor torque per level' },
         { key: 'suspension', name: 'Suspension', desc: '+10% spring frequency & damping' },
@@ -806,7 +806,7 @@
         fuelUse: 1.4,
         airCtrl: 0.6,
         comOffset: [0, 0.2],
-        unlockCost: 2500,
+        unlockCost: 250,
         chassisHalfW: 1.55,
         chassisHalfH: 0.45,
         wheelBase: 2.2,
@@ -832,7 +832,7 @@
         fuelUse: 0.8,
         airCtrl: 1.4,
         comOffset: [0, -0.15],
-        unlockCost: 5000,
+        unlockCost: 450,
         chassisHalfW: 1.45,
         chassisHalfH: 0.28,
         wheelBase: 2.0,
@@ -858,7 +858,7 @@
         fuelUse: 1.2,
         airCtrl: 0.5,
         comOffset: [0, -0.3],
-        unlockCost: 9000,
+        unlockCost: 700,
         chassisHalfW: 1.5,
         chassisHalfH: 0.42,
         wheelBase: 2.15,
@@ -884,7 +884,7 @@
         fuelUse: 1.1,
         airCtrl: 1.1,
         comOffset: [0, -0.2],
-        unlockCost: 15000,
+        unlockCost: 1000,
         chassisHalfW: 1.6,
         chassisHalfH: 0.32,
         wheelBase: 2.2,
@@ -949,6 +949,16 @@
         if (parsed.bestDist) saveData.bestDist = parsed.bestDist;
         if (parsed.upgrades) saveData.upgrades = parsed.upgrades;
       }
+
+      // Sync Coins & Crystals directly from Mochi Pal shared wallet!
+      const mochiRaw = localStorage.getItem('mochipal_state_v1');
+      if (mochiRaw) {
+        const ms = JSON.parse(mochiRaw);
+        if (ms && ms.wallet) {
+          saveData.coins = Math.floor(ms.wallet.coins || 0);
+          globalGems = Math.floor(ms.wallet.crystals || 0);
+        }
+      }
     } catch (e) {}
     CONFIG.cars.forEach(c => {
       if (!saveData.upgrades[c.id]) {
@@ -964,6 +974,18 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
       localStorage.setItem(GLOBAL_GEMS_KEY, String(globalGems));
+      localStorage.setItem('arcade_global_coins', String(Math.floor(saveData.coins)));
+
+      // Write Coins & Crystals directly back to Mochi Pal shared wallet!
+      const mochiRaw = localStorage.getItem('mochipal_state_v1');
+      if (mochiRaw) {
+        const ms = JSON.parse(mochiRaw);
+        if (ms && ms.wallet) {
+          ms.wallet.coins = Math.floor(saveData.coins);
+          ms.wallet.crystals = Math.floor(globalGems);
+          localStorage.setItem('mochipal_state_v1', JSON.stringify(ms));
+        }
+      }
     } catch (e) {}
   }
 
@@ -2270,22 +2292,6 @@
     c.roundRect(headX + 2, headY - 6, 0.22 * ppm, 9, 4);
     c.fill();
 
-    // Draw Equipped Companion Pet flying above Car
-    try {
-      const pRaw = localStorage.getItem('arcade_profile_v1');
-      if (pRaw) {
-        const prof = JSON.parse(pRaw);
-        if (prof && prof.equippedPet) {
-          const petIcon = prof.equippedPet === 'drone' ? '🤖' : prof.equippedPet === 'fox' ? '🦊' : '🐲';
-          c.save();
-          c.font = "22px 'Fredoka', sans-serif";
-          c.textAlign = 'center';
-          c.fillText(petIcon, headX - 28, headY - 22 + Math.sin(performance.now() * 0.006) * 6);
-          c.restore();
-        }
-      }
-    } catch (e) {}
-
     // Distinct silhouette per car
     c.fillStyle = carCfg.colorPrimary;
     c.strokeStyle = '#0f172a';
@@ -2647,6 +2653,12 @@
       fetch('https://script.google.com/macros/s/AKfycbzHXu32iW7OpZvBT_lGtOJEYnueaIIMFTa-F4rhaJmNv2T0y4BvtVUFKi8DD5x66PPf/exec?action=save&payload=' + encodeURIComponent(payload)).catch(() => {});
     } catch (e) {}
 
+    if (window.parent && window.parent !== window && typeof window.parent.__mochiOnRunFinished === 'function') {
+      const totalRunCoins = runTrackCoins + runAirCoins + runFlipCoins;
+      window.parent.__mochiOnRunFinished({ gameId: 'ridgeRush', score: currentDistMeters, directCoins: totalRunCoins });
+      return;
+    }
+
     elHud.classList.add('rr-hidden');
     elScreenGameOver.classList.remove('rr-hidden');
 
@@ -2838,7 +2850,7 @@
     sfx.init();
     if (globalGems >= 5) {
       globalGems -= 5;
-      saveData.coins += 1000;
+      saveData.coins += 200;
       writeSave();
       sfx.playGem();
       renderUpgradesScreen();
