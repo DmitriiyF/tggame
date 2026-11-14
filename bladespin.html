@@ -267,8 +267,8 @@
     </div>
   </div>
 
-  <!-- GAME OVER MODAL -->
-  <div id="bs-screen-gameover" class="bs-overlay bs-hidden" style="background:rgba(9,13,22,0.75);font-family:'Fredoka', sans-serif;">
+  <!-- GAME OVER MODAL (HIDDEN IN MOCHI PAL) -->
+  <div id="bs-screen-gameover" class="bs-overlay bs-hidden" style="display:none !important;">
     <div class="bs-card">
       <div id="bs-new-record" class="bs-hidden" style="background:#f59e0b;color:#0f172a;font-size:12px;font-weight:700;padding:3px 12px;border-radius:99px;font-family:'Fredoka', sans-serif;">★ NEW RECORD ★</div>
       <div style="font-size:24px;font-weight:700;color:#f87171;font-family:'Fredoka', sans-serif;">BLADE DEFLECTED!</div>
@@ -1064,8 +1064,12 @@
       localStorage.setItem('arcade_runs_history_v1', JSON.stringify(list.slice(0, 20)));
     } catch (e) {}
 
-    if (window.parent && window.parent !== window && typeof window.parent.__mochiOnRunFinished === 'function') {
-      window.parent.__mochiOnRunFinished({ gameId: 'bladeSpin', score });
+    if (window.parent && window.parent !== window) {
+      if (typeof window.parent.__mochiOnRunFinished === 'function') {
+        window.parent.__mochiOnRunFinished({ gameId: 'bladeSpin', score });
+      } else {
+        window.parent.postMessage({ type: 'MOCHI_RUN_FINISHED', gameId: 'bladeSpin', score }, '*');
+      }
       return;
     }
 

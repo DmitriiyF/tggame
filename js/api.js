@@ -1,5 +1,5 @@
 // Mochi Pal — Pure Client Storage Engine (localStorage + Telegram CloudStorage + Google Sheets Sync)
-import { CONFIG } from './config.js';
+import { CONFIG } from './config.js?v=20261114_3';
 
 const STORAGE_KEY = 'mochipal_state_v1';
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;

@@ -1,6 +1,6 @@
 // Mochi Pal — Layered Canvas 2D Pet Renderer, Interactive Bath Tools (Soap & Shower) & Spring Physics
-import { CONFIG } from './config.js';
-import { sfx } from './audio.js';
+import { CONFIG } from './config.js?v=20261114_3';
+import { sfx } from './audio.js?v=20261114_3';
 
 export class MochiStage {
   constructor(canvas, callbacks = {}) {
@@ -58,9 +58,9 @@ export class MochiStage {
     };
     this.showerTool = {
       homeX: 292,
-      homeY: 115,
+      homeY: 175,
       x: 292,
-      y: 115,
+      y: 175,
       r: 34,
       dragging: false,
       waterSoundCooldown: 0
@@ -123,7 +123,7 @@ export class MochiStage {
     }
 
     this.showerTool.homeX = Math.min(this.width - 54, this.width * 0.84);
-    this.showerTool.homeY = Math.max(88, this.height * 0.24);
+    this.showerTool.homeY = Math.max(155, this.height * 0.45);
     if (!this.showerTool.dragging) {
       this.showerTool.x = this.showerTool.homeX;
       this.showerTool.y = this.showerTool.homeY;
@@ -378,7 +378,7 @@ export class MochiStage {
       // Dragging Shower Head in Bathroom: aim water stream over Mochi!
       if (this.showerTool.dragging) {
         this.showerTool.x = Math.max(36, Math.min(this.width - 36, pos.x));
-        this.showerTool.y = Math.max(48, Math.min(this.height * 0.65, pos.y));
+        this.showerTool.y = Math.max(55, Math.min(this.height * 0.72, pos.y));
         return;
       }
 

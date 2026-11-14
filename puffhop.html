@@ -225,8 +225,8 @@
     </div>
   </div>
 
-  <!-- GAME OVER MODAL -->
-  <div id="ph-screen-gameover" class="ph-overlay ph-hidden" style="background:rgba(9,13,22,0.72);font-family:'Fredoka', sans-serif;">
+  <!-- GAME OVER MODAL (HIDDEN IN MOCHI PAL) -->
+  <div id="ph-screen-gameover" class="ph-overlay ph-hidden" style="display:none !important;">
     <div class="ph-card">
       <div id="ph-new-record" class="ph-hidden" style="background:#f59e0b;color:#0f172a;font-size:12px;font-weight:700;padding:3px 12px;border-radius:99px;font-family:'Fredoka', sans-serif;">★ NEW RECORD ★</div>
       <div style="font-size:22px;font-weight:700;color:#f87171;font-family:'Fredoka', sans-serif;">GAME OVER</div>
@@ -854,8 +854,12 @@
       localStorage.setItem('arcade_runs_history_v1', JSON.stringify(list.slice(0, 20)));
     } catch (e) {}
 
-    if (window.parent && window.parent !== window && typeof window.parent.__mochiOnRunFinished === 'function') {
-      window.parent.__mochiOnRunFinished({ gameId: 'puffHop', score });
+    if (window.parent && window.parent !== window) {
+      if (typeof window.parent.__mochiOnRunFinished === 'function') {
+        window.parent.__mochiOnRunFinished({ gameId: 'puffHop', score });
+      } else {
+        window.parent.postMessage({ type: 'MOCHI_RUN_FINISHED', gameId: 'puffHop', score }, '*');
+      }
       return;
     }
 

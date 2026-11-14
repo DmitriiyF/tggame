@@ -188,51 +188,56 @@
     /* FLOATING SIDE BUTTONS ON STAGE */
     #mp-app-root .mp-stage-top-overlay {
       position: absolute;
-      top: 10px;
-      left: 12px;
-      right: 12px;
+      top: 8px;
+      left: 10px;
+      right: 10px;
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
+      gap: 6px;
       pointer-events: none;
       z-index: 10;
     }
 
     #mp-app-root .mp-room-pill {
       pointer-events: auto;
-      background: rgba(15, 23, 42, 0.85);
+      background: rgba(15, 23, 42, 0.88);
       backdrop-filter: blur(8px);
       border: 1.5px solid rgba(253, 224, 71, 0.45);
-      padding: 6px 12px;
+      padding: 5px 10px;
       border-radius: 99px;
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 700;
       color: #fde047;
       cursor: pointer;
+      white-space: nowrap;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
 
     #mp-app-root .mp-side-btns {
       pointer-events: auto;
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 5px;
     }
 
     #mp-app-root .mp-float-btn {
       position: relative;
-      background: rgba(15, 23, 42, 0.82);
+      background: rgba(15, 23, 42, 0.86);
       backdrop-filter: blur(8px);
       border: 1px solid rgba(255, 255, 255, 0.22);
       color: #f8fafc;
-      padding: 7px 11px;
-      border-radius: 14px;
-      font-size: 12px;
+      padding: 5px 8px;
+      border-radius: 11px;
+      font-size: 11px;
       font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
+      white-space: nowrap;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
 
@@ -567,6 +572,15 @@
       inset: 0;
       z-index: 60;
       background: #090d16;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    #mp-app-root #mp-minigame-host.mp-hidden {
+      display: none !important;
     }
 
     /* TOAST BANNER */
@@ -683,13 +697,13 @@
       <div class="mp-stage-top-overlay">
         <div class="mp-room-pill" id="mp-room-badge" title="Нажми, чтобы прокачать комнату и сменить обои">🍎 Кухня • Ур. 1 ⬆️</div>
         <div class="mp-side-btns">
-          <button class="mp-float-btn" id="mp-btn-house" style="border-color:rgba(253,224,71,0.5);color:#fde047;">🏠 Дом / Ремонт</button>
-          <button class="mp-float-btn" id="mp-btn-wardrobe">👒 Гардероб</button>
+          <button class="mp-float-btn" id="mp-btn-house" style="border-color:rgba(253,224,71,0.5);color:#fde047;">🏠 Дом</button>
+          <button class="mp-float-btn" id="mp-btn-wardrobe">👒 Шкаф</button>
           <button class="mp-float-btn" id="mp-btn-tasks">
-            🎯 Задания
+            🎯 Квесты
             <span class="mp-dot-alert" id="mp-tasks-dot"></span>
           </button>
-          <button class="mp-float-btn" id="mp-btn-leaderboard">🏆 Рейтинг</button>
+          <button class="mp-float-btn" id="mp-btn-leaderboard">🏆 Топ</button>
         </div>
       </div>
     </div>
@@ -832,6 +846,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js"></script>
+  <script type="module" src="./js/app.js?v=20261114_3"></script>
 </body>
 </html>

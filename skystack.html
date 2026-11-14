@@ -261,8 +261,8 @@
     </div>
   </div>
 
-  <!-- GAME OVER SCREEN -->
-  <div id="ss-screen-gameover" class="ss-overlay ss-hidden">
+  <!-- GAME OVER SCREEN (HIDDEN IN MOCHI PAL) -->
+  <div id="ss-screen-gameover" class="ss-overlay ss-hidden" style="display:none !important;">
     <div class="ss-gameover-card" style="gap:9px;padding:18px;">
       <div id="ss-new-record-banner" class="ss-new-record ss-hidden">★ NEW RECORD ★</div>
       <div style="font-size:24px;font-weight:700;color:#f8fafc;font-family:'Fredoka', sans-serif;">TOWER COMPLETE</div>
@@ -903,8 +903,12 @@
     }
     recordRunInHubLog();
 
-    if (window.parent && window.parent !== window && typeof window.parent.__mochiOnRunFinished === 'function') {
-      window.parent.__mochiOnRunFinished({ gameId: 'skyStack', score });
+    if (window.parent && window.parent !== window) {
+      if (typeof window.parent.__mochiOnRunFinished === 'function') {
+        window.parent.__mochiOnRunFinished({ gameId: 'skyStack', score });
+      } else {
+        window.parent.postMessage({ type: 'MOCHI_RUN_FINISHED', gameId: 'skyStack', score }, '*');
+      }
       return;
     }
 

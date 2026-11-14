@@ -275,8 +275,8 @@
     </div>
   </div>
 
-  <!-- GAME OVER -->
-  <div id="td-screen-gameover" class="td-overlay td-hidden">
+  <!-- GAME OVER (HIDDEN IN MOCHI PAL) -->
+  <div id="td-screen-gameover" class="td-overlay td-hidden" style="display:none !important;">
     <div class="td-card" style="gap:10px;padding:18px;">
       <div id="td-new-record" class="td-new-record td-hidden">★ NEW RECORD ★</div>
       <div id="td-go-title" style="font-size:22px;font-weight:700;color:#f87171;font-family:'Fredoka', sans-serif;">TIMBER!</div>
@@ -957,9 +957,13 @@
     writeStorage();
     recordRunInHubLog();
 
-    if (window.parent && window.parent !== window && typeof window.parent.__mochiOnRunFinished === 'function') {
+    if (window.parent && window.parent !== window) {
       setTimeout(() => {
-        window.parent.__mochiOnRunFinished({ gameId: 'timberDash', score });
+        if (typeof window.parent.__mochiOnRunFinished === 'function') {
+          window.parent.__mochiOnRunFinished({ gameId: 'timberDash', score });
+        } else {
+          window.parent.postMessage({ type: 'MOCHI_RUN_FINISHED', gameId: 'timberDash', score }, '*');
+        }
       }, 320);
       return;
     }

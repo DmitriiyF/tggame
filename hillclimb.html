@@ -629,8 +629,8 @@
     </div>
   </div>
 
-  <!-- GAME OVER SCREEN -->
-  <div id="rr-screen-gameover" class="rr-overlay rr-hidden" style="justify-content:center;gap:10px;font-family:'Fredoka', sans-serif;">
+  <!-- GAME OVER SCREEN (HIDDEN IN MOCHI PAL) -->
+  <div id="rr-screen-gameover" class="rr-overlay rr-hidden" style="display:none !important;">
     <div class="rr-card" style="max-width:440px;font-family:'Fredoka', sans-serif;gap:8px;padding:14px;">
       <div id="rr-go-reason" style="font-size:22px;font-weight:700;color:#f87171;text-align:center;font-family:'Fredoka', sans-serif;">DRIVER KNOCKED OUT</div>
       <div id="rr-go-dist" style="font-size:16px;font-weight:600;color:#38bdf8;text-align:center;font-family:'Fredoka', sans-serif;">Distance: 0 m</div>
@@ -2653,9 +2653,13 @@
       fetch('https://script.google.com/macros/s/AKfycbzHXu32iW7OpZvBT_lGtOJEYnueaIIMFTa-F4rhaJmNv2T0y4BvtVUFKi8DD5x66PPf/exec?action=save&payload=' + encodeURIComponent(payload)).catch(() => {});
     } catch (e) {}
 
-    if (window.parent && window.parent !== window && typeof window.parent.__mochiOnRunFinished === 'function') {
+    if (window.parent && window.parent !== window) {
       const totalRunCoins = runTrackCoins + runAirCoins + runFlipCoins;
-      window.parent.__mochiOnRunFinished({ gameId: 'ridgeRush', score: currentDistMeters, directCoins: totalRunCoins });
+      if (typeof window.parent.__mochiOnRunFinished === 'function') {
+        window.parent.__mochiOnRunFinished({ gameId: 'ridgeRush', score: currentDistMeters, directCoins: totalRunCoins });
+      } else {
+        window.parent.postMessage({ type: 'MOCHI_RUN_FINISHED', gameId: 'ridgeRush', score: currentDistMeters, directCoins: totalRunCoins }, '*');
+      }
       return;
     }
 

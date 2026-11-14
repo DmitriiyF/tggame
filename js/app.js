@@ -1,8 +1,8 @@
 // Mochi Pal — Main Virtual Pet Application Controller
-import { CONFIG } from './config.js';
-import { sfx } from './audio.js';
-import { api, xpNeededForLevel, computeMoodMultiplier } from './api.js';
-import { MochiStage } from './mochi-renderer.js';
+import { CONFIG } from './config.js?v=20261114_3';
+import { sfx } from './audio.js?v=20261114_3';
+import { api, xpNeededForLevel, computeMoodMultiplier } from './api.js?v=20261114_3';
+import { MochiStage } from './mochi-renderer.js?v=20261114_3';
 
 const ROOM_ORDER = ['kitchen', 'bathroom', 'bedroom', 'playroom'];
 
@@ -18,6 +18,11 @@ class MochiPalApp {
     this.toastTimeout = null;
     window.__mochiCloseEmbeddedGame = () => this.closeEmbeddedGame();
     window.__mochiOnRunFinished = (info) => this.handleEmbeddedRunFinished(info);
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'MOCHI_RUN_FINISHED') {
+        this.handleEmbeddedRunFinished(e.data);
+      }
+    });
   }
 
   async init() {
@@ -565,7 +570,7 @@ class MochiPalApp {
     // Mount the ORIGINAL standalone HTML game with cache-buster so latest hooks always run
     const iframe = document.createElement('iframe');
     iframe.src = `${gCfg.url}?v=${Date.now()}`;
-    iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;background:#0f172a;';
+    iframe.style.cssText = 'flex:1;width:100%;height:100%;min-height:0;border:0;display:block;background:#0f172a;';
     iframe.setAttribute('allow', 'autoplay; fullscreen');
     this.activeGameIframe = iframe;
 
@@ -591,14 +596,14 @@ class MochiPalApp {
       } catch (e) {}
     });
 
-    // Live Mochi Coin & Crystal Earning Progress Bar confined inside the 520px game column (position: absolute)
+    // Dedicated top header bar inside the 520px game column (above the iframe — never overlaps game buttons/pedals!)
     const liveBar = document.createElement('div');
     liveBar.id = 'mp-live-game-hud';
-    liveBar.style.cssText = "position:absolute;bottom:10px;left:10px;right:10px;z-index:90;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(15,23,42,0.92);border:1.5px solid rgba(253,224,71,0.45);border-radius:16px;padding:6px 10px;font-family:'Fredoka', sans-serif;box-shadow:0 8px 24px rgba(0,0,0,0.55);backdrop-filter:blur(8px);pointer-events:auto;";
+    liveBar.style.cssText = "flex-shrink:0;width:100%;max-width:520px;box-sizing:border-box;z-index:90;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#0f172a;border-bottom:1.5px solid rgba(253,224,71,0.4);padding:6px 10px;font-family:'Fredoka', sans-serif;";
 
     const backBtn = document.createElement('button');
     backBtn.innerHTML = '🐾 К Мочи';
-    backBtn.style.cssText = "background:linear-gradient(180deg,#ec4899,#be185d);color:#fff;border:none;border-radius:11px;padding:6px 11px;font-family:'Fredoka', sans-serif;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;";
+    backBtn.style.cssText = "background:linear-gradient(180deg,#ec4899,#be185d);color:#fff;border:none;border-radius:10px;padding:5px 10px;font-family:'Fredoka', sans-serif;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;";
     backBtn.addEventListener('click', () => {
       this.closeEmbeddedGame();
     });
@@ -606,11 +611,11 @@ class MochiPalApp {
     const statsBox = document.createElement('div');
     statsBox.style.cssText = 'flex:1;display:flex;flex-direction:column;gap:3px;min-width:0;';
     statsBox.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
         <span style="color:#fde047;" id="mp-live-coins-txt">🪙 ${Math.floor(this.state.wallet.coins)} (+0 🪙 • ⚡×${computeMoodMultiplier(this.state.pet.needs)})</span>
         <span style="color:#38bdf8;" id="mp-live-gems-txt">💎 ${Math.floor(this.state.wallet.crystals)}</span>
       </div>
-      <div style="width:100%;height:6px;background:rgba(51,65,85,0.9);border-radius:99px;overflow:hidden;">
+      <div style="width:100%;height:5px;background:rgba(51,65,85,0.9);border-radius:99px;overflow:hidden;">
         <div id="mp-live-gem-bar" style="width:0%;height:100%;background:linear-gradient(90deg,#fde047,#38bdf8);transition:width 0.15s ease;"></div>
       </div>
     `;
@@ -618,8 +623,8 @@ class MochiPalApp {
     liveBar.appendChild(backBtn);
     liveBar.appendChild(statsBox);
 
-    host.appendChild(iframe);
     host.appendChild(liveBar);
+    host.appendChild(iframe);
 
     if (this.liveHudInterval) clearInterval(this.liveHudInterval);
     this.liveHudInterval = setInterval(() => this._updateLiveGameHud(gameId), 180);
