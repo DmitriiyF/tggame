@@ -241,6 +241,18 @@ class MochiPalApp {
       sfx.playClick();
       this.refreshLeaderboard();
     });
+
+    // Enable mouse wheel horizontal scrolling on the bottom tray carousel
+    const trayEl = document.getElementById('mp-room-tray');
+    if (trayEl) {
+      trayEl.addEventListener('wheel', (e) => {
+        const carousel = trayEl.querySelector('.mp-food-carousel');
+        if (carousel && e.deltaY !== 0) {
+          e.preventDefault();
+          carousel.scrollLeft += e.deltaY;
+        }
+      }, { passive: false });
+    }
   }
 
   switchRoom(roomId) {
@@ -778,8 +790,8 @@ class MochiPalApp {
     const tabsWrap = document.getElementById('mp-shop-tabs');
     const tabs = [
       { id: 'food', label: '🍎 Еда' },
-      { id: 'house', label: '🏠 Дом (Ур. 1→3)' },
-      { id: 'decor', label: '🖼️ Обои и Ковры' },
+      { id: 'house', label: '🏠 Дом' },
+      { id: 'decor', label: '🖼️ Обои' },
       { id: 'hats', label: '👒 Шапки' },
       { id: 'colors', label: '🎨 Цвета' },
       { id: 'skins', label: '✨ Узоры' },
