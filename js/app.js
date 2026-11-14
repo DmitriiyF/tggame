@@ -562,17 +562,39 @@ class MochiPalApp {
     host.classList.remove('mp-hidden');
     this.currentGameInstance = { id: gameId };
 
-    // Mount the ORIGINAL standalone HTML game (skystack.html, puffhop.html, timberdash.html, bladespin.html, hillclimb.html)
+    // Mount the ORIGINAL standalone HTML game with cache-buster so latest hooks always run
     const iframe = document.createElement('iframe');
-    iframe.src = gCfg.url;
+    iframe.src = `${gCfg.url}?v=${Date.now()}`;
     iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;background:#0f172a;';
     iframe.setAttribute('allow', 'autoplay; fullscreen');
     this.activeGameIframe = iframe;
 
-    // Live Mochi Coin & Crystal Earning Progress Bar at bottom of screen
+    // Force-hide any legacy in-game Game Over overlays inside the iframe so ONLY the Mochi reward modal appears
+    iframe.addEventListener('load', () => {
+      try {
+        const doc = iframe.contentDocument;
+        if (doc && doc.head) {
+          const st = doc.createElement('style');
+          st.textContent = `
+            #ss-screen-gameover,
+            #ph-screen-gameover,
+            #td-screen-gameover,
+            #bs-screen-gameover,
+            #rr-screen-gameover {
+              display: none !important;
+              opacity: 0 !important;
+              pointer-events: none !important;
+            }
+          `;
+          doc.head.appendChild(st);
+        }
+      } catch (e) {}
+    });
+
+    // Live Mochi Coin & Crystal Earning Progress Bar confined inside the 520px game column (position: absolute)
     const liveBar = document.createElement('div');
     liveBar.id = 'mp-live-game-hud';
-    liveBar.style.cssText = "position:fixed;bottom:12px;left:12px;right:12px;z-index:9999;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(15,23,42,0.92);border:1.5px solid rgba(253,224,71,0.45);border-radius:16px;padding:6px 10px;font-family:'Fredoka', sans-serif;box-shadow:0 8px 24px rgba(0,0,0,0.55);backdrop-filter:blur(8px);pointer-events:auto;";
+    liveBar.style.cssText = "position:absolute;bottom:10px;left:10px;right:10px;z-index:90;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(15,23,42,0.92);border:1.5px solid rgba(253,224,71,0.45);border-radius:16px;padding:6px 10px;font-family:'Fredoka', sans-serif;box-shadow:0 8px 24px rgba(0,0,0,0.55);backdrop-filter:blur(8px);pointer-events:auto;";
 
     const backBtn = document.createElement('button');
     backBtn.innerHTML = '🐾 К Мочи';
@@ -657,6 +679,17 @@ class MochiPalApp {
     if (gemBar) {
       gemBar.style.width = `${pct}%`;
     }
+
+    // Fallback check: if a new run was written to arcade_runs_history_v1, immediately open the Mochi reward modal!
+    try {
+      const runsRaw = localStorage.getItem('arcade_runs_history_v1');
+      if (runsRaw) {
+        const runs = JSON.parse(runsRaw);
+        if (Array.isArray(runs) && runs.length > 0 && (runs[0].ts || 0) > (this.state.lastProcessedRunTs || 0)) {
+          this.handleEmbeddedRunFinished({ gameId, score: rawScore });
+        }
+      }
+    } catch (e) {}
   }
 
   handleEmbeddedRunFinished(info = {}) {
