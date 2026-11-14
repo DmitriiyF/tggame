@@ -3,406 +3,359 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Arcade Hub</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <title>Mochi Pal — Виртуальный питомец и Мини-игры</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     * {
       box-sizing: border-box;
-      font-family: 'Fredoka', sans-serif;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-
-    body {
       margin: 0;
       padding: 0;
-      min-height: 100dvh;
-      background: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 75%);
-      color: #f8fafc;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding-bottom: calc(78px + env(safe-area-inset-bottom, 12px));
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Fredoka', sans-serif;
     }
 
-    /* COMPACT STICKY HEADER */
-    .hub-header {
+    html, body {
       width: 100%;
-      max-width: 560px;
-      padding: max(12px, env(safe-area-inset-top, 12px)) 16px 10px 16px;
-      background: rgba(15, 23, 42, 0.92);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(12px);
+      height: 100%;
+      overflow: hidden;
+      background: #090d16;
+      color: #f8fafc;
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    #mp-app-root {
+      position: relative;
+      width: 100%;
+      max-width: 520px;
+      height: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      background: #0f172a;
+      overflow: hidden;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.7);
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    /* TOP BAR */
+    #mp-app-root .mp-top-bar {
+      background: rgba(15, 23, 42, 0.94);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      padding: max(8px, env(safe-area-inset-top, 8px)) 12px 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 20;
+    }
+
+    #mp-app-root .mp-top-row-1 {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      position: sticky;
-      top: 0;
-      z-index: 40;
+      gap: 8px;
     }
 
-    .profile-mini {
+    #mp-app-root .mp-pet-badge {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 4px 10px 4px 5px;
+      border-radius: 99px;
+      cursor: pointer;
     }
 
-    .lvl-circle {
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #f59e0b, #ea580c);
+    #mp-app-root .mp-lvl-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f472b6, #db2777);
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
-      font-size: 15px;
-      color: #ffffff;
-      box-shadow: 0 4px 10px rgba(234, 88, 12, 0.35);
+      box-shadow: 0 2px 8px rgba(244, 114, 182, 0.4);
     }
 
-    .profile-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
+    #mp-app-root .mp-xp-bar {
+      width: 68px;
+      height: 6px;
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: 2px;
     }
 
-    .profile-rank {
-      font-size: 13px;
-      font-weight: 700;
-      color: #f8fafc;
+    #mp-app-root .mp-xp-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4ade80, #38bdf8);
+      transition: width 0.3s ease;
+    }
+
+    #mp-app-root .mp-currencies {
       display: flex;
       align-items: center;
       gap: 6px;
     }
 
-    .xp-bar-bg {
-      width: 110px;
-      height: 6px;
-      background: rgba(255, 255, 255, 0.12);
-      border-radius: 99px;
-      overflow: hidden;
-    }
-
-    .xp-bar-fill {
-      height: 100%;
-      width: 20%;
-      background: linear-gradient(90deg, #38bdf8, #818cf8);
-      border-radius: 99px;
-      transition: width 0.25s ease;
-    }
-
-    .hub-currencies {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .streak-pill {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: rgba(249, 115, 22, 0.18);
-      border: 1.5px solid rgba(249, 115, 22, 0.55);
-      border-radius: 99px;
-      padding: 4px 10px;
-      font-size: 13px;
-      font-weight: 700;
-      color: #fdba74;
-    }
-
-    .hub-gem-pill {
+    #mp-app-root .mp-curr-pill {
       display: flex;
       align-items: center;
       gap: 5px;
-      background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(168, 85, 247, 0.25));
-      border: 2px solid #38bdf8;
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      padding: 5px 10px;
       border-radius: 99px;
-      padding: 4px 12px;
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 700;
-      color: #7dd3fc;
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.22);
-      transition: transform 0.15s ease;
+      color: #f8fafc;
+      cursor: pointer;
     }
 
-    .hub-gem-pill.bump {
-      transform: scale(1.15);
-    }
-
-    /* TAB VIEWS */
-    .tab-view {
-      width: 100%;
-      max-width: 540px;
-      padding: 12px 16px;
-      display: none;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .tab-view.active {
-      display: flex;
-    }
-
-    /* STREAK & CHEST BANNER */
-    .streak-card {
-      background: linear-gradient(135deg, rgba(30, 58, 138, 0.72), rgba(88, 28, 135, 0.72));
-      border: 1px solid rgba(56, 189, 248, 0.38);
-      border-radius: 18px;
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-    }
-
-    .streak-top {
+    /* 4 CIRCULAR NEED RINGS */
+    #mp-app-root .mp-needs-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
+      gap: 6px;
     }
 
-    .streak-days {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-    }
-
-    .streak-day-box {
-      background: rgba(15, 23, 42, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 10px;
-      padding: 5px 2px;
-      text-align: center;
-      font-size: 10px;
-      color: #94a3b8;
-      font-weight: 700;
-    }
-
-    .streak-day-box.done {
-      background: rgba(34, 197, 94, 0.22);
-      border-color: #4ade80;
-      color: #4ade80;
-    }
-
-    .streak-day-box.today {
-      background: rgba(56, 189, 248, 0.28);
-      border-color: #38bdf8;
-      color: #ffffff;
-    }
-
-    .chest-btn {
-      background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
-      color: #0f172a;
-      border: none;
-      border-radius: 11px;
-      padding: 8px 12px;
-      font-weight: 700;
-      font-size: 12px;
-      cursor: pointer;
-      white-space: nowrap;
-      box-shadow: 0 3px 0 #0369a1;
-    }
-
-    .chest-btn:active {
-      transform: translateY(2px);
-      box-shadow: 0 1px 0 #0369a1;
-    }
-
-    .chest-btn.cooldown {
-      background: rgba(51, 65, 85, 0.85);
-      color: #94a3b8;
-      box-shadow: none;
-      cursor: default;
-    }
-
-    .chest-btn.toggle-on {
-      background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
-      color: #052e16;
-      box-shadow: 0 3px 0 #15803d;
-    }
-
-    /* GAMES GRID */
-    .games-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .game-card {
-      background: rgba(30, 41, 59, 0.9);
-      border-radius: 18px;
-      overflow: hidden;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32);
-      transition: transform 0.12s ease;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      border: 2px solid rgba(56, 189, 248, 0.45);
-      position: relative;
-    }
-
-    .game-card:active {
-      transform: scale(0.96);
-    }
-
-    .game-card.wide {
-      grid-column: span 2;
-      flex-direction: row;
-      align-items: center;
-    }
-
-    .game-badge {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: #22c55e;
-      color: #ffffff;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 99px;
-      text-transform: uppercase;
-    }
-
-    .game-badge.new-badge {
-      background: linear-gradient(135deg, #f97316, #ec4899);
-    }
-
-    .game-icon {
-      width: 100%;
-      height: 104px;
+    #mp-app-root .mp-need-chip {
+      flex: 1;
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 50px;
+      gap: 6px;
+      background: rgba(30, 41, 59, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 4px 7px;
+      border-radius: 14px;
     }
 
-    .game-card.wide .game-icon {
-      width: 110px;
-      height: 92px;
+    #mp-app-root .mp-ring-svg {
+      width: 36px;
+      height: 36px;
+      transform: rotate(-90deg);
       flex-shrink: 0;
     }
 
-    .ridge-icon { background: linear-gradient(160deg, #0284c7 0%, #38bdf8 55%, #22c55e 55%, #15803d 100%); }
-    .skystack-icon { background: linear-gradient(155deg, #6366f1 0%, #a855f7 52%, #ec4899 100%); }
-    .timber-icon { background: linear-gradient(160deg, #0ea5e9 0%, #38bdf8 52%, #854d0e 52%, #15803d 100%); }
-    .blade-icon { background: linear-gradient(145deg, #1e293b 0%, #dc2626 55%, #f59e0b 100%); }
-    .puff-icon { background: linear-gradient(160deg, #0284c7 0%, #06b6d4 60%, #fde047 100%); }
-
-    .game-info {
-      padding: 10px 12px 12px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
+    #mp-app-root .mp-ring-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.12);
+      stroke-width: 4;
     }
 
-    .game-title {
-      font-weight: 700;
-      font-size: 16px;
-      color: #ffffff;
+    #mp-app-root .mp-ring-fg {
+      fill: none;
+      stroke: #4ade80;
+      stroke-width: 4;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.35s ease, stroke 0.3s ease;
     }
 
-    .game-meta {
-      font-size: 11px;
-      color: #94a3b8;
-      font-weight: 600;
+    @keyframes mp-pulse-danger {
+      0%, 100% { transform: scale(1); border-color: rgba(239, 68, 68, 0.85); }
+      50% { transform: scale(1.04); border-color: #ef4444; background: rgba(127, 29, 29, 0.45); }
     }
 
-    /* SUB-PILLS SWITCHER */
-    .sub-tabs {
-      display: flex;
-      background: rgba(15, 23, 42, 0.75);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      padding: 4px;
-      gap: 4px;
+    #mp-app-root .mp-pulse-low {
+      animation: mp-pulse-danger 1.1s infinite;
     }
 
-    .sub-tab-btn {
+    /* CENTER PET STAGE */
+    #mp-app-root #mp-stage-wrap {
+      position: relative;
       flex: 1;
-      background: transparent;
-      border: none;
-      color: #94a3b8;
-      font-size: 12px;
+      width: 100%;
+      overflow: hidden;
+      touch-action: pan-y;
+    }
+
+    #mp-app-root #mp-pet-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* FLOATING SIDE BUTTONS ON STAGE */
+    #mp-app-root .mp-stage-top-overlay {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #mp-app-root .mp-room-pill {
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.76);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      padding: 6px 12px;
+      border-radius: 99px;
+      font-size: 13px;
       font-weight: 700;
-      padding: 8px 6px;
-      border-radius: 9px;
-      cursor: pointer;
+      color: #fde047;
     }
 
-    .sub-tab-btn.active {
-      background: rgba(56, 189, 248, 0.2);
-      color: #38bdf8;
-    }
-
-    /* LIST ROWS */
-    .list-stack {
+    #mp-app-root .mp-side-btns {
+      pointer-events: auto;
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
 
-    .item-row {
-      background: rgba(30, 41, 59, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 14px;
-      padding: 11px 13px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .item-info {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-
-    .item-title {
-      font-size: 14px;
-      font-weight: 700;
+    #mp-app-root .mp-float-btn {
+      position: relative;
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.22);
       color: #f8fafc;
-    }
-
-    .item-sub {
-      font-size: 11px;
-      color: #94a3b8;
-    }
-
-    .section-label {
+      padding: 7px 11px;
+      border-radius: 14px;
       font-size: 12px;
       font-weight: 700;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin-top: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
 
-    /* BOTTOM NAVIGATION BAR */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 560px;
-      background: rgba(15, 23, 42, 0.96);
+    #mp-app-root .mp-dot-alert {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ef4444;
+      border: 2px solid #0f172a;
+    }
+
+    /* ROOM INTERACTIVE TRAY (FOOD CAROUSEL / SOAP / LAMP / ARCADE) */
+    #mp-app-root #mp-room-tray {
+      background: rgba(15, 23, 42, 0.95);
       border-top: 1px solid rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(14px);
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      padding: 6px 8px max(8px, env(safe-area-inset-bottom, 8px)) 8px;
-      z-index: 50;
+      padding: 8px 12px;
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      z-index: 15;
     }
 
-    .nav-btn {
+    #mp-app-root .mp-food-carousel {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      width: 100%;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+
+    #mp-app-root .mp-food-carousel::-webkit-scrollbar {
+      display: none;
+    }
+
+    #mp-app-root .mp-food-card {
+      flex: 0 0 68px;
+      background: rgba(30, 41, 59, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 14px;
+      padding: 6px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      color: #f8fafc;
+      cursor: pointer;
+    }
+
+    #mp-app-root .mp-food-card.mp-empty {
+      opacity: 0.72;
+      border-style: dashed;
+    }
+
+    #mp-app-root .mp-food-ico {
+      font-size: 24px;
+      line-height: 1.1;
+    }
+
+    #mp-app-root .mp-food-name {
+      font-size: 10px;
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    #mp-app-root .mp-food-qty {
+      font-size: 11px;
+      font-weight: 700;
+      color: #fde047;
+    }
+
+    #mp-app-root .mp-action-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+
+    #mp-app-root .mp-room-action-btn {
+      flex: 1;
+      background: linear-gradient(180deg, #334155, #1e293b);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #f8fafc;
+      padding: 12px 14px;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    #mp-app-root .mp-room-action-btn.mp-btn-active {
+      background: linear-gradient(180deg, #ec4899, #be185d);
+      border-color: #f9a8d4;
+    }
+
+    #mp-app-root .mp-btn-blue {
+      background: linear-gradient(180deg, #0ea5e9, #0284c7);
+    }
+
+    #mp-app-root .mp-btn-green {
+      background: linear-gradient(180deg, #22c55e, #15803d);
+    }
+
+    #mp-app-root .mp-btn-amber {
+      background: linear-gradient(180deg, #f59e0b, #d97706);
+    }
+
+    #mp-app-root .mp-btn-purple {
+      background: linear-gradient(180deg, #6366f1, #4338ca);
+    }
+
+    /* BOTTOM NAVIGATION */
+    #mp-app-root .mp-bottom-nav {
+      background: rgba(9, 13, 22, 0.98);
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      padding: 6px 8px max(8px, env(safe-area-inset-bottom, 8px)) 8px;
+      z-index: 20;
+    }
+
+    #mp-app-root .mp-nav-btn {
       background: transparent;
       border: none;
       color: #64748b;
@@ -410,1009 +363,393 @@
       flex-direction: column;
       align-items: center;
       gap: 2px;
-      padding: 6px 4px;
+      padding: 6px 2px;
       border-radius: 12px;
-      cursor: pointer;
       font-size: 11px;
       font-weight: 700;
+      cursor: pointer;
     }
 
-    .nav-btn .nav-ico {
-      font-size: 20px;
-      line-height: 1.1;
+    #mp-app-root .mp-nav-btn.mp-active {
+      color: #f472b6;
+      background: rgba(244, 114, 182, 0.14);
     }
 
-    .nav-btn.active {
-      color: #38bdf8;
-      background: rgba(56, 189, 248, 0.12);
+    /* MODALS & OVERLAYS */
+    #mp-app-root .mp-modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(9, 13, 22, 0.82);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+
+    #mp-app-root .mp-hidden {
+      display: none !important;
+    }
+
+    #mp-app-root .mp-modal-card {
+      width: 100%;
+      max-height: 86vh;
+      background: linear-gradient(180deg, #1e293b, #0f172a);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 24px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+    }
+
+    #mp-app-root .mp-modal-hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #mp-app-root .mp-close-x {
+      background: rgba(51, 65, 85, 0.8);
+      border: none;
+      color: #e2e8f0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #mp-app-root .mp-scroll-list {
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 58vh;
+      padding-right: 2px;
+    }
+
+    #mp-app-root .mp-item-row {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #mp-app-root .mp-small-btn {
+      background: rgba(51, 65, 85, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    #mp-app-root .mp-small-btn.mp-disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    #mp-app-root .mp-tabs-row {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+
+    #mp-app-root .mp-tab-pill {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #94a3b8;
+      padding: 6px 12px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    #mp-app-root .mp-tab-pill.mp-active {
+      background: #f472b6;
+      color: #0f172a;
+      border-color: #f9a8d4;
+    }
+
+    /* EMBEDDED MINI-GAME FULLSCREEN HOST */
+    #mp-app-root #mp-minigame-host {
+      position: absolute;
+      inset: 0;
+      z-index: 60;
+      background: #090d16;
+    }
+
+    /* TOAST BANNER */
+    #mp-app-root #mp-toast {
+      position: absolute;
+      bottom: 145px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(244, 114, 182, 0.5);
+      color: #fde047;
+      padding: 8px 16px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 80;
+      white-space: nowrap;
+      max-width: 92%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #mp-app-root #mp-toast.mp-show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
   </style>
 </head>
 <body>
-
-  <!-- COMPACT HEADER -->
-  <div class="hub-header">
-    <div class="profile-mini">
-      <div class="lvl-circle" id="hdr-lvl">1</div>
-      <div class="profile-meta">
-        <div class="profile-rank">
-          <span id="hdr-rank">Новичок</span>
-          <span id="hdr-pet-ico"></span>
-        </div>
-        <div class="xp-bar-bg">
-          <div class="xp-bar-fill" id="hdr-xp-fill"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="hub-currencies">
-      <div class="streak-pill" title="Ежедневный стрик">
-        <span>🔥</span>
-        <span id="hdr-streak">1 дн.</span>
-      </div>
-      <div class="hub-gem-pill" id="hub-gem-pill" title="Единая валюта хаба">
-        <span>💎</span>
-        <span id="hub-gems-val">10</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB 1: GAMES -->
-  <div class="tab-view active" id="tab-games">
-    <div class="streak-card">
-      <div class="streak-top">
-        <div>
-          <div style="font-size:14px;font-weight:700;color:#ffffff;">🎁 Ежедневный бонус и сундук</div>
-          <div style="font-size:11px;color:#cbd5e1;" id="streak-sub-txt">Заходи каждый день — награда растёт до +15 💎!</div>
-        </div>
-        <button class="chest-btn" id="chest-btn" onclick="claimChest()">🎁 +5 💎</button>
-      </div>
-      <div class="streak-days" id="streak-days-row"></div>
-    </div>
-
-    <div class="section-label">🕹 Все игры хаба (5)</div>
-
-    <div class="games-grid">
-      <div class="game-card" onclick="startGame('hillclimb.html')">
-        <span class="game-badge">PLAY</span>
-        <div class="game-icon ridge-icon">🚙</div>
-        <div class="game-info">
-          <div class="game-title">Ridge Rush</div>
-          <div class="game-meta" id="rr-best-meta">Гоночная физика 2D</div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="startGame('skystack.html')">
-        <span class="game-badge">PLAY</span>
-        <div class="game-icon skystack-icon">🧱</div>
-        <div class="game-info">
-          <div class="game-title">Sky Stack</div>
-          <div class="game-meta" id="ss-best-meta">Изометрическая башня</div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="startGame('timberdash.html')">
-        <span class="game-badge">PLAY</span>
-        <div class="game-icon timber-icon">🦫</div>
-        <div class="game-info">
-          <div class="game-title">Timber Dash</div>
-          <div class="game-meta" id="td-best-meta">Бобёр-дровосек</div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="startGame('bladespin.html')">
-        <span class="game-badge new-badge">NEW</span>
-        <div class="game-icon blade-icon">🗡</div>
-        <div class="game-info">
-          <div class="game-title">Blade Spin</div>
-          <div class="game-meta" id="bs-best-meta">Метание кинжалов и боссы</div>
-        </div>
-      </div>
-
-      <div class="game-card wide" onclick="startGame('puffhop.html')">
-        <span class="game-badge new-badge">NEW</span>
-        <div class="game-icon puff-icon">🐡</div>
-        <div class="game-info">
-          <div class="game-title">Puff Hop</div>
-          <div class="game-meta" id="ph-best-meta">Подводный полёт рыбы-ежа сквозь рифы</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB 2: QUESTS (DAILY / WEEKLY / TROPHIES) -->
-  <div class="tab-view" id="tab-quests">
-    <div class="sub-tabs">
-      <button class="sub-tab-btn active" id="qbtn-daily" onclick="switchQuestTab('daily')">☀️ Дейлики</button>
-      <button class="sub-tab-btn" id="qbtn-weekly" onclick="switchQuestTab('weekly')">🗓 Виклики</button>
-      <button class="sub-tab-btn" id="qbtn-trophies" onclick="switchQuestTab('trophies')">🏅 Трофеи</button>
-    </div>
-    <div style="font-size:11px;color:#94a3b8;text-align:center;" id="quest-timer-txt">Ежедневные задания обновляются каждые 24 часа</div>
-    <div class="list-stack" id="quests-list"></div>
-  </div>
-
-  <!-- TAB 3: SHOP & PETS -->
-  <div class="tab-view" id="tab-shop">
-    <div class="section-label">🐾 Питомцы-компаньоны (работают во всех 5 играх)</div>
-    <div class="list-stack" id="pets-shop-list"></div>
-
-    <div class="section-label">👑 Статус и Обменник за 💎 Алмазы</div>
-    <div class="list-stack" id="gem-shop-list"></div>
-  </div>
-
-  <!-- TAB 4: LEADERBOARD & CHALLENGES -->
-  <div class="tab-view" id="tab-social">
-    <div class="item-row" style="flex-direction:column;align-items:stretch;gap:8px;background:linear-gradient(135deg,rgba(30,58,138,0.65),rgba(88,28,135,0.65));border-color:rgba(56,189,248,0.4);">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-        <div class="item-info">
-          <div class="item-title">⚔️ Вызов другу на рекорды Хаба</div>
-          <div class="item-sub">Прямая отправка карточки в чат Telegram (без @бота)</div>
-        </div>
-        <button class="chest-btn" onclick="shareHubChallenge()">⚔️ Вызвать</button>
-      </div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#e2e8f0;cursor:pointer;padding-top:6px;border-top:1px solid rgba(255,255,255,0.12);">
-        <input type="checkbox" id="hub-auto-send-chk" onchange="toggleAutoSendRuns(this.checked)" style="accent-color:#38bdf8;">
-        <span>⚡ Авто-отправка результата каждого забега в чат</span>
-      </label>
-    </div>
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
-      <div class="section-label" style="margin:0;">🏆 Таблица лидеров</div>
-      <div style="display:flex;gap:6px;">
-        <button class="chest-btn" style="padding:5px 10px;font-size:11px;" onclick="syncWithGoogleSheet(true)">🔄 Обновить</button>
-      </div>
-    </div>
-
-    <div class="sub-tabs" id="lb-filter-tabs">
-      <button class="sub-tab-btn active" onclick="setLbFilter('total', this)">🏆 Общий</button>
-      <button class="sub-tab-btn" onclick="setLbFilter('rr', this)">🚙</button>
-      <button class="sub-tab-btn" onclick="setLbFilter('ss', this)">🧱</button>
-      <button class="sub-tab-btn" onclick="setLbFilter('td', this)">🦫</button>
-      <button class="sub-tab-btn" onclick="setLbFilter('bs', this)">🗡</button>
-      <button class="sub-tab-btn" onclick="setLbFilter('ph', this)">🐡</button>
-    </div>
-
-    <div id="sheet-status-txt" style="font-size:11px;color:#94a3b8;text-align:center;"></div>
-    <div class="list-stack" id="leaderboard-list"></div>
-
-    <div class="section-label">📜 История твоих последних забегов</div>
-    <div class="list-stack" id="runs-history-list"></div>
-  </div>
-
-  <!-- BOTTOM NAVIGATION -->
-  <div class="bottom-nav">
-    <button class="nav-btn active" id="nav-games" onclick="switchMainTab('games')">
-      <span class="nav-ico">🎮</span>
-      <span>Игры</span>
-    </button>
-    <button class="nav-btn" id="nav-quests" onclick="switchMainTab('quests')">
-      <span class="nav-ico">🎯</span>
-      <span>Задания</span>
-    </button>
-    <button class="nav-btn" id="nav-shop" onclick="switchMainTab('shop')">
-      <span class="nav-ico">🐾</span>
-      <span>Магазин</span>
-    </button>
-    <button class="nav-btn" id="nav-social" onclick="switchMainTab('social')">
-      <span class="nav-ico">🏆</span>
-      <span>Рейтинг</span>
-    </button>
-  </div>
-
-  <script>
-    const GLOBAL_GEMS_KEY = 'arcade_global_gems';
-    const PROFILE_KEY = 'arcade_profile_v1';
-    const HUB_CLAIMS_KEY = 'arcade_hub_claims_v1';
-    const SHEET_URL_KEY = 'arcade_google_sheet_url_v1';
-    const SHEET_CACHE_KEY = 'arcade_google_sheet_cache_v1';
-    // Жёстко привязанный Google Apps Script Web App (/exec) для чтения и авто-записи рекордов всех друзей:
-    const DEFAULT_GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzHXu32iW7OpZvBT_lGtOJEYnueaIIMFTa-F4rhaJmNv2T0y4BvtVUFKi8DD5x66PPf/exec';
-    const CHEST_COOLDOWN_MS = 15 * 60 * 1000;
-    let currentLbFilter = 'total';
-
-    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-    if (tg) {
-      try {
-        tg.ready();
-        tg.expand();
-      } catch (e) {}
-    }
-
-    let currentQuestSubTab = 'daily';
-
-    const PETS_CATALOG = [
-      {
-        id: 'drone',
-        icon: '🤖',
-        name: 'Кибер-Дрон',
-        desc: '+15% к монетам, брёвнам, яблокам и жемчугу во всех играх',
-        cost: 45
-      },
-      {
-        id: 'fox',
-        icon: '🦊',
-        name: 'Огненный Лис',
-        desc: '+1 💎 бонусный алмаз за каждые 20 очков в любой игре',
-        cost: 90
-      },
-      {
-        id: 'dragon',
-        icon: '🐲',
-        name: 'Золотой Дракон',
-        desc: '+25% к опыту (XP) и бесплатный авто-щит 1 раз за забег',
-        cost: 180
-      }
-    ];
-
-    function getDayKey() {
-      return new Date().toISOString().slice(0, 10);
-    }
-
-    function getWeekKey() {
-      const now = new Date();
-      const w = Math.ceil((((now - new Date(now.getFullYear(), 0, 1)) / 86400000) + 1) / 7);
-      return `${now.getFullYear()}-W${w}`;
-    }
-
-    function getGems() {
-      try {
-        let gems = parseInt(localStorage.getItem(GLOBAL_GEMS_KEY), 10);
-        if (isNaN(gems)) {
-          gems = 10;
-          localStorage.setItem(GLOBAL_GEMS_KEY, String(gems));
-        }
-        return gems;
-      } catch (e) {
-        return 10;
-      }
-    }
-
-    function addGems(delta) {
-      const next = Math.max(0, getGems() + delta);
-      try {
-        localStorage.setItem(GLOBAL_GEMS_KEY, String(next));
-      } catch (e) {}
-      syncCloudStorage();
-      const el = document.getElementById('hub-gems-val');
-      if (el) el.textContent = next.toLocaleString();
-      const pill = document.getElementById('hub-gem-pill');
-      if (pill) {
-        pill.classList.remove('bump');
-        void pill.offsetWidth;
-        pill.classList.add('bump');
-      }
-    }
-
-    function getProfile() {
-      const dayKey = getDayKey();
-      const weekKey = getWeekKey();
-      let prof = {
-        xp: 0,
-        streak: 1,
-        lastLoginDay: '',
-        unlockedPets: {},
-        equippedPet: null,
-        trophiesClaimed: {},
-        friendsLeaderboard: [],
-        daily: { dayKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, games: {}, claims: {} },
-        weekly: { weekKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, runs: 0, claims: {} }
-      };
-      try {
-        const raw = localStorage.getItem(PROFILE_KEY);
-        if (raw) {
-          const p = JSON.parse(raw);
-          prof = { ...prof, ...p };
-        }
-      } catch (e) {}
-
-      if (!prof.daily || prof.daily.dayKey !== dayKey) {
-        prof.daily = { dayKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, games: {}, claims: {} };
-      }
-      if (!prof.weekly || prof.weekly.weekKey !== weekKey) {
-        prof.weekly = { weekKey, rr: 0, ss: 0, td: 0, bs: 0, ph: 0, runs: 0, claims: {} };
-      }
-      return prof;
-    }
-
-    function saveProfile(prof) {
-      try {
-        localStorage.setItem(PROFILE_KEY, JSON.stringify(prof));
-      } catch (e) {}
-      syncCloudStorage();
-    }
-
-    // Sync to Telegram CloudStorage so player progress persists across phone & desktop
-    function syncCloudStorage() {
-      if (!tg || !tg.CloudStorage || !tg.isVersionAtLeast || !tg.isVersionAtLeast('6.9')) return;
-      try {
-        tg.CloudStorage.setItem(GLOBAL_GEMS_KEY, String(getGems()), () => {});
-        tg.CloudStorage.setItem(PROFILE_KEY, localStorage.getItem(PROFILE_KEY) || '{}', () => {});
-      } catch (e) {}
-    }
-
-    function checkDailyLoginStreak() {
-      const prof = getProfile();
-      const today = getDayKey();
-      if (prof.lastLoginDay !== today) {
-        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-        if (prof.lastLoginDay === yesterday) {
-          prof.streak = Math.min(7, (prof.streak || 1) + 1);
-        } else {
-          prof.streak = 1;
-        }
-        prof.lastLoginDay = today;
-        const streakRewards = [2, 3, 4, 5, 7, 10, 15];
-        const reward = streakRewards[(prof.streak - 1) % 7] || 2;
-        saveProfile(prof);
-        addGems(reward);
-        const sub = document.getElementById('streak-sub-txt');
-        if (sub) sub.textContent = `День ${prof.streak} подряд: получено +${reward} 💎!`;
-      }
-    }
-
-    function getClaims() {
-      try {
-        const raw = localStorage.getItem(HUB_CLAIMS_KEY);
-        if (raw) return JSON.parse(raw);
-      } catch (e) {}
-      return { lastChest: 0, vipUnlocked: false, vipEnabled: false, allThemesUnlocked: false };
-    }
-
-    function saveClaims(c) {
-      try {
-        localStorage.setItem(HUB_CLAIMS_KEY, JSON.stringify(c));
-      } catch (e) {}
-    }
-
-    function getStats() {
-      let rrBest = 0, rrCoins = 0;
-      let ssBest = 0;
-      let tdBest = 0, tdLogs = 0;
-      let bsBest = 0, bsStage = 1, bsApples = 0;
-      let phBest = 0, phPearls = 0;
-
-      try {
-        const rrRaw = localStorage.getItem('ridge_rush_save_v1');
-        if (rrRaw) {
-          const d = JSON.parse(rrRaw);
-          if (d.bestDist) rrBest = Math.max(0, ...Object.values(d.bestDist));
-          if (typeof d.coins === 'number') rrCoins = d.coins;
-        }
-      } catch (e) {}
-
-      try {
-        ssBest = parseInt(localStorage.getItem('skystack_best_v1'), 10) || 0;
-      } catch (e) {}
-
-      try {
-        const tdRaw = localStorage.getItem('timberdash_save_v1');
-        if (tdRaw) {
-          const d = JSON.parse(tdRaw);
-          tdBest = d.best || 0;
-          tdLogs = d.woodCoins || 0;
-        }
-      } catch (e) {}
-
-      try {
-        const bsRaw = localStorage.getItem('bladespin_save_v1');
-        if (bsRaw) {
-          const d = JSON.parse(bsRaw);
-          bsBest = d.bestScore || 0;
-          bsStage = d.bestStage || 1;
-          bsApples = d.apples || 0;
-        }
-      } catch (e) {}
-
-      try {
-        const phRaw = localStorage.getItem('puffhop_save_v1');
-        if (phRaw) {
-          const d = JSON.parse(phRaw);
-          phBest = d.best || 0;
-          phPearls = d.pearls || 0;
-        }
-      } catch (e) {}
-
-      return { rrBest, rrCoins, ssBest, tdBest, tdLogs, bsBest, bsStage, bsApples, phBest, phPearls };
-    }
-
-    function switchMainTab(tabId) {
-      ['games', 'quests', 'shop', 'social'].forEach(id => {
-        document.getElementById(`tab-${id}`).classList.toggle('active', id === tabId);
-        document.getElementById(`nav-${id}`).classList.toggle('active', id === tabId);
-      });
-      loadHubData();
-    }
-
-    function switchQuestTab(subId) {
-      currentQuestSubTab = subId;
-      ['daily', 'weekly', 'trophies'].forEach(id => {
-        document.getElementById(`qbtn-${id}`).classList.toggle('active', id === subId);
-      });
-      const timerTxt = document.getElementById('quest-timer-txt');
-      if (subId === 'daily') timerTxt.textContent = '☀️ Ежедневные задания сбрасываются каждые 24 часа';
-      else if (subId === 'weekly') timerTxt.textContent = '🗓 Крупные еженедельные миссии с повышенной наградой 💎';
-      else timerTxt.textContent = '🏅 Постоянные трофеи за рекорды во всех играх';
-      renderQuests(getStats());
-    }
-
-    function renderHeaderAndStreak(stats) {
-      const prof = getProfile();
-      const claims = getClaims();
-      const totalXP = prof.xp + stats.rrBest + stats.ssBest * 4 + stats.tdBest * 2 + stats.bsBest * 3 + stats.phBest * 4;
-      const level = Math.min(50, Math.floor(totalXP / 120) + 1);
-      const xpInLevel = totalXP % 120;
-
-      const ranks = ['Новичок', 'Искатель', 'Мастер', 'Грандмастер', 'Легенда Аркады'];
-      const rankName = ranks[Math.min(ranks.length - 1, Math.floor((level - 1) / 5))];
-      const vipPrefix = (claims.vipUnlocked && claims.vipEnabled) ? '👑 ' : '';
-
-      document.getElementById('hdr-lvl').textContent = String(level);
-      document.getElementById('hdr-rank').textContent = `${vipPrefix}${rankName}`;
-      document.getElementById('hdr-xp-fill').style.width = `${Math.round((xpInLevel / 120) * 100)}%`;
-      document.getElementById('hdr-streak').textContent = `${prof.streak || 1} дн.`;
-
-      const petObj = PETS_CATALOG.find(p => p.id === prof.equippedPet);
-      document.getElementById('hdr-pet-ico').textContent = petObj ? petObj.icon : '';
-
-      // 7-day streak boxes
-      const streakRow = document.getElementById('streak-days-row');
-      streakRow.innerHTML = '';
-      const rewards = [2, 3, 4, 5, 7, 10, 15];
-      for (let d = 1; d <= 7; d++) {
-        const box = document.createElement('div');
-        const cur = prof.streak || 1;
-        box.className = 'streak-day-box' + (d < cur ? ' done' : d === cur ? ' today' : '');
-        box.innerHTML = `<div>Д${d}</div><div style="color:#7dd3fc;">+${rewards[d - 1]}💎</div>`;
-        streakRow.appendChild(box);
-      }
-    }
-
-    function claimChest() {
-      const claims = getClaims();
-      const now = Date.now();
-      if (now - (claims.lastChest || 0) < CHEST_COOLDOWN_MS) return;
-      claims.lastChest = now;
-      saveClaims(claims);
-      addGems(5);
-      updateChestButton();
-    }
-
-    function updateChestButton() {
-      const btn = document.getElementById('chest-btn');
-      if (!btn) return;
-      const claims = getClaims();
-      const diff = CHEST_COOLDOWN_MS - (Date.now() - (claims.lastChest || 0));
-      if (diff <= 0) {
-        btn.classList.remove('cooldown');
-        btn.textContent = '🎁 Сундук +5 💎';
-      } else {
-        btn.classList.add('cooldown');
-        btn.textContent = `⏳ ${Math.ceil(diff / 60000)} мин`;
-      }
-    }
-
-    function renderQuests(stats) {
-      const prof = getProfile();
-      const container = document.getElementById('quests-list');
-      if (!container) return;
-      container.innerHTML = '';
-
-      let list = [];
-      let claimMap = {};
-
-      if (currentQuestSubTab === 'daily') {
-        const d = prof.daily;
-        const gamesTodayCount = Object.keys(d.games || {}).length;
-        claimMap = d.claims || {};
-        list = [
-          { id: 'd_rr', title: '🚙 Проехать 200 м в Ridge Rush сегодня', prog: `${Math.min(d.rr || 0, 200)} / 200 м`, done: (d.rr || 0) >= 200, reward: 5 },
-          { id: 'd_ss', title: '🧱 Построить 15 этажей в Sky Stack сегодня', prog: `${Math.min(d.ss || 0, 15)} / 15 блоков`, done: (d.ss || 0) >= 15, reward: 5 },
-          { id: 'd_td', title: '🦫 Срубить 40 секций в Timber Dash сегодня', prog: `${Math.min(d.td || 0, 40)} / 40 секций`, done: (d.td || 0) >= 40, reward: 5 },
-          { id: 'd_bs', title: '🗡 Воткнуть 15 кинжалов в Blade Spin сегодня', prog: `${Math.min(d.bs || 0, 15)} / 15 кинжалов`, done: (d.bs || 0) >= 15, reward: 5 },
-          { id: 'd_ph', title: '🐡 Проплыть 15 рифов в Puff Hop сегодня', prog: `${Math.min(d.ph || 0, 15)} / 15 рифов`, done: (d.ph || 0) >= 15, reward: 5 },
-          { id: 'd_all3', title: '🔥 Сыграть в 3 разные игры хаба за день', prog: `${Math.min(gamesTodayCount, 3)} / 3 игр`, done: gamesTodayCount >= 3, reward: 10 }
-        ];
-      } else if (currentQuestSubTab === 'weekly') {
-        const w = prof.weekly;
-        claimMap = w.claims || {};
-        list = [
-          { id: 'w_rr', title: '🚙 Марафон: проехать суммарно 2 500 м в Ridge Rush', prog: `${Math.min(w.rr || 0, 2500)} / 2500 м`, done: (w.rr || 0) >= 2500, reward: 35 },
-          { id: 'w_ss', title: '🧱 Архитектор: построить суммарно 150 этажей в Sky Stack', prog: `${Math.min(w.ss || 0, 150)} / 150 блоков`, done: (w.ss || 0) >= 150, reward: 30 },
-          { id: 'w_td', title: '🦫 Дровосек недели: срубить суммарно 400 секций в Timber Dash', prog: `${Math.min(w.td || 0, 400)} / 400 секций`, done: (w.td || 0) >= 400, reward: 35 },
-          { id: 'w_bs_ph', title: '🗡🐡 Набрать суммарно 150 очков в Blade Spin и Puff Hop', prog: `${Math.min((w.bs || 0) + (w.ph || 0), 150)} / 150 очков`, done: ((w.bs || 0) + (w.ph || 0)) >= 150, reward: 40 },
-          { id: 'w_runs', title: '🏆 Завершить 25 забегов в любых играх за неделю', prog: `${Math.min(w.runs || 0, 25)} / 25 забегов`, done: (w.runs || 0) >= 25, reward: 60 }
-        ];
-      } else {
-        claimMap = prof.trophiesClaimed || {};
-        list = [
-          { id: 't_rr500', title: '🏅 Покоритель вершин: рекорд 500 м в Ridge Rush', prog: `${Math.min(stats.rrBest, 500)} / 500 м`, done: stats.rrBest >= 500, reward: 20 },
-          { id: 't_ss40', title: '🏅 Небоскрёб: рекорд 40 этажей в Sky Stack', prog: `${Math.min(stats.ssBest, 40)} / 40`, done: stats.ssBest >= 40, reward: 20 },
-          { id: 't_td100', title: '🏅 Железный топор: рекорд 100 в Timber Dash', prog: `${Math.min(stats.tdBest, 100)} / 100`, done: stats.tdBest >= 100, reward: 25 },
-          { id: 't_bs30', title: '🏅 Мастер куная: рекорд 30 в Blade Spin', prog: `${Math.min(stats.bsBest, 30)} / 30`, done: stats.bsBest >= 30, reward: 25 },
-          { id: 't_ph30', title: '🏅 Король рифов: рекорд 30 в Puff Hop', prog: `${Math.min(stats.phBest, 30)} / 30`, done: stats.phBest >= 30, reward: 25 }
-        ];
-      }
-
-      list.forEach(q => {
-        const isClaimed = !!claimMap[q.id];
-        const row = document.createElement('div');
-        row.className = 'item-row';
-        row.innerHTML = `
-          <div class="item-info">
-            <div class="item-title">${q.title}</div>
-            <div class="item-sub">Прогресс: ${q.prog}</div>
+  <div id="mp-app-root">
+    <!-- TOP BAR: LEVEL, CURRENCIES & 4 NEED RINGS -->
+    <div class="mp-top-bar">
+      <div class="mp-top-row-1">
+        <div class="mp-pet-badge" id="mp-pet-name-btn" title="Переименовать питомца">
+          <div class="mp-lvl-circle" id="mp-lvl-num">1</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#f8fafc;display:flex;align-items:center;gap:4px;">
+              <span id="mp-pet-name-txt">Мочи</span>
+              <span style="font-size:10px;color:#94a3b8;">✏️</span>
+            </div>
+            <div class="mp-xp-bar">
+              <div class="mp-xp-fill" id="mp-xp-fill"></div>
+            </div>
           </div>
-        `;
-        const btn = document.createElement('button');
-        if (isClaimed) {
-          btn.className = 'chest-btn cooldown';
-          btn.disabled = true;
-          btn.textContent = '✓ Получено';
-        } else if (q.done) {
-          btn.className = 'chest-btn toggle-on';
-          btn.textContent = `Забрать +${q.reward} 💎`;
-          btn.onclick = () => {
-            const p = getProfile();
-            if (currentQuestSubTab === 'daily') p.daily.claims[q.id] = true;
-            else if (currentQuestSubTab === 'weekly') p.weekly.claims[q.id] = true;
-            else {
-              p.trophiesClaimed = p.trophiesClaimed || {};
-              p.trophiesClaimed[q.id] = true;
-            }
-            p.xp = (p.xp || 0) + q.reward * 5;
-            saveProfile(p);
-            addGems(q.reward);
-            loadHubData();
-          };
-        } else {
-          btn.className = 'chest-btn cooldown';
-          btn.disabled = true;
-          btn.textContent = `+${q.reward} 💎`;
-        }
-        row.appendChild(btn);
-        container.appendChild(row);
-      });
-    }
-
-    function renderShopAndPets(stats) {
-      const gems = getGems();
-      const prof = getProfile();
-      const claims = getClaims();
-
-      // 1. Pets Shop (with Equip / Unequip toggle!)
-      const petsContainer = document.getElementById('pets-shop-list');
-      petsContainer.innerHTML = '';
-      PETS_CATALOG.forEach(pet => {
-        const unlocked = !!(prof.unlockedPets && prof.unlockedPets[pet.id]);
-        const isEquipped = prof.equippedPet === pet.id;
-        const row = document.createElement('div');
-        row.className = 'item-row';
-        row.innerHTML = `
-          <div class="item-info">
-            <div class="item-title">${pet.icon} ${pet.name}</div>
-            <div class="item-sub">${pet.desc}</div>
-          </div>
-        `;
-        const btn = document.createElement('button');
-        if (unlocked) {
-          btn.className = isEquipped ? 'chest-btn toggle-on' : 'chest-btn';
-          btn.textContent = isEquipped ? '✓ Надет (Снять)' : 'Надеть';
-          btn.onclick = () => {
-            const p = getProfile();
-            p.equippedPet = p.equippedPet === pet.id ? null : pet.id;
-            saveProfile(p);
-            loadHubData();
-          };
-        } else {
-          btn.className = 'chest-btn' + (gems < pet.cost ? ' cooldown' : '');
-          btn.disabled = gems < pet.cost;
-          btn.textContent = `Купить за ${pet.cost} 💎`;
-          btn.onclick = () => {
-            if (getGems() < pet.cost) return;
-            addGems(-pet.cost);
-            const p = getProfile();
-            p.unlockedPets = p.unlockedPets || {};
-            p.unlockedPets[pet.id] = true;
-            p.equippedPet = pet.id;
-            saveProfile(p);
-            loadHubData();
-          };
-        }
-        row.appendChild(btn);
-        petsContainer.appendChild(row);
-      });
-
-      // 2. VIP Title (150 Gems + Toggle On/Off) & Currency Packs
-      const shopContainer = document.getElementById('gem-shop-list');
-      shopContainer.innerHTML = '';
-
-      // VIP Title Row with On/Off Toggle
-      const vipRow = document.createElement('div');
-      vipRow.className = 'item-row';
-      vipRow.innerHTML = `
-        <div class="item-info">
-          <div class="item-title">👑 VIP-титул «Чемпион Хаба» в вызовах</div>
-          <div class="item-sub">Корона чемпиона в профиле и челленджах (можно включать и отключать)</div>
         </div>
-      `;
-      const vipBtn = document.createElement('button');
-      const vipCost = 150;
-      if (claims.vipUnlocked) {
-        vipBtn.className = claims.vipEnabled ? 'chest-btn toggle-on' : 'chest-btn';
-        vipBtn.textContent = claims.vipEnabled ? '👑 Вкл (Отключить)' : 'Включить титул';
-        vipBtn.onclick = () => {
-          const c = getClaims();
-          c.vipEnabled = !c.vipEnabled;
-          saveClaims(c);
-          loadHubData();
-        };
-      } else {
-        vipBtn.className = 'chest-btn' + (gems < vipCost ? ' cooldown' : '');
-        vipBtn.disabled = gems < vipCost;
-        vipBtn.textContent = `Купить за ${vipCost} 💎`;
-        vipBtn.onclick = () => {
-          if (getGems() < vipCost) return;
-          addGems(-vipCost);
-          const c = getClaims();
-          c.vipUnlocked = true;
-          c.vipEnabled = true;
-          saveClaims(c);
-          loadHubData();
-        };
-      }
-      vipRow.appendChild(vipBtn);
-      shopContainer.appendChild(vipRow);
 
-      // Currency Exchanges
-      const packs = [
-        {
-          title: '🪙 +1 500 монет для Ridge Rush',
-          sub: `Баланс: ${stats.rrCoins.toLocaleString()} 🪙`,
-          cost: 5,
-          buy: () => {
-            const raw = localStorage.getItem('ridge_rush_save_v1');
-            const d = raw ? JSON.parse(raw) : { coins: 0, selectedCarIndex: 0, unlockedCars: { pebble_buggy: true }, upgrades: {}, bestDist: {} };
-            d.coins = (d.coins || 0) + 1500;
-            localStorage.setItem('ridge_rush_save_v1', JSON.stringify(d));
-          }
-        },
-        {
-          title: '🪵 +25 брёвен для Timber Dash',
-          sub: `Баланс: ${stats.tdLogs} 🪵`,
-          cost: 5,
-          buy: () => {
-            const raw = localStorage.getItem('timberdash_save_v1');
-            const d = raw ? JSON.parse(raw) : { best: 0, woodCoins: 0, unlockedSkins: { cap_red: true, axe_steel: true, tree_oak: true }, equipped: {} };
-            d.woodCoins = (d.woodCoins || 0) + 25;
-            localStorage.setItem('timberdash_save_v1', JSON.stringify(d));
-          }
-        },
-        {
-          title: '🍎 +25 яблок для Blade Spin',
-          sub: `Баланс: ${stats.bsApples} 🍎`,
-          cost: 5,
-          buy: () => {
-            const raw = localStorage.getItem('bladespin_save_v1');
-            const d = raw ? JSON.parse(raw) : { bestScore: 0, bestStage: 1, apples: 0, unlockedSkins: { steel: true }, equippedSkin: 'steel' };
-            d.apples = (d.apples || 0) + 25;
-            localStorage.setItem('bladespin_save_v1', JSON.stringify(d));
-          }
-        },
-        {
-          title: '⚪ +25 жемчужин для Puff Hop',
-          sub: `Баланс: ${stats.phPearls} ⚪`,
-          cost: 5,
-          buy: () => {
-            const raw = localStorage.getItem('puffhop_save_v1');
-            const d = raw ? JSON.parse(raw) : { best: 0, pearls: 0, unlockedSkins: { sunny: true }, equippedSkin: 'sunny' };
-            d.pearls = (d.pearls || 0) + 25;
-            localStorage.setItem('puffhop_save_v1', JSON.stringify(d));
-          }
-        }
-      ];
-
-      packs.forEach(pk => {
-        const row = document.createElement('div');
-        row.className = 'item-row';
-        row.innerHTML = `<div class="item-info"><div class="item-title">${pk.title}</div><div class="item-sub">${pk.sub}</div></div>`;
-        const b = document.createElement('button');
-        b.className = 'chest-btn' + (gems < pk.cost ? ' cooldown' : '');
-        b.disabled = gems < pk.cost;
-        b.textContent = `Купить за ${pk.cost} 💎`;
-        b.onclick = () => {
-          if (getGems() < pk.cost) return;
-          addGems(-pk.cost);
-          pk.buy();
-          loadHubData();
-        };
-        row.appendChild(b);
-        shopContainer.appendChild(row);
-      });
-    }
-
-    function getSheetUrl() {
-      return DEFAULT_GOOGLE_SHEET_URL;
-    }
-
-    function setLbFilter(filterKey, btnEl) {
-      currentLbFilter = filterKey;
-      const parent = document.getElementById('lb-filter-tabs');
-      if (parent) {
-        Array.from(parent.children).forEach(b => b.classList.remove('active'));
-      }
-      if (btnEl) btnEl.classList.add('active');
-      renderLeaderboardAndSocial(getStats());
-    }
-
-    async function syncWithGoogleSheet(showStatus = false) {
-      const sheetUrl = getSheetUrl();
-      const statusEl = document.getElementById('sheet-status-txt');
-      if (!sheetUrl) {
-        if (statusEl) {
-          statusEl.textContent = '💡 Нажми «📊 Таблица», чтобы подключить общую Google Таблицу для друзей';
-        }
-        return;
-      }
-
-      const stats = getStats();
-      const claims = getClaims();
-      const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
-      const userId = tgUser && tgUser.id ? String(tgUser.id) : (localStorage.getItem('arcade_anon_id') || (() => {
-        const id = 'p_' + Math.floor(Math.random() * 900000 + 100000);
-        try { localStorage.setItem('arcade_anon_id', id); } catch (e) {}
-        return id;
-      })());
-      const rawName = tgUser && tgUser.first_name ? tgUser.first_name : 'Игрок';
-      const displayName = (claims.vipUnlocked && claims.vipEnabled) ? `👑 ${rawName}` : rawName;
-
-      if (statusEl && showStatus) statusEl.textContent = '⏳ Синхронизация с Google Таблицей...';
-
-      try {
-        // Case A: Google Apps Script Web App (/exec) -> supports both saving our scores & reading all friends
-        if (sheetUrl.includes('script.google.com')) {
-          const payload = JSON.stringify({
-            userId,
-            name: displayName,
-            rrBest: stats.rrBest,
-            ssBest: stats.ssBest,
-            tdBest: stats.tdBest,
-            bsBest: stats.bsBest,
-            phBest: stats.phBest,
-            gems: getGems()
-          });
-          const sep = sheetUrl.includes('?') ? '&' : '?';
-          const res = await fetch(`${sheetUrl}${sep}action=save&payload=${encodeURIComponent(payload)}`);
-          const data = await res.json();
-          if (data && Array.isArray(data.players)) {
-            localStorage.setItem(SHEET_CACHE_KEY, JSON.stringify(data.players));
-            if (statusEl) statusEl.textContent = `✅ Google Таблица обновлена (${data.players.length} игр.)`;
-            renderLeaderboardAndSocial(stats);
-          }
-          return;
-        }
-
-        // Case B: Direct Google Spreadsheet URL or ID -> pulls live rows via gviz/tq JSON endpoint
-        const match = sheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
-        const sheetId = match ? match[1] : sheetUrl.trim();
-        const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
-        const res = await fetch(gvizUrl);
-        const txt = await res.text();
-        const jsonStart = txt.indexOf('{');
-        const jsonEnd = txt.lastIndexOf('}');
-        if (jsonStart !== -1 && jsonEnd !== -1) {
-          const gviz = JSON.parse(txt.slice(jsonStart, jsonEnd + 1));
-          const rows = (gviz.table && gviz.table.rows) || [];
-          const players = [];
-          rows.forEach(r => {
-            const c = r.c || [];
-            const val = (idx) => (c[idx] && c[idx].v !== null && c[idx].v !== undefined) ? c[idx].v : '';
-            const nameVal = String(val(1) || val(0) || '').trim();
-            if (!nameVal || nameVal.toLowerCase() === 'name' || nameVal.toLowerCase() === 'имя') return;
-            const rr = Number(val(3)) || 0;
-            const ss = Number(val(4)) || 0;
-            const td = Number(val(5)) || 0;
-            const bs = Number(val(6)) || 0;
-            const ph = Number(val(7)) || 0;
-            const tot = Number(val(2)) || (rr + ss * 10 + td * 5 + bs * 8 + ph * 10);
-            players.push({
-              userId: String(val(0) || nameVal),
-              name: nameVal,
-              totalPts: tot,
-              rrBest: rr,
-              ssBest: ss,
-              tdBest: td,
-              bsBest: bs,
-              phBest: ph
-            });
-          });
-          localStorage.setItem(SHEET_CACHE_KEY, JSON.stringify(players));
-          if (statusEl) statusEl.textContent = showStatus ? `✅ Обновлено (${players.length} чел.)` : '';
-          renderLeaderboardAndSocial(stats);
-        }
-      } catch (err) {
-        if (statusEl) statusEl.textContent = showStatus ? '⚠️ Проверь доступ к таблице («Все, у кого есть ссылка — Читатель»)' : '';
-      }
-    }
-
-    function renderLeaderboardAndSocial(stats) {
-      const prof = getProfile();
-      const claims = getClaims();
-      const rawName = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name)
-        ? tg.initDataUnsafe.user.first_name
-        : 'Ты (Игрок)';
-      const myTitle = (claims.vipUnlocked && claims.vipEnabled) ? `👑 ${rawName}` : rawName;
-      const myTotalPts = stats.rrBest + stats.ssBest * 10 + stats.tdBest * 5 + stats.bsBest * 8 + stats.phBest * 10;
-
-      let sheetPlayers = [];
-      try {
-        const cRaw = localStorage.getItem(SHEET_CACHE_KEY);
-        if (cRaw) sheetPlayers = JSON.parse(cRaw) || [];
-      } catch (e) {}
-
-      let entries = [];
-      if (sheetPlayers.length > 0) {
-        entries = sheetPlayers.map(p => ({
-          name: p.name,
-          totalPts: p.totalPts || 0,
-          rr: p.rrBest || 0,
-          ss: p.ssBest || 0,
-          td: p.tdBest || 0,
-          bs: p.bsBest || 0,
-          ph: p.phBest || 0,
-          isMe: p.name === myTitle || p.name === rawName
-        }));
-        if (!entries.some(e => e.isMe)) {
-          entries.push({
-            name: myTitle,
-            totalPts: myTotalPts,
-            rr: stats.rrBest,
-            ss: stats.ssBest,
-            td: stats.tdBest,
-            bs: stats.bsBest,
-            ph: stats.phBest,
-            isMe: true
-          });
-        }
-      } else {
-        entries = [
-          { name: myTitle, totalPts: myTotalPts, rr: stats.rrBest, ss: stats.ssBest, td: stats.tdBest, bs: stats.bsBest, ph: stats.phBest, isMe: true }
-        ];
-      }
-
-      const getVal = (e) => {
-        if (currentLbFilter === 'rr') return e.rr || 0;
-        if (currentLbFilter === 'ss') return e.ss || 0;
-        if (currentLbFilter === 'td') return e.td || 0;
-        if (currentLbFilter === 'bs') return e.bs || 0;
-        if (currentLbFilter === 'ph') return e.ph || 0;
-        return e.totalPts || 0;
-      };
-
-      const getUnit = () => {
-        if (currentLbFilter === 'rr') return 'м';
-        if (currentLbFilter === 'ss') return 'эт.';
-        if (currentLbFilter === 'td') return '🪵';
-        if (currentLbFilter === 'bs') return '🗡';
-        if (currentLbFilter === 'ph') return '🐡';
-        return 'pts';
-      };
-
-      entries.sort((a, b) => getVal(b) - getVal(a));
-
-      const lbEl = document.getElementById('leaderboard-list');
-      lbEl.innerHTML = '';
-      entries.slice(0, 10).forEach((e, idx) => {
-        const row = document.createElement('div');
-        row.className = 'item-row';
-        if (e.isMe) row.style.borderColor = '#38bdf8';
-        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
-        const subDetails = `🚙${e.rr || 0}м • 🧱${e.ss || 0} • 🦫${e.td || 0} • 🗡${e.bs || 0} • 🐡${e.ph || 0}`;
-        row.innerHTML = `
-          <div class="item-info">
-            <div class="item-title">${medal} ${e.name}</div>
-            <div class="item-sub">${subDetails}</div>
+        <div class="mp-currencies">
+          <div class="mp-curr-pill" id="mp-coins-pill" title="Монеты (нажми для магазина)">
+            <span>🪙</span>
+            <span id="mp-coins-val">150</span>
           </div>
-          <div style="font-size:15px;font-weight:700;color:#fde047;white-space:nowrap;">${getVal(e).toLocaleString()} ${getUnit()}</div>
-        `;
-        lbEl.appendChild(row);
-      });
+          <div class="mp-curr-pill" id="mp-crystals-pill" title="Кристаллы">
+            <span>💎</span>
+            <span id="mp-crystals-val">12</span>
+          </div>
+        </div>
+      </div>
 
-      // Runs History
-      const chk = document.getElementById('hub-auto-send-chk');
-      if (chk) {
-        try {
-          chk.checked = localStorage.getItem('arcade_auto_send_runs_v1') === '1';
-        } catch (e) {}
-      }
+      <!-- 4 NEED RINGS -->
+      <div class="mp-needs-row">
+        <div class="mp-need-chip" id="mp-need-wrap-hunger">
+          <svg class="mp-ring-svg" viewBox="0 0 40 40">
+            <circle class="mp-ring-bg" cx="20" cy="20" r="16"></circle>
+            <circle class="mp-ring-fg" id="mp-ring-hunger" cx="20" cy="20" r="16"></circle>
+          </svg>
+          <div>
+            <div style="font-size:11px;color:#cbd5e1;">🍎 Еда</div>
+            <div style="font-size:12px;font-weight:700;" id="mp-need-val-hunger">80%</div>
+          </div>
+        </div>
 
-      const histEl = document.getElementById('runs-history-list');
-      histEl.innerHTML = '';
-      try {
-        const raw = localStorage.getItem('arcade_runs_history_v1');
-        const runs = raw ? JSON.parse(raw) : [];
-        if (runs.length === 0) {
-          histEl.innerHTML = `<div class="item-row"><div class="item-sub">Сыграй в любую игру, и здесь появятся отчёты твоих забегов!</div></div>`;
-        } else {
-          runs.slice(0, 6).forEach((r, idx) => {
-            const row = document.createElement('div');
-            row.className = 'item-row';
-            const statusBadge = r.target ? (r.beat ? ' • ✅ Вызов побит!' : ` • Цель: ${r.target}`) : '';
-            row.innerHTML = `
-              <div class="item-info">
-                <div class="item-title">${r.icon} ${r.game} — ${r.score}</div>
-                <div class="item-sub">Забег #${runs.length - idx}${statusBadge}</div>
-              </div>
-            `;
-            const btn = document.createElement('button');
-            btn.className = 'chest-btn';
-            btn.textContent = '📤 В чат';
-            btn.onclick = () => {
-              const url = `${window.location.origin}${window.location.pathname}`;
-              const text = `🎮 Мой забег в ${r.game}: ${r.score}${statusBadge}! Попробуй побить:`;
-              shareViaTelegramHub(text, url);
-            };
-            row.appendChild(btn);
-            histEl.appendChild(row);
-          });
-        }
-      } catch (e) {}
-    }
+        <div class="mp-need-chip" id="mp-need-wrap-energy">
+          <svg class="mp-ring-svg" viewBox="0 0 40 40">
+            <circle class="mp-ring-bg" cx="20" cy="20" r="16"></circle>
+            <circle class="mp-ring-fg" id="mp-ring-energy" cx="20" cy="20" r="16"></circle>
+          </svg>
+          <div>
+            <div style="font-size:11px;color:#cbd5e1;">⚡ Сон</div>
+            <div style="font-size:12px;font-weight:700;" id="mp-need-val-energy">85%</div>
+          </div>
+        </div>
 
-    function shareViaTelegramHub(text, url) {
-      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
-      if (tg && typeof tg.openTelegramLink === 'function') {
-        try {
-          tg.openTelegramLink(shareUrl);
-          return;
-        } catch (e) {}
-      }
-      window.open(shareUrl, '_blank');
-    }
+        <div class="mp-need-chip" id="mp-need-wrap-hygiene">
+          <svg class="mp-ring-svg" viewBox="0 0 40 40">
+            <circle class="mp-ring-bg" cx="20" cy="20" r="16"></circle>
+            <circle class="mp-ring-fg" id="mp-ring-hygiene" cx="20" cy="20" r="16"></circle>
+          </svg>
+          <div>
+            <div style="font-size:11px;color:#cbd5e1;">🛁 Мытьё</div>
+            <div style="font-size:12px;font-weight:700;" id="mp-need-val-hygiene">85%</div>
+          </div>
+        </div>
 
-    function shareHubChallenge() {
-      const stats = getStats();
-      const claims = getClaims();
-      const rawName = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name)
-        ? tg.initDataUnsafe.user.first_name
-        : 'Игрок';
-      const prefix = (claims.vipUnlocked && claims.vipEnabled) ? '👑 Чемпион ' : '';
-      const name = `${prefix}${rawName}`;
-      const url = `${window.location.origin}${window.location.pathname}`;
-      const text = `⚔️ ВЫЗОВ В ARCADE HUB от ${name}!\nМои рекорды в 5 играх:\n🚙 Ridge Rush: ${stats.rrBest} м\n🧱 Sky Stack: ${stats.ssBest}\n🦫 Timber Dash: ${stats.tdBest}\n🗡 Blade Spin: ${stats.bsBest}\n🐡 Puff Hop: ${stats.phBest}\nПопробуй побить и отправь свой забег в ответ:`;
-      shareViaTelegramHub(text, url);
-    }
+        <div class="mp-need-chip" id="mp-need-wrap-fun">
+          <svg class="mp-ring-svg" viewBox="0 0 40 40">
+            <circle class="mp-ring-bg" cx="20" cy="20" r="16"></circle>
+            <circle class="mp-ring-fg" id="mp-ring-fun" cx="20" cy="20" r="16"></circle>
+          </svg>
+          <div>
+            <div style="font-size:11px;color:#cbd5e1;">🎾 Игры</div>
+            <div style="font-size:12px;font-weight:700;" id="mp-need-val-fun">80%</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    function toggleAutoSendRuns(enabled) {
-      try {
-        localStorage.setItem('arcade_auto_send_runs_v1', enabled ? '1' : '0');
-      } catch (e) {}
-    }
+    <!-- CENTER STAGE: ROOM + MOCHI PET -->
+    <div id="mp-stage-wrap">
+      <canvas id="mp-pet-canvas"></canvas>
 
-    function loadHubData() {
-      document.getElementById('hub-gems-val').textContent = getGems().toLocaleString();
-      const stats = getStats();
+      <div class="mp-stage-top-overlay">
+        <div class="mp-room-pill" id="mp-room-badge">🍎 Кухня • Ур. 1</div>
+        <div class="mp-side-btns">
+          <button class="mp-float-btn" id="mp-btn-wardrobe">👒 Гардероб</button>
+          <button class="mp-float-btn" id="mp-btn-tasks">
+            🎯 Задания
+            <span class="mp-dot-alert" id="mp-tasks-dot"></span>
+          </button>
+          <button class="mp-float-btn" id="mp-btn-leaderboard">🏆 Рейтинг</button>
+        </div>
+      </div>
+    </div>
 
-      if (stats.rrBest > 0) document.getElementById('rr-best-meta').textContent = `🏆 ${stats.rrBest} м • 🪙 ${stats.rrCoins}`;
-      if (stats.ssBest > 0) document.getElementById('ss-best-meta').textContent = `🏆 Рекорд: ${stats.ssBest}`;
-      if (stats.tdBest > 0) document.getElementById('td-best-meta').textContent = `🏆 ${stats.tdBest} • 🪵 ${stats.tdLogs}`;
-      if (stats.bsBest > 0) document.getElementById('bs-best-meta').textContent = `🏆 ${stats.bsBest} • Этап ${stats.bsStage}`;
-      if (stats.phBest > 0) document.getElementById('ph-best-meta').textContent = `🏆 Рекорд: ${stats.phBest} • ⚪ ${stats.phPearls}`;
+    <!-- ROOM INTERACTIVE TRAY -->
+    <div id="mp-room-tray"></div>
 
-      renderHeaderAndStreak(stats);
-      updateChestButton();
-      renderQuests(stats);
-      renderShopAndPets(stats);
-      renderLeaderboardAndSocial(stats);
-    }
+    <!-- BOTTOM ROOM NAVIGATION -->
+    <div class="mp-bottom-nav">
+      <button class="mp-nav-btn mp-active" data-room-btn="kitchen">
+        <span style="font-size:20px;">🍎</span>
+        <span>Кухня</span>
+      </button>
+      <button class="mp-nav-btn" data-room-btn="bathroom">
+        <span style="font-size:20px;">🛁</span>
+        <span>Ванная</span>
+      </button>
+      <button class="mp-nav-btn" data-room-btn="bedroom">
+        <span style="font-size:20px;">🌙</span>
+        <span>Спальня</span>
+      </button>
+      <button class="mp-nav-btn" data-room-btn="playroom">
+        <span style="font-size:20px;">🕹️</span>
+        <span>Игровая</span>
+      </button>
+      <button class="mp-nav-btn" data-room-btn="shop">
+        <span style="font-size:20px;">🛍️</span>
+        <span>Магазин</span>
+      </button>
+    </div>
 
-    function startGame(url) {
-      window.location.href = url;
-    }
+    <!-- TOAST -->
+    <div id="mp-toast"></div>
 
-    checkDailyLoginStreak();
-    loadHubData();
-    syncWithGoogleSheet(false);
-    setInterval(updateChestButton, 15000);
-  </script>
+    <!-- EMBEDDED MINI-GAME HOST -->
+    <div id="mp-minigame-host" class="mp-hidden"></div>
+
+    <!-- MODAL 1: MINI-GAME HUB -->
+    <div id="mp-modal-games" class="mp-modal-overlay mp-hidden">
+      <div class="mp-modal-card">
+        <div class="mp-modal-hdr">
+          <div style="font-size:18px;font-weight:700;color:#fde047;">🕹️ Мини-Игры Мочи</div>
+          <button class="mp-close-x" data-close-modal="mp-modal-games">✕</button>
+        </div>
+        <div style="font-size:12px;color:#cbd5e1;">Мочи играет прямо в твоей экипировке (цвет и шапка)! Зарабатывай монеты 🪙 и кристаллы 💎 за рекорды.</div>
+        <div class="mp-scroll-list" id="mp-games-list"></div>
+      </div>
+    </div>
+
+    <!-- MODAL 2: SHOP & WARDROBE -->
+    <div id="mp-modal-shop" class="mp-modal-overlay mp-hidden">
+      <div class="mp-modal-card">
+        <div class="mp-modal-hdr">
+          <div style="font-size:18px;font-weight:700;color:#f472b6;">🛍️ Магазин и Гардероб Мочи</div>
+          <button class="mp-close-x" data-close-modal="mp-modal-shop">✕</button>
+        </div>
+        <div class="mp-tabs-row" id="mp-shop-tabs"></div>
+        <div class="mp-scroll-list" id="mp-shop-list"></div>
+      </div>
+    </div>
+
+    <!-- MODAL 3: DAILY STREAK & TASKS -->
+    <div id="mp-modal-tasks" class="mp-modal-overlay mp-hidden">
+      <div class="mp-modal-card">
+        <div class="mp-modal-hdr">
+          <div style="font-size:18px;font-weight:700;color:#4ade80;">🎯 Ежедневные задания и Календарь</div>
+          <button class="mp-close-x" data-close-modal="mp-modal-tasks">✕</button>
+        </div>
+        <div id="mp-streak-box" class="mp-item-row" style="background:rgba(245,158,11,0.16);border-color:rgba(251,191,36,0.4);"></div>
+        <div class="mp-scroll-list" id="mp-tasks-list"></div>
+      </div>
+    </div>
+
+    <!-- MODAL 4: FRIENDS LEADERBOARD (GOOGLE SHEETS) -->
+    <div id="mp-modal-leaderboard" class="mp-modal-overlay mp-hidden">
+      <div class="mp-modal-card">
+        <div class="mp-modal-hdr">
+          <div style="font-size:18px;font-weight:700;color:#38bdf8;">🏆 Таблица лидеров друзей</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button id="mp-lb-refresh-btn" class="mp-small-btn mp-btn-blue">🔄 Обновить</button>
+            <button class="mp-close-x" data-close-modal="mp-modal-leaderboard">✕</button>
+          </div>
+        </div>
+        <div id="mp-lb-status" style="font-size:12px;color:#94a3b8;">Синхронизация с Google Таблицей...</div>
+        <div class="mp-scroll-list" id="mp-lb-list"></div>
+      </div>
+    </div>
+
+    <!-- MODAL 5: MINI-GAME REWARD SCREEN -->
+    <div id="mp-modal-reward" class="mp-modal-overlay mp-hidden">
+      <div class="mp-modal-card" style="text-align:center;align-items:center;">
+        <div id="mp-rew-game-title" style="font-size:16px;font-weight:700;color:#38bdf8;">🧱 Sky Stack</div>
+        <div style="font-size:22px;font-weight:700;color:#f8fafc;">ЗАБЕГ ЗАВЕРШЁН!</div>
+        <div id="mp-rew-score" style="font-size:48px;font-weight:700;color:#fde047;line-height:1;">0</div>
+        <div id="mp-rew-best" style="font-size:13px;color:#4ade80;font-weight:700;">Лучший результат: 0</div>
+
+        <div style="display:flex;gap:10px;justify-content:center;width:100%;margin:6px 0;">
+          <div style="flex:1;background:rgba(30,41,59,0.9);padding:10px;border-radius:14px;border:1px solid rgba(250,204,21,0.3);">
+            <div style="font-size:11px;color:#94a3b8;">Монеты</div>
+            <div id="mp-rew-coins" style="font-size:18px;font-weight:700;color:#fde047;">+0 🪙</div>
+          </div>
+          <div style="flex:1;background:rgba(30,41,59,0.9);padding:10px;border-radius:14px;border:1px solid rgba(56,189,248,0.3);">
+            <div style="font-size:11px;color:#94a3b8;">Кристаллы</div>
+            <div id="mp-rew-crystals" style="font-size:18px;font-weight:700;color:#38bdf8;">+0 💎</div>
+          </div>
+          <div style="flex:1;background:rgba(30,41,59,0.9);padding:10px;border-radius:14px;border:1px solid rgba(74,222,128,0.3);">
+            <div style="font-size:11px;color:#94a3b8;">Опыт Мочи</div>
+            <div id="mp-rew-xp" style="font-size:18px;font-weight:700;color:#4ade80;">+0 XP</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;width:100%;">
+          <button id="mp-reward-again-btn" class="mp-room-action-btn mp-btn-green">▶ Играть ещё</button>
+          <button id="mp-reward-back-btn" class="mp-room-action-btn">🏠 К Мочи</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 6: FIRST SESSION TUTORIAL & RENAME PET -->
+    <div id="mp-modal-tutorial" class="mp-modal-overlay mp-hidden">
+      <div class="mp-modal-card" style="text-align:center;">
+        <div style="font-size:40px;">🍡</div>
+        <div style="font-size:20px;font-weight:700;color:#f472b6;">Знакомься, это твой Mochi Pal!</div>
+        <div style="font-size:13px;color:#cbd5e1;line-height:1.45;text-align:left;background:rgba(30,41,59,0.75);padding:12px;border-radius:16px;">
+          1. <b>Дай имя питомцу</b> ниже 👇<br>
+          2. <b>Корми</b> на Кухне 🍎 (перетащи еду в рот или нажми на неё)<br>
+          3. <b>Намыль мочалкой</b> и смой душем в Ванной 🛁<br>
+          4. <b>Укладывай спать</b> в Спальне 🌙, чтобы копить энергию ⚡<br>
+          5. <b>Играй в 5 мини-игр</b> в Игровой 🕹️ и покупай шапки в Гардеробе 👒!
+        </div>
+        <input id="mp-pet-name-input" type="text" maxlength="16" value="Мочи" placeholder="Имя твоего питомца..." style="width:100%;padding:12px 14px;border-radius:14px;border:2px solid #f472b6;background:#0f172a;color:#fff;font-size:16px;font-weight:700;text-align:center;font-family:'Fredoka', sans-serif;">
+        <button id="mp-save-name-btn" class="mp-room-action-btn mp-btn-green">💖 Начать ухаживать за Мочи!</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>
