@@ -1,7 +1,7 @@
-// Mochi Pal — Backend API Client + Authoritative Edge/CloudStorage Fallback Engine
+// Mochi Pal — Pure Client Storage Engine (localStorage + Telegram CloudStorage + Google Sheets Sync)
 import { CONFIG } from './config.js';
 
-const STORAGE_KEY = 'mochipal_authoritative_state_v1';
+const STORAGE_KEY = 'mochipal_state_v1';
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 
 function getTodayStr() {
@@ -21,26 +21,30 @@ export function computeMoodMultiplier(needs) {
   return 0.5;
 }
 
-class MochiBackendClient {
+class MochiStateEngine {
   constructor() {
-    this.useRemoteServer = null; // auto-detected on first request
     this.activeRuns = new Map();
     this.state = this._loadLocalState();
-  }
-
-  _getTelegramHeaders() {
-    return {
-      'Content-Type': 'application/json',
-      'X-Telegram-Init-Data': (tg && tg.initData) ? tg.initData : ''
-    };
+    this._syncStandaloneGamesProgress();
+    this._loadFromTelegramCloud();
   }
 
   _createDefaultState() {
     const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
     const today = getTodayStr();
+    let existingGems = 12;
+    try {
+      const g = parseInt(localStorage.getItem('arcade_global_gems'), 10);
+      if (!isNaN(g) && g > 0) existingGems = g;
+    } catch (e) {}
+
     return {
       user: {
-        tgId: tgUser && tgUser.id ? String(tgUser.id) : 'local_' + Math.floor(Math.random() * 900000 + 100000),
+        tgId: tgUser && tgUser.id ? String(tgUser.id) : (localStorage.getItem('arcade_anon_id') || (() => {
+          const id = 'p_' + Math.floor(Math.random() * 900000 + 100000);
+          try { localStorage.setItem('arcade_anon_id', id); } catch (e) {}
+          return id;
+        })()),
         name: tgUser && tgUser.first_name ? tgUser.first_name : 'Друг Мочи',
         tutorialDone: false,
         streak: {
@@ -83,8 +87,8 @@ class MochiBackendClient {
         }
       },
       wallet: {
-        coins: 150,
-        crystals: 12,
+        coins: 180,
+        crystals: existingGems,
         dailyEarned: {
           date: today,
           coins: 0,
@@ -146,16 +150,70 @@ class MochiBackendClient {
     return this._createDefaultState();
   }
 
+  _loadFromTelegramCloud() {
+    if (!tg || !tg.CloudStorage || !tg.isVersionAtLeast || !tg.isVersionAtLeast('6.9')) return;
+    try {
+      tg.CloudStorage.getItem(STORAGE_KEY, (err, val) => {
+        if (!err && val) {
+          try {
+            const cloudState = JSON.parse(val);
+            if (cloudState && cloudState.pet && (cloudState.pet.level > this.state.pet.level || cloudState.wallet.coins > this.state.wallet.coins)) {
+              this.state = cloudState;
+              this._saveLocalState();
+            }
+          } catch (e) {}
+        }
+      });
+    } catch (e) {}
+  }
+
+  // Merge records & gems from standalone games (skystack.html, puffhop.html, timberdash.html, bladespin.html, hillclimb.html)
+  _syncStandaloneGamesProgress() {
+    try {
+      const bs = this.state.bestScores;
+      const ssBest = parseInt(localStorage.getItem('skystack_best_v1'), 10) || 0;
+      if (ssBest > (bs.skyStack || 0)) bs.skyStack = ssBest;
+
+      const phRaw = localStorage.getItem('puffhop_save_v1');
+      if (phRaw) {
+        const d = JSON.parse(phRaw);
+        if ((d.best || 0) > (bs.puffHop || 0)) bs.puffHop = d.best;
+      }
+
+      const tdRaw = localStorage.getItem('timberdash_save_v1');
+      if (tdRaw) {
+        const d = JSON.parse(tdRaw);
+        if ((d.best || 0) > (bs.timberDash || 0)) bs.timberDash = d.best;
+      }
+
+      const bsRaw = localStorage.getItem('bladespin_save_v1');
+      if (bsRaw) {
+        const d = JSON.parse(bsRaw);
+        if ((d.bestScore || 0) > (bs.bladeSpin || 0)) bs.bladeSpin = d.bestScore;
+      }
+
+      const rrRaw = localStorage.getItem('ridge_rush_save_v1');
+      if (rrRaw) {
+        const d = JSON.parse(rrRaw);
+        const maxRR = d.bestDist ? Math.max(0, ...Object.values(d.bestDist)) : 0;
+        if (maxRR > (bs.ridgeRush || 0)) bs.ridgeRush = maxRR;
+      }
+
+      localStorage.setItem('arcade_global_gems', String(this.state.wallet.crystals));
+    } catch (e) {}
+  }
+
   _saveLocalState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+      localStorage.setItem('arcade_global_gems', String(this.state.wallet.crystals));
       if (tg && tg.CloudStorage && tg.isVersionAtLeast && tg.isVersionAtLeast('6.9')) {
         tg.CloudStorage.setItem(STORAGE_KEY, JSON.stringify(this.state), () => {});
       }
     } catch (e) {}
   }
 
-  // Server-side timestamp decay with 70% offline cap (pet never hits 0 overnight)
+  // Offline time decay with 70% cap (Mochi never reaches 0 overnight)
   _applyTimeDecay() {
     const now = Date.now();
     const pet = this.state.pet;
@@ -163,14 +221,13 @@ class MochiBackendClient {
     pet.lastUpdate = now;
 
     if (elapsedHours > 0.001) {
-      const maxDrain = CONFIG.needs.offlineMaxDrain * 100; // max 70 points drained offline
+      const maxDrain = CONFIG.needs.offlineMaxDrain * 100;
       const d = CONFIG.needs.decayPerHour;
 
       const drainH = Math.min(maxDrain, elapsedHours * d.hunger);
       const drainHy = Math.min(maxDrain, elapsedHours * d.hygiene);
       const drainF = Math.min(maxDrain, elapsedHours * d.fun);
 
-      // Pet never reaches 0 while sleeping offline (floor at 15 if offline > 1h)
       const minFloor = elapsedHours > 0.5 ? 15 : 5;
       pet.needs.hunger = Math.max(minFloor, Math.round((pet.needs.hunger - drainH) * 10) / 10);
       pet.needs.hygiene = Math.max(minFloor, Math.round((pet.needs.hygiene - drainHy) * 10) / 10);
@@ -190,7 +247,6 @@ class MochiBackendClient {
       }
     }
 
-    // Reset daily counters if date changed
     const today = getTodayStr();
     if (!this.state.wallet.dailyEarned || this.state.wallet.dailyEarned.date !== today) {
       this.state.wallet.dailyEarned = { date: today, coins: 0, crystals: 0 };
@@ -199,7 +255,6 @@ class MochiBackendClient {
       this.state.tasks = this._generateDailyTasks(today);
     }
 
-    // Check streak availability
     const streak = this.state.user.streak;
     if (streak.lastClaimDate !== today) {
       const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
@@ -211,6 +266,7 @@ class MochiBackendClient {
       streak.claimedToday = true;
     }
 
+    this._syncStandaloneGamesProgress();
     this._saveLocalState();
   }
 
@@ -240,40 +296,11 @@ class MochiBackendClient {
   }
 
   async getState() {
-    if (this.useRemoteServer !== false) {
-      try {
-        const res = await fetch('/api/state', { headers: this._getTelegramHeaders() });
-        if (res.ok && (res.headers.get('content-type') || '').includes('application/json')) {
-          this.useRemoteServer = true;
-          this.state = await res.json();
-          this._saveLocalState();
-          return this.state;
-        }
-        this.useRemoteServer = false;
-      } catch (e) {
-        this.useRemoteServer = false;
-      }
-    }
     this._applyTimeDecay();
     return this.state;
   }
 
   async petAction(type, payload = {}) {
-    if (this.useRemoteServer) {
-      try {
-        const res = await fetch('/api/pet/action', {
-          method: 'POST',
-          headers: this._getTelegramHeaders(),
-          body: JSON.stringify({ type, ...payload })
-        });
-        if (res.ok) {
-          this.state = await res.json();
-          this._saveLocalState();
-          return this.state;
-        }
-      } catch (e) {}
-    }
-
     this._applyTimeDecay();
     const pet = this.state.pet;
     let levelInfo = { leveledUp: false };
@@ -376,12 +403,10 @@ class MochiBackendClient {
     let rawCoins = Math.floor(cleanScore * gCfg.coinRate * moodMult * roomBonus);
     if (cleanScore > 0 && rawCoins < 3) rawCoins = 3;
 
-    // Daily soft cap check
     if (this.state.wallet.dailyEarned.coins >= CONFIG.economy.coinSoftCapDaily) {
       rawCoins = Math.max(1, Math.floor(rawCoins * CONFIG.economy.softCapRate));
     }
 
-    // Milestone crystals + personal best crystal
     const prevBest = this.state.bestScores[gameId] || 0;
     const isNewBest = cleanScore > prevBest && cleanScore > 0;
     if (isNewBest) {
@@ -557,6 +582,7 @@ class MochiBackendClient {
   async syncToGoogleSheets() {
     const url = CONFIG.economy.googleSheetSyncUrl;
     if (!url) return [];
+    this._syncStandaloneGamesProgress();
     const bs = this.state.bestScores || {};
     const payload = JSON.stringify({
       userId: this.state.user.tgId,
@@ -574,4 +600,4 @@ class MochiBackendClient {
   }
 }
 
-export const api = new MochiBackendClient();
+export const api = new MochiStateEngine();
