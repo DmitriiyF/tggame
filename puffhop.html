@@ -855,11 +855,15 @@
     } catch (e) {}
 
     if (window.parent && window.parent !== window) {
-      if (typeof window.parent.__mochiOnRunFinished === 'function') {
-        window.parent.__mochiOnRunFinished({ gameId: 'puffHop', score });
-      } else {
+      try {
+        if (typeof window.parent.__mochiOnRunFinished === 'function') {
+          window.parent.__mochiOnRunFinished({ gameId: 'puffHop', score });
+          return;
+        }
+      } catch (e) {}
+      try {
         window.parent.postMessage({ type: 'MOCHI_RUN_FINISHED', gameId: 'puffHop', score }, '*');
-      }
+      } catch (e) {}
       return;
     }
 

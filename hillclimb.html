@@ -2655,11 +2655,15 @@
 
     if (window.parent && window.parent !== window) {
       const totalRunCoins = runTrackCoins + runAirCoins + runFlipCoins;
-      if (typeof window.parent.__mochiOnRunFinished === 'function') {
-        window.parent.__mochiOnRunFinished({ gameId: 'ridgeRush', score: currentDistMeters, directCoins: totalRunCoins });
-      } else {
+      try {
+        if (typeof window.parent.__mochiOnRunFinished === 'function') {
+          window.parent.__mochiOnRunFinished({ gameId: 'ridgeRush', score: currentDistMeters, directCoins: totalRunCoins });
+          return;
+        }
+      } catch (e) {}
+      try {
         window.parent.postMessage({ type: 'MOCHI_RUN_FINISHED', gameId: 'ridgeRush', score: currentDistMeters, directCoins: totalRunCoins }, '*');
-      }
+      } catch (e) {}
       return;
     }
 

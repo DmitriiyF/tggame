@@ -1,6 +1,6 @@
 // Mochi Pal — Layered Canvas 2D Pet Renderer, Interactive Bath Tools (Soap & Shower) & Spring Physics
-import { CONFIG } from './config.js?v=20261114_3';
-import { sfx } from './audio.js?v=20261114_3';
+import { CONFIG } from './config.js?v=20261125_1';
+import { sfx } from './audio.js?v=20261125_1';
 
 export class MochiStage {
   constructor(canvas, callbacks = {}) {

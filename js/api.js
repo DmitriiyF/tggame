@@ -1,5 +1,5 @@
 // Mochi Pal — Pure Client Storage Engine (localStorage + Telegram CloudStorage + Google Sheets Sync)
-import { CONFIG } from './config.js?v=20261114_3';
+import { CONFIG } from './config.js?v=20261125_1';
 
 const STORAGE_KEY = 'mochipal_state_v1';
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
@@ -139,20 +139,49 @@ class MochiStateEngine {
     };
   }
 
+  _normalizeState(parsed) {
+    const def = this._createDefaultState();
+    if (!parsed || typeof parsed !== 'object') return def;
+
+    parsed.user = { ...def.user, ...(parsed.user || {}) };
+    parsed.user.streak = { ...def.user.streak, ...(parsed.user.streak || {}) };
+    parsed.user.settings = { ...def.user.settings, ...(parsed.user.settings || {}) };
+
+    parsed.pet = { ...def.pet, ...(parsed.pet || {}) };
+    parsed.pet.needs = { ...def.pet.needs, ...(parsed.pet.needs || {}) };
+    parsed.pet.equipped = { ...def.pet.equipped, ...(parsed.pet.equipped || {}) };
+    parsed.pet.house = { ...def.pet.house, ...(parsed.pet.house || {}) };
+    parsed.pet.house.rooms = {
+      kitchen: { tier: 1, ...((parsed.pet.house.rooms && parsed.pet.house.rooms.kitchen) || {}) },
+      bathroom: { tier: 1, ...((parsed.pet.house.rooms && parsed.pet.house.rooms.bathroom) || {}) },
+      bedroom: { tier: 1, ...((parsed.pet.house.rooms && parsed.pet.house.rooms.bedroom) || {}) },
+      playroom: { tier: 1, ...((parsed.pet.house.rooms && parsed.pet.house.rooms.playroom) || {}) }
+    };
+    if (!parsed.pet.house.wallpaper) parsed.pet.house.wallpaper = 'wall_default';
+    if (!parsed.pet.house.rug) parsed.pet.house.rug = 'rug_pink';
+
+    parsed.wallet = { ...def.wallet, ...(parsed.wallet || {}) };
+    parsed.wallet.dailyEarned = { ...def.wallet.dailyEarned, ...(parsed.wallet.dailyEarned || {}) };
+
+    parsed.inventory = { ...def.inventory, ...(parsed.inventory || {}) };
+    parsed.inventory.food = { ...(parsed.inventory.food || def.inventory.food) };
+    parsed.inventory.ownedCosmetics = { ...def.inventory.ownedCosmetics, ...(parsed.inventory.ownedCosmetics || {}) };
+
+    parsed.bestScores = { ...def.bestScores, ...(parsed.bestScores || {}) };
+    if (!parsed.tasks || !Array.isArray(parsed.tasks.list)) {
+      parsed.tasks = def.tasks;
+    }
+    parsed.achievements = { ...def.achievements, ...(parsed.achievements || {}) };
+    return parsed;
+  }
+
   _loadLocalState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && parsed.pet && parsed.wallet) {
-          if (!parsed.pet.house) parsed.pet.house = { rooms: { kitchen: { tier: 1 }, bathroom: { tier: 1 }, bedroom: { tier: 1 }, playroom: { tier: 1 } } };
-          if (!parsed.pet.house.wallpaper) parsed.pet.house.wallpaper = 'wall_default';
-          if (!parsed.pet.house.rug) parsed.pet.house.rug = 'rug_pink';
-          if (!parsed.inventory) parsed.inventory = { food: {}, ownedCosmetics: {} };
-          if (!parsed.inventory.ownedCosmetics) parsed.inventory.ownedCosmetics = {};
-          parsed.inventory.ownedCosmetics.wall_default = true;
-          parsed.inventory.ownedCosmetics.rug_pink = true;
-          return parsed;
+          return this._normalizeState(parsed);
         }
       }
     } catch (e) {}
@@ -165,7 +194,7 @@ class MochiStateEngine {
       tg.CloudStorage.getItem(STORAGE_KEY, (err, val) => {
         if (!err && val) {
           try {
-            const cloudState = JSON.parse(val);
+            const cloudState = this._normalizeState(JSON.parse(val));
             if (cloudState && cloudState.pet && (cloudState.pet.level > this.state.pet.level || cloudState.wallet.coins > this.state.wallet.coins)) {
               this.state = cloudState;
               this._saveLocalState();

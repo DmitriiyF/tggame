@@ -1,8 +1,8 @@
 // Mochi Pal — Main Virtual Pet Application Controller
-import { CONFIG } from './config.js?v=20261114_3';
-import { sfx } from './audio.js?v=20261114_3';
-import { api, xpNeededForLevel, computeMoodMultiplier } from './api.js?v=20261114_3';
-import { MochiStage } from './mochi-renderer.js?v=20261114_3';
+import { CONFIG } from './config.js?v=20261125_1';
+import { sfx } from './audio.js?v=20261125_1';
+import { api, xpNeededForLevel, computeMoodMultiplier } from './api.js?v=20261125_1';
+import { MochiStage } from './mochi-renderer.js?v=20261125_1';
 
 const ROOM_ORDER = ['kitchen', 'bathroom', 'bedroom', 'playroom'];
 
@@ -26,11 +26,14 @@ class MochiPalApp {
   }
 
   async init() {
-    // If loaded inside an embedded game iframe when the user clicked "🏠 В меню" inside skystack/puffhop/etc., close the iframe in parent!
-    if (window.parent && window.parent !== window && typeof window.parent.__mochiCloseEmbeddedGame === 'function') {
-      window.parent.__mochiCloseEmbeddedGame();
-      return;
-    }
+    // If loaded inside our own same-origin embedded game iframe (when clicking "🏠 В меню" inside skystack/puffhop/etc.), close the iframe in parent!
+    // Must wrap in try/catch because inside Telegram Web/Desktop Mini App, window.parent is Telegram's cross-origin host frame!
+    try {
+      if (window.frameElement && window.parent && window.parent !== window && typeof window.parent.__mochiCloseEmbeddedGame === 'function') {
+        window.parent.__mochiCloseEmbeddedGame();
+        return;
+      }
+    } catch (e) {}
 
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
     if (tg) {

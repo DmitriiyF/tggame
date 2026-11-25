@@ -959,11 +959,15 @@
 
     if (window.parent && window.parent !== window) {
       setTimeout(() => {
-        if (typeof window.parent.__mochiOnRunFinished === 'function') {
-          window.parent.__mochiOnRunFinished({ gameId: 'timberDash', score });
-        } else {
+        try {
+          if (typeof window.parent.__mochiOnRunFinished === 'function') {
+            window.parent.__mochiOnRunFinished({ gameId: 'timberDash', score });
+            return;
+          }
+        } catch (e) {}
+        try {
           window.parent.postMessage({ type: 'MOCHI_RUN_FINISHED', gameId: 'timberDash', score }, '*');
-        }
+        } catch (e) {}
       }, 320);
       return;
     }
